@@ -5,6 +5,7 @@ rio_build
 tk1_build
 build
 .DS_Store
+.vs
 
 *.swp
 

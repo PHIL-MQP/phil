@@ -1,6 +1,9 @@
 #include <array>
+#include <iostream>
 
 #include <phil/phil.h>
+#include <SmartDashboard/SmartDashboard.h>
+#include <networktables/NetworkTableInstance.h>
 
 namespace phil {
 
@@ -8,8 +11,9 @@ Phil *Phil::instance = nullptr;
 
 // TODO: don't hard code tk1 hostname
 Phil::Phil() :
-    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1"), tk1_time_offset(0) {
-  table = NetworkTable::GetTable(phil::kTableName);
+    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1.local"), tk1_time_offset(0) {
+  auto inst = nt::NetworkTableInstance::GetDefault();
+  table = inst.GetTable(phil::kTableName);
 
   // initialize the table -- THIS IS BAD DON'T DO THIS
   frc::SmartDashboard::PutNumber(phil::kWheelRadius, 0.038);

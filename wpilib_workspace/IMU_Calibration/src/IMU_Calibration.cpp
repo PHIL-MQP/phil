@@ -115,7 +115,7 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
 }
 
 int manditory_init() {
-  if (!HAL_Initialize(0)) {
+  if (!HAL_Initialize(0, 500)) {
     std::cout << "FATAL ERROR: HAL could not be initialized" << std::endl;
     return -1;
   }

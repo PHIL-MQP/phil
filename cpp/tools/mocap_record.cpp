@@ -1,12 +1,32 @@
 #include <iostream>
-#include <stdio.h>
 #include <errno.h>
 #include <cstring>
 #include <fstream>
 #include <cscore.h>
 #include <opencv2/highgui.hpp>
 
-int main(int argc, char **argv) {
+#include <phil/common/udp.h>
+#include <phil/common/args.h>
+
+int main(int argc, const char **argv) {
+  args::ArgumentParser parser("This program records camera frames and their timestamps",
+                              "This program is meant to run on TK1 during Motion Capture"
+                                  "recording tests. However, it is general purpose and could be used on a laptop."
+                                  "It cannot be built for the RoboRIO.");
+  args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+  args::ValueFlag<std::string>
+      server_hostname_flag(parser, "hostname", "hostname of the server sending start/stop", {'o'});
+
+  try
+  {
+    parser.ParseCLI(argc, argv);
+  }
+  catch (args::Help &e)
+  {
+    std::cout << parser;
+    return 0;
+  }
+
   cs::UsbCamera camera{"usbcam", 0};
   camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, 30);
   cs::MjpegServer mjpegServer{"httpserver", 8081};
@@ -15,7 +35,7 @@ int main(int argc, char **argv) {
   sink.SetSource(camera);
 
   cv::Mat frame;
-  cv::VideoWriter video("out.mjpeg", CV_FOURCC('M', 'J', 'P', 'G'), 30, cv::Size(320, 240));
+  cv::VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
 
   std::ofstream time_stamps_file;
   time_stamps_file.open("frame_time_stamps.csv");
@@ -25,9 +45,22 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  // wait for UDP message to start
+  std::string hostname = "phil-tk1.local";
+  if (server_hostname_flag) {
+    hostname = args::get(server_hostname_flag);
+  }
 
-  for (int i=0; i < 300; i++) {
+  // wait for UDP message to start
+  phil::UDPServer udp_server;
+  uint8_t message = 0;
+  udp_server.Read(&message, 1);
+
+  struct timeval timeout = {0};
+  timeout.tv_usec = 10;
+  timeout.tv_sec = 0;
+  udp_server.SetTimeout(timeout);
+
+  for (int i = 0; i < 1000; i++) {
     uint64_t time = sink.GrabFrame(frame);
     if (time == 0) {
       std::cout << "error: " << sink.GetError() << std::endl;
@@ -38,6 +71,10 @@ int main(int argc, char **argv) {
     time_stamps_file << time << std::endl;
 
     // check for UDP message to stop
+    ssize_t bytes_received = udp_server.Read(&message, 1);
+    if (bytes_received > 0) {
+      break;
+    }
   }
 
   time_stamps_file.close();
