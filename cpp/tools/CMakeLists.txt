@@ -23,14 +23,14 @@ if (${TK1})
             opencv_imgproc
             opencv_highgui)
 
-    add_executable(mocap_record mocap_record.cpp)
+    add_executable(mocap_record mocap_record.cpp ${phil_common_src})
     target_link_libraries(mocap_record
             aruco
             cscore
             opencv_core
             opencv_imgproc
             opencv_highgui)
-    target_include_directories(mocap_record PRIVATE ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+    target_include_directories(mocap_record PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 endif ()
 
 # Ye old linux build
