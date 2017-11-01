@@ -1,58 +1,59 @@
-/**
-  @file videocapture_basic.cpp
-  @brief A very basic sample for using VideoCapture and VideoWriter
-  @author PkLab.net
-  @date Aug 24, 2016
-  */
-
-#include <opencv2/opencv.hpp>
+#include "opencv2/imgproc.hpp"
+#include "opencv2/highgui.hpp"
 #include <iostream>
-#include <stdio.h>
 
 using namespace cv;
-using namespace std;
 
-int main(int argc, char** argv)
-{
-  if (argc <= 1)
-  {
-    std::cout << "USAGE: ./main camera_id"
-              << std::endl
-              << std::endl
-              << "EX: ./main 1"
-              << std::endl;
-    return 0;
-  }
+void help() {
+  printf("\nThis program illustrates Log-Polar image transforms\n"
+             "Usage :\n"
+             "./polar_transforms [[camera number -- Default 0],[path_to_filename]]\n\n");
+}
 
+int main(int argc, char **argv) {
+  VideoCapture capture;
+  Mat log_polar_img;
 
-  Mat frame;
-  //--- INITIALIZE VIDEOCAPTURE
-  VideoCapture cap;
-  int deviceID = atoi(argv[1]);
-  cap.open(deviceID);
-  // check if we succeeded
-  if (!cap.isOpened()) {
-    cerr << "ERROR! Unable to open camera\n";
+  help();
+
+  CommandLineParser parser(argc, argv, "{@input|0|}");
+  std::string arg = parser.get<std::string>("@input");
+
+  std::cout << "Press q twice to quit" << std::endl;
+
+  if (arg.size() == 1 && isdigit(arg[0]))
+    capture.open(arg[0] - '0');
+  else
+    capture.open(arg.c_str());
+
+  if (!capture.isOpened()) {
+    const char *name = argv[0];
+    fprintf(stderr, "Could not initialize capturing...\n");
+    fprintf(stderr, "Usage: %s <CAMERA_NUMBER>    , or \n       %s <VIDEO_FILE>\n", name, name);
     return -1;
   }
 
-  //--- GRAB AND WRITE LOOP
-  cout << "Start grabbing" << endl
-    << "Press any key to terminate" << endl;
-  for (;;)
-  {
-    // wait for a new frame from camera and store it into 'frame'
-    cap.read(frame);
-    // check if we succeeded
-    if (frame.empty()) {
-      cerr << "ERROR! blank frame grabbed\n";
+  namedWindow("Log-Polar", WINDOW_AUTOSIZE);
+
+  for (;;) {
+    Mat frame;
+    capture >> frame;
+
+    if (frame.empty())
+      break;
+
+    Point2f center((float) frame.cols / 2, (float) frame.rows / 2);
+    double M = 70;
+
+    logPolar(frame, log_polar_img, center, M, INTER_LINEAR + WARP_FILL_OUTLIERS);
+
+    imshow("Log-Polar", log_polar_img.t());
+
+    if (waitKey(10) == 'q') {
       break;
     }
-    // show live and wait for a key with timeout long enough to show images
-    imshow("Live", frame);
-    if (waitKey(5) >= 0)
-      break;
   }
-  // the camera will be deinitialized automatically in VideoCapture destructor
+
+  waitKey(0);
   return 0;
 }
