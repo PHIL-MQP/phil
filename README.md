@@ -1,2 +1,1 @@
-# phil
-Main repository
+# PHIL - Position Hallucination and Indoor Localization
