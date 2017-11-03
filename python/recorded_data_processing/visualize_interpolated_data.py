@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import numpy as np
 import csv
@@ -45,7 +47,8 @@ def main():
 
         # double integrate gyro data
 
-    plt.plot(xs, ys, marker='.')
+    n = 10  # show the first n points
+    plt.plot(xs[:n], ys[:n], marker='.')
     plt.scatter(xs[0], ys[0], marker='o', c='red')
     plt.show()
 

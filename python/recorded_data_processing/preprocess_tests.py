@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import unittest
 import numpy as np
 
@@ -34,6 +36,15 @@ class TestPreProcess(unittest.TestCase):
         self.assertEqual(preprocess.interpolate(-10, 10, 0, 5, 2), -2)
         self.assertEqual(preprocess.interpolate(-10, 10, 0, 5, 2.5), 0)
         self.assertEqual(preprocess.interpolate(-10, 10, 0, 5, 5), 10)
+
+    def test_encoder_diff(self):
+        self.assertEqual(preprocess.encoder_diff(0, 1), 1)
+        self.assertEqual(preprocess.encoder_diff(0, 10), 10)
+        self.assertEqual(preprocess.encoder_diff(0, 2**15-1), 2**15-1)
+        self.assertEqual(preprocess.encoder_diff(2**16, 0), 1)
+        self.assertEqual(preprocess.encoder_diff(2**16, 1), 2)
+        self.assertEqual(preprocess.encoder_diff(0, 2**16), -1)
+        self.assertEqual(preprocess.encoder_diff(0, 2**16 - 1), -2)
 
 
 if __name__ == '__main__':

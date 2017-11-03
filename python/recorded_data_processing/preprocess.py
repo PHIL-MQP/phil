@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import argparse
 import sys
@@ -6,16 +8,22 @@ import csv
 import json
 
 
-def encoder_diff(ticks_1, ticks_2):
+def encoder_diff(ticks_1, ticks_2, encoder_bits=16):
+    """ Like doing ticks_2 - ticks_1, but aware of edge cases """
     diff = ticks_2 - ticks_1
-    if diff > 2 ** 15:
-        return 2 ** 16 - ticks_2 + ticks_1
-    elif diff < -(2 ** 15):
-        return -ticks_2 - (2 ** 16 - ticks_1)
+    if diff > 2 ** (encoder_bits - 1):  # encoder actually went backwards and wrapped around (ex: 1, 65535)
+        return -ticks_1 - ((2 ** encoder_bits + 1) - ticks_2)
+    elif diff < -2 ** (encoder_bits - 1):  # encoder went forwards and wrapped around (ex: 65535, 1)
+        return (2 ** encoder_bits + 1) - ticks_1 + ticks_2
     return diff
 
 
 def load_data(data_directory):
+    """
+    Load the bagged sensor data from the specified directory and return two numpy arrays.
+    The first is speeds, and has the size Nx3. The second is NavX, and has the size Mx7
+    N/M here are the number of readings.
+    """
     metadata_filename = os.path.join(data_directory, "metadata.json")
     encoder_filename = os.path.join(data_directory, "encoder_data.csv")
     imu_filename = os.path.join(data_directory, "ins_data.csv")
@@ -53,30 +61,11 @@ def load_data(data_directory):
     return speeds, imus, metadata
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("data_directory", help="directory with data")
-
-    args = parser.parse_args()
-
-    if not os.path.exists(args.data_directory):
-        print("data direction [{}] does not exist".format(args.data_directory))
-        return
-
-    output_filename = os.path.join(args.data_directory, "interpolated_data.csv")
-
-    speeds, imus, metadata = load_data(args.data_directory)
-
-    # iterate over all the time imu readings were taken and get interpolated sensor values
-    writer = csv.writer(open(output_filename, 'w'))
-    writer.writerow(["left", "right", "imux", "imuy", "imuz", "gyrox", "gyroy", "gyroz", "time"])
-    for t in np.arange(imus[0][-1], imus[-1][-1], 0.1):
-        sensor_values = interpolate_data(imus, speeds, t)
-        sensor_values.append(t)
-        writer.writerow(sensor_values)
-
-
 def interpolate_data(imus, speeds, t):
+    """
+    given numpy arrays of sensor data, produce a synthetic sensor reading at one specific time.
+    The reading will be interpolated between the actual readings.
+    """
     # find the two sensor readings nearest to t and linearly interpolate
     sensor_values = []
 
@@ -118,8 +107,32 @@ def interpolate_data(imus, speeds, t):
 
 
 def interpolate(s0, s1, t0, t1, t):
+    """ interpolate between (t0, s0) and (t1, s1) at time t """
     m = (s1 - s0) / (t1 - t0)
     return s0 + m * (t - t0)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("data_directory", help="directory with data")
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.data_directory):
+        print("data direction [{}] does not exist".format(args.data_directory))
+        return
+
+    output_filename = os.path.join(args.data_directory, "interpolated_data.csv")
+
+    speeds, imus, metadata = load_data(args.data_directory)
+
+    # iterate over all the time imu readings were taken and get interpolated sensor values
+    writer = csv.writer(open(output_filename, 'w'))
+    writer.writerow(["left", "right", "imux", "imuy", "imuz", "gyrox", "gyroy", "gyroz", "time"])
+    for t in np.arange(imus[0][-1], imus[-1][-1], 0.1):
+        sensor_values = interpolate_data(imus, speeds, t)
+        sensor_values.append(t)
+        writer.writerow(sensor_values)
 
 
 if __name__ == '__main__':
