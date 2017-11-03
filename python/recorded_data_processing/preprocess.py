@@ -9,9 +9,9 @@ import json
 def encoder_diff(ticks_1, ticks_2):
     diff = ticks_2 - ticks_1
     if diff > 2 ** 15:
-        return 2**16 - ticks_2 + ticks_1
+        return 2 ** 16 - ticks_2 + ticks_1
     elif diff < -(2 ** 15):
-        return -ticks_2 - (2**16 - ticks_1)
+        return -ticks_2 - (2 ** 16 - ticks_1)
     return diff
 
 
@@ -69,8 +69,10 @@ def main():
 
     # iterate over all the time imu readings were taken and get interpolated sensor values
     writer = csv.writer(open(output_filename, 'w'))
+    writer.writerow(["left", "right", "imux", "imuy", "imuz", "gyrox", "gyroy", "gyroz", "time"])
     for t in np.arange(imus[0][-1], imus[-1][-1], 0.1):
         sensor_values = interpolate_data(imus, speeds, t)
+        sensor_values.append(t)
         writer.writerow(sensor_values)
 
 

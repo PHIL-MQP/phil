@@ -3,7 +3,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-static constexpr unsigned short maxR = 400, maxT = 4500;
+static constexpr unsigned short maxR = 400, maxT = 2250;
 static constexpr unsigned short midX = 320, midY = 240;
 
 int main(int argc, const char **argv) {
