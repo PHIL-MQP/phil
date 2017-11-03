@@ -6,22 +6,21 @@ import csv
 import json
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("data_directory", help="directory with data")
+def encoder_diff(ticks_1, ticks_2):
+    diff = ticks_2 - ticks_1
+    if diff > 2 ** 15:
+        return 2**16 - ticks_2 + ticks_1
+    elif diff < -(2 ** 15):
+        return -ticks_2 - (2**16 - ticks_1)
+    return diff
 
-    args = parser.parse_args()
 
-    if not os.path.exists(args.data_directory):
-        return
-
-    metadata_filename = os.path.join(args.data_directory, "metadata.json")
-    encoder_filename = os.path.join(args.data_directory, "encoder_data.csv")
-    imu_filename = os.path.join(args.data_directory, "ins_data.csv")
-    output_filename = os.path.join(args.data_directory, "interpolated_data.csv")
+def load_data(data_directory):
+    metadata_filename = os.path.join(data_directory, "metadata.json")
+    encoder_filename = os.path.join(data_directory, "encoder_data.csv")
+    imu_filename = os.path.join(data_directory, "ins_data.csv")
 
     metadata = json.load(open(metadata_filename, 'r'))
-
     encoder_file = open(encoder_filename, 'r')
     imu_file = open(imu_filename, 'r')
     encoder_reader = csv.reader(encoder_file)
@@ -32,13 +31,14 @@ def main():
     previous_row = next(encoder_reader)
     speeds = []
     for row in encoder_reader:
-        left_speed = float(row[0]) - float(previous_row[0])
-        right_speed = float(row[1]) - float(previous_row[1])
+        left_speed = encoder_diff(float(row[0]), float(previous_row[0]))
+        right_speed = encoder_diff(float(row[1]), float(previous_row[1]))
         time = float(row[2])
 
         speeds.append(np.array([left_speed, right_speed, time]))
 
         previous_row = row
+    speeds = np.array(speeds)
 
     imus = []
     for row in imu_reader:
@@ -46,6 +46,24 @@ def main():
         imu[-2] = imu[-2] + roborio_laptop_time_offset
         imu[-1] = imu[-1] + roborio_laptop_time_offset
         imus.append(imu)
+    imus = np.array(imus)
+
+    return speeds, imus, metadata
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("data_directory", help="directory with data")
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.data_directory):
+        print("data direction [{}] does not exist".format(args.data_directory))
+        return
+
+    output_filename = os.path.join(args.data_directory, "interpolated_data.csv")
+
+    speeds, imus, metadata = load_data(args.data_directory)
 
     # iterate over all the time imu readings were taken and get interpolated sensor values
     writer = csv.writer(open(output_filename, 'w'))
@@ -61,9 +79,9 @@ def interpolate_data(imus, speeds, t):
     # find the interpolated speeds
     points_found = False
     for idx in range(1, len(speeds)):
-        t0 = speeds[idx-1][-1]  # assumes time is last
+        t0 = speeds[idx - 1][-1]  # assumes time is last
         t1 = speeds[idx][-1]
-        s0 = speeds[idx-1]
+        s0 = speeds[idx - 1]
         s1 = speeds[idx]
         if t0 <= t <= t1:
             # linear interpolate
@@ -78,9 +96,9 @@ def interpolate_data(imus, speeds, t):
     # find the interpolated imu data
     points_found = False
     for idx in range(1, len(imus)):
-        t0 = imus[idx-1][-1]  # assumes time is last
+        t0 = imus[idx - 1][-1]  # assumes time is last
         t1 = imus[idx][-1]
-        s0 = imus[idx-1]
+        s0 = imus[idx - 1]
         s1 = imus[idx]
         if t0 <= t <= t1:
             # linear interpolate
@@ -102,4 +120,3 @@ def interpolate(s0, s1, t0, t1, t):
 
 if __name__ == '__main__':
     sys.exit(main())
-
