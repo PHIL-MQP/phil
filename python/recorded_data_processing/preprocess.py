@@ -28,6 +28,7 @@ def load_data(data_directory):
 
     roborio_laptop_time_offset = metadata['laptop_time_s'] - metadata['roborio_time_s']
 
+    next(encoder_reader)  # skip header
     previous_row = next(encoder_reader)
     speeds = []
     for row in encoder_reader:
@@ -41,6 +42,7 @@ def load_data(data_directory):
     speeds = np.array(speeds)
 
     imus = []
+    next(imu_reader)  # skip header
     for row in imu_reader:
         imu = np.array([float(x) for x in row])
         imu[-2] = imu[-2] + roborio_laptop_time_offset
