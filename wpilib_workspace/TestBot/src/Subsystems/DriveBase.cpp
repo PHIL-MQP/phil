@@ -1,6 +1,7 @@
+#include <phil/phil.h>
+#include <RobotMap.h>
 #include <Subsystems/DriveBase.h>
 #include <Victor.h>
-#include <RobotMap.h>
 
 DriveBase::DriveBase() :
 		frc::Subsystem("DriveBase") {
@@ -9,6 +10,10 @@ DriveBase::DriveBase() :
 
 	left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA, RobotMap::kLeftEnocderB);
 	right_encoder = new frc::Encoder(RobotMap::kRightEnocderA, RobotMap::kRightEnocderB);
+
+	ahrs = new AHRS(SPI::Port::kMXP);
+
+  phil::Phil::GetInstance()->GiveSensors(left_encoder, right_encoder, ahrs);
 }
 
 void DriveBase::InitDefaultCommand() {

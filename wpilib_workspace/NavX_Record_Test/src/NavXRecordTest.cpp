@@ -7,7 +7,7 @@
 #include <SPI.h>
 #include <HAL/HAL.h>
 
-#include "Robot.h"
+#include <NavXRecordTest.h>
 
 /**
  * This programs logs navX MXP values to a file.

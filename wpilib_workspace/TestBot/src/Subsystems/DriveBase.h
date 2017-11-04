@@ -1,8 +1,9 @@
 #pragma once
 
-#include <SpeedController.h>
-#include <Encoder.h>
+#include <AHRS.h>
 #include <Commands/Subsystem.h>
+#include <Encoder.h>
+#include <SpeedController.h>
 
 class DriveBase: public frc::Subsystem {
 public:
@@ -16,5 +17,6 @@ private:
 	frc::SpeedController *right_motor;
 	frc::Encoder *left_encoder;
 	frc::Encoder *right_encoder;
+	AHRS *ahrs;
 
 };
