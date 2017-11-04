@@ -8,19 +8,17 @@
 
 namespace phil {
 
-const std::string kTableName = "phil_table";
-const std::string kEncodersKey = "encoders";
-const std::string kINSKey = "ins";
-const std::string kPoseKey = "pose";
+const llvm::StringRef kTableName("phil_table");
+const llvm::StringRef kEncodersKey("encoders");
+const llvm::StringRef kINSKey("ins");
+const llvm::StringRef kPoseKey("pose");
+const llvm::StringRef kWheelRadius("wheel_radius");
+const llvm::StringRef kTrackWidth("track_width");
 
 struct pose_t {
   double x;
   double y;
   double phi;
-
-  double dxdt;
-  double dydt;
-  double dphidt;
 };
 
 class Phil {
@@ -39,8 +37,19 @@ public:
 
 	void GiveSensors(Encoder *left_encoder, Encoder *right_encoder, AHRS *ahrs);
 
+	/**
+	 * For when we are only doing IMU and Encoders, we will use this method.
+	 */
 	void ReadSensorsAndProcessLocally();
+
+	/**
+	 * For when we have a camera being processed on a co-processor
+	 */
 	void ReadSensorsAndProcessOnTK1();
+
+	/**
+	 * Literally just reads the value of network tables and returns it
+	 */
 	pose_t GetPosition();
 };
 
