@@ -1,0 +1,4 @@
+class OI {
+public:
+	OI();
+};
