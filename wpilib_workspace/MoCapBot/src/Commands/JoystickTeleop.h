@@ -1,8 +1,8 @@
 #pragma once
 
-#include <CommandBase.h>
+#include <Commands/Command.h>
 
-class JoystickTeleop : public CommandBase {
+class JoystickTeleop : public Command {
 public:
 	JoystickTeleop();
 	void Initialize();

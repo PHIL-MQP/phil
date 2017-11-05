@@ -1,11 +1,12 @@
 #include <Commands/Forward.h>
+#include <MoCapBot.h>
 
-Forward::Forward() : CommandBase("Forward") {
+Forward::Forward() : Command("Forward") {
 }
 
 void Forward::Initialize() {
 	SetTimeout(1.0);
-	drive_base->SetSpeed(0.1, 0.1);
+	Robot::drive_base->SetSpeed(0.1, 0.1);
 }
 
 void Forward::Execute() {
@@ -16,7 +17,7 @@ bool Forward::IsFinished() {
 }
 
 void Forward::End() {
-	drive_base->Stop();
+	Robot::drive_base->Stop();
 }
 
 void Forward::Interrupted() {

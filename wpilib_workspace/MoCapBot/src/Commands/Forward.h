@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../CommandBase.h"
+#include <Commands/Command.h>
 
-class Forward: public CommandBase {
+class Forward: public Command {
 public:
 	Forward();
 	void Initialize() override;

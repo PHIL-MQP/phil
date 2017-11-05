@@ -7,10 +7,6 @@
 DriveBase::DriveBase() :
     frc::Subsystem("DriveBase"), left_motor(nullptr), right_motor(nullptr), left_encoder(nullptr), right_encoder(
         nullptr), ahrs(nullptr) {
-}
-
-void DriveBase::Init() {
-  left_motor = new frc::Victor(RobotMap::kLeftMotor);
   right_motor = new frc::Victor(RobotMap::kRightMotor);
 
   left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA, RobotMap::kLeftEnocderB);

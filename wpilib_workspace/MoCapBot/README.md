@@ -1,4 +1,4 @@
-# Data Collection Bot
+# MoCap (Motion Capture) Bot
 
 This is the code that we use in our motion capture tests to bag sensor data. It should read sensor data, camera data, etc. in the same manner that the Test Bot programs do.
 
