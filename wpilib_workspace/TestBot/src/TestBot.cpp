@@ -12,7 +12,6 @@ class Robot : public frc::IterativeRobot {
 
 public:
 	void RobotInit() override {
-		frc::SmartDashboard::PutString("debug", "hello");
 		std::cout << "RobotInit" << std::endl;
 	}
 

@@ -1,4 +1,7 @@
+#include <Joystick.h>
+
 class OI {
 public:
-	OI();
+	void Init();
+	frc::Joystick *gamepad;
 };

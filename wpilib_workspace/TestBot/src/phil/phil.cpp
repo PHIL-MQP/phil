@@ -9,6 +9,10 @@ Phil *Phil::instance = nullptr;
 Phil::Phil() :
     left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr) {
   table = NetworkTable::GetTable(phil::kTableName);
+
+  // initialize the table -- THIS IS BAD DON'T DO THIS
+  frc::SmartDashboard::PutNumber(phil::kWheelRadius, 0.038);
+  frc::SmartDashboard::PutNumber(phil::kTrackWidth, 0.23);
 }
 
 Phil *Phil::GetInstance() {
@@ -27,18 +31,18 @@ void Phil::GiveSensors(Encoder *left_encoder, Encoder *right_encoder, AHRS *ahrs
 
 void Phil::ReadSensorsAndProcessLocally() {
   // Read the sensors
-  double wl = left_encoder->GetRate();
-  double wr = right_encoder->GetRate();
-  double ax = ahrs->GetRawAccelX();
-  double ay = ahrs->GetRawAccelY();
-  double az = ahrs->GetRawAccelZ();
-  double gx = ahrs->GetRawGyroX();
-  double gy = ahrs->GetRawGyroY();
-  double gz = ahrs->GetRawGyroZ();
+//  double wl = left_encoder->GetRate();
+//  double wr = right_encoder->GetRate();
+//  double ax = ahrs->GetRawAccelX();
+//  double ay = ahrs->GetRawAccelY();
+//  double az = ahrs->GetRawAccelZ();
+//  double gx = ahrs->GetRawGyroX();
+//  double gy = ahrs->GetRawGyroY();
+//  double gz = ahrs->GetRawGyroZ();
 
   // read configuration values
-  double wheel_radius = table->GetNumber(phil::kWheelRadius);
-  double track_width = table->GetNumber(phil::kTrackWidth);
+  double wheel_radius = frc::SmartDashboard::GetNumber(phil::kWheelRadius, -1);
+  double track_width = frc::SmartDashboard::GetNumber(phil::kTrackWidth, -1);
 
   std::cout << "do math here..." << std::endl;
 

@@ -1,4 +1,5 @@
 #include <OI.h>
 
-OI::OI() {
+void OI::Init() {
+  gamepad = new frc::Joystick(0);
 }
