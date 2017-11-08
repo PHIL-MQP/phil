@@ -26,16 +26,21 @@ def main():
     wheel_radius_m = 0.038
     track_width_m = 0.23
     dt_s = 0.1
+    ticks_per_motor_rev = 52.0  # this is not the variable you're looking for
+    gear_ratio = 6545 / 132
+    ticks_per_wheel_rev = gear_ratio * ticks_per_motor_rev  # this one is!
 
-    x = np.array([0, 0, 0])
+    x = np.array([0, 0, 0], dtype=np.float32)
     xs = []
     ys = []
     next(reader)  # skip header
     for row in reader:
         # forward kinematics
-        u = np.array([float(row[0]), float(row[1])], dtype=np.float32)
-        T = wheel_radius_m / (alpha * track_width_m) * np.array(
-            [[(alpha * track_width_m) / 2, (alpha * track_width_m) / 2], [-1, 1]])
+        wl = float(row[0]) / ticks_per_wheel_rev
+        wr = float(row[1]) / ticks_per_wheel_rev
+        u = np.array([wl, wr], dtype=np.float32)
+        B = alpha * track_width_m
+        T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
         dydt, dpdt = T @ u
         x[0] += np.cos(x[2]) * dydt * dt_s
         x[1] += np.sin(x[2]) * dydt * dt_s
@@ -47,9 +52,9 @@ def main():
 
         # double integrate gyro data
 
-    n = 10  # show the first n points
-    plt.plot(xs[:n], ys[:n], marker='.')
-    plt.scatter(xs[0], ys[0], marker='o', c='red')
+    plt.plot(xs, ys, marker='.')
+    plt.axis("equal")
+    plt.scatter(xs[0], ys[0], marker='o', c='red')  # show starting point
     plt.show()
 
 
