@@ -18,12 +18,7 @@ def encoder_diff(ticks_1, ticks_2, encoder_bits=16):
     return diff
 
 
-def load_data(data_directory):
-    """
-    Load the bagged sensor data from the specified directory and return two numpy arrays.
-    The first is speeds, and has the size Nx3. The second is NavX, and has the size Mx7
-    N/M here are the number of readings.
-    """
+def load_files(data_directory):
     metadata_filename = os.path.join(data_directory, "metadata.json")
     encoder_filename = os.path.join(data_directory, "encoder_data.csv")
     imu_filename = os.path.join(data_directory, "ins_data.csv")
@@ -33,6 +28,17 @@ def load_data(data_directory):
     imu_file = open(imu_filename, 'r')
     encoder_reader = csv.reader(encoder_file)
     imu_reader = csv.reader(imu_file)
+
+    return metadata, encoder_reader, imu_reader
+
+
+def load_data(data_directory):
+    """
+    Load the bagged sensor data from the specified directory and return two numpy arrays.
+    The first is speeds, and has the size Nx3. The second is NavX, and has the size Mx7
+    N/M here are the number of readings.
+    """
+    metadata, encoder_reader, imu_reader = load_files(data_directory)
 
     roborio_laptop_time_offset = metadata['laptop_time_s'] - metadata['roborio_time_s']
 
@@ -129,7 +135,9 @@ def main():
     # iterate over all the time imu readings were taken and get interpolated sensor values
     writer = csv.writer(open(output_filename, 'w'))
     writer.writerow(["left", "right", "imux", "imuy", "imuz", "gyrox", "gyroy", "gyroz", "time"])
-    for t in np.arange(imus[0][-1], imus[-1][-1], 0.1):
+    t0 = max(speeds[0][-1], imus[0][-1])
+    t1 = min(speeds[-1][-1], imus[-1][-1])
+    for t in np.arange(t0, t1, 0.1):
         sensor_values = interpolate_data(imus, speeds, t)
         sensor_values.append(t)
         writer.writerow(sensor_values)

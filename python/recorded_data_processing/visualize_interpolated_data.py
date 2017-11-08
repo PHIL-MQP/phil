@@ -33,11 +33,15 @@ def main():
     x = np.array([0, 0, 0], dtype=np.float32)
     xs = []
     ys = []
+    wls = []
+    wrs = []
     next(reader)  # skip header
     for row in reader:
         # forward kinematics
         wl = float(row[0]) / ticks_per_wheel_rev
         wr = float(row[1]) / ticks_per_wheel_rev
+        wls.append(wl)
+        wrs.append(wr)
         u = np.array([wl, wr], dtype=np.float32)
         B = alpha * track_width_m
         T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
@@ -52,10 +56,12 @@ def main():
 
         # double integrate gyro data
 
-    plt.plot(xs, ys, marker='.')
+    plt.plot(xs[0:-1:5], ys[0:-1:5], marker='.')
     plt.axis("equal")
     plt.scatter(xs[0], ys[0], marker='o', c='red')  # show starting point
+
     plt.show()
+
 
 
 if __name__ == '__main__':

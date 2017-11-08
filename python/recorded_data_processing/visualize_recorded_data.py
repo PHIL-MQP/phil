@@ -26,19 +26,19 @@ def main():
     plt.title("Encoder Data")
     plt.legend()
 
-    plt.figure()
-    plt.plot(imus[:, 0], label='imu x')
-    plt.plot(imus[:, 1], label='imu y')
-    plt.plot(imus[:, 2], label='imu z')
-    plt.title("IMU Data")
-    plt.legend()
-
-    plt.figure()
-    plt.plot(imus[:, 3], label='gyro x')
-    plt.plot(imus[:, 4], label='gyro y')
-    plt.plot(imus[:, 5], label='gyro z')
-    plt.title("Gyro Data")
-    plt.legend()
+    # plt.figure()
+    # plt.plot(imus[:, 0], label='imu x')
+    # plt.plot(imus[:, 1], label='imu y')
+    # plt.plot(imus[:, 2], label='imu z')
+    # plt.title("IMU Data")
+    # plt.legend()
+    #
+    # plt.figure()
+    # plt.plot(imus[:, 3], label='gyro x')
+    # plt.plot(imus[:, 4], label='gyro y')
+    # plt.plot(imus[:, 5], label='gyro z')
+    # plt.title("Gyro Data")
+    # plt.legend()
 
     plt.show()
 
