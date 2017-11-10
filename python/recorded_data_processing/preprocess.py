@@ -45,12 +45,15 @@ def load_data(data_directory):
     next(encoder_reader)  # skip header
     previous_row = next(encoder_reader)
     speeds = []
+    ticks_per_wheel_rev = metadata["gear_ratio"] * metadata["ticks_per_motor_rev"]
     for row in encoder_reader:
-        left_speed = encoder_diff(float(row[0]), float(previous_row[0]))
-        right_speed = encoder_diff(float(row[1]), float(previous_row[1]))
+        left_radians = encoder_diff(float(row[0]), float(previous_row[0])) * 2 * np.pi / ticks_per_wheel_rev
+        right_radians = encoder_diff(float(row[1]), float(previous_row[1])) * 2 * np.pi / ticks_per_wheel_rev
+        left_speed_rad_per_sec = left_radians / metadata['encoder_period_s']
+        right_speed_rad_per_sec = right_radians / metadata['encoder_period_s']
         time = float(row[2])
 
-        speeds.append(np.array([left_speed, right_speed, time]))
+        speeds.append(np.array([left_speed_rad_per_sec, right_speed_rad_per_sec, time]))
 
         previous_row = row
     speeds = np.array(speeds)

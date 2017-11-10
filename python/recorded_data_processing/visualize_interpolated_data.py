@@ -26,9 +26,6 @@ def main():
     wheel_radius_m = 0.038
     track_width_m = 0.23
     dt_s = 0.1
-    ticks_per_motor_rev = 52.0  # this is not the variable you're looking for
-    gear_ratio = 6545 / 132
-    ticks_per_wheel_rev = gear_ratio * ticks_per_motor_rev  # this one is!
 
     x = np.array([0, 0, 0], dtype=np.float32)
     xs = []
@@ -37,15 +34,17 @@ def main():
     wrs = []
     next(reader)  # skip header
     for row in reader:
-        # forward kinematics
-        wl = float(row[0]) / ticks_per_wheel_rev
-        wr = float(row[1]) / ticks_per_wheel_rev
+        # linearized dynamics, which represents Ax + Bu
+        # this part calculated the expected next state given our model of robot moves given the current state
+        # our x matrix contains x, y, theta positions, velocities, accelerations, and several error terms
+        wl = float(row[0])
+        wr = float(row[1])
         wls.append(wl)
         wrs.append(wr)
-        u = np.array([wl, wr], dtype=np.float32)
+        w = np.array([wl, wr], dtype=np.float32)
         B = alpha * track_width_m
         T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
-        dydt, dpdt = T @ u
+        dydt, dpdt = T @ w
         x[0] += np.cos(x[2]) * dydt * dt_s
         x[1] += np.sin(x[2]) * dydt * dt_s
         x[2] += dpdt * dt_s
@@ -56,12 +55,11 @@ def main():
 
         # double integrate gyro data
 
-    plt.plot(xs[0:-1:5], ys[0:-1:5], marker='.')
-    plt.axis("equal")
+    plt.plot(xs, ys, marker='.')
     plt.scatter(xs[0], ys[0], marker='o', c='red')  # show starting point
+    plt.axis("equal")
 
     plt.show()
-
 
 
 if __name__ == '__main__':

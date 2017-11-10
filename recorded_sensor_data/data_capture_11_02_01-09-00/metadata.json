@@ -2,5 +2,7 @@
   "roborio_time_s": 6198.0,
   "laptop_time_s": 1509598200.0,
   "ins_period_s": 0.01,
-  "encoder_period_s": 0.1
+  "encoder_period_s": 0.1,
+  "ticks_per_motor_rev": 52.0,
+  "gear_ratio": 49.5833333333
 }
