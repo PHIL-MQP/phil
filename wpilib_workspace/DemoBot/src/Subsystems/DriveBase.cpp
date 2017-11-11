@@ -1,5 +1,6 @@
 #include <phil/phil.h>
 #include <RobotMap.h>
+#include <Timer.h>
 #include <SPI.h>
 #include <Subsystems/DriveBase.h>
 #include <Victor.h>

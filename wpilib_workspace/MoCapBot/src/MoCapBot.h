@@ -15,4 +15,8 @@ public:
 
   static frc::Joystick *gamepad;
   static DriveBase *drive_base;
+  static frc::SPI *tk1_spi;
+	static AHRS *ahrs;
+	static frc::Encoder *left_encoder;
+	static frc::Encoder *right_encoder;
 };

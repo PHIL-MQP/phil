@@ -16,7 +16,4 @@ public:
 private:
 	frc::SpeedController *left_motor;
 	frc::SpeedController *right_motor;
-	frc::Encoder *left_encoder;
-	frc::Encoder *right_encoder;
-	AHRS *ahrs;
 };
