@@ -78,9 +78,9 @@ void Robot::TeleopPeriodic() {
 
   uint8_t *raw_data = (uint8_t *) &data;
   int size = sizeof(data_t);
-//  tk1_spi->Write(raw_data, size);
-  uint8_t test = 170;
-  tk1_spi->Write(&test, 1);
+  tk1_spi->Write(raw_data, size);
+//  uint8_t test = 170;
+//  tk1_spi->Write(&test, 1);
 }
 
 

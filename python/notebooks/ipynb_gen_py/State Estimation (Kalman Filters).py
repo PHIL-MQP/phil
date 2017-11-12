@@ -6,16 +6,15 @@
 # 
 # $$ x = \begin{bmatrix}
 # x & y & \theta &
-# \dot{x} & \dot{y} & \dot{\theta} &
-# \ddot{x} & \ddot{y} & \ddot{\theta} &
-# a_x^d & a_y^d & a_z^d &
-# a_x^b & a_y^b & a_z^b & \end{bmatrix}^T $$
+# \dot{x} & \dot{y} & \dot{\theta} \end{bmatrix}^T $$
 # 
 # The control inputs are the wheel velocities.
 # 
 # $$ u = \begin{bmatrix}
 # w_l \\
 # w_r \\
+# \alpha_l \\
+# \alpha_r \\
 # \end{bmatrix} $$
 # 
 # We must describe our dynamics. How do we compute our next state given our current state and the control inputs?
@@ -27,28 +26,88 @@
 # \dot{x}_{t+1} &= \dot{x}_t + \ddot{x}_t\Delta t \\
 # \dot{y}_{t+1} &= \dot{y}_t + \ddot{y}_t\Delta t \\
 # \dot{\theta}_{t+1} &= \dot{\theta}_t + \ddot{\theta}_t\Delta t \\
-# \ddot{x}_{t+1} &= \ddot{x}_t \\ 
-# \ddot{y}_{t+1} &= \ddot{y}_t \\
-# \ddot{\theta}_{t+1} &= \ddot{\theta}_t \\
 # \end{align}
 # 
 # The other values in x are not a function of x, but some are a function of u.
 # 
 # \begin{align}
-# x_{t+1} &= R\cos\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} * w_l +
-#           -R\cos\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} * w_r \\
-# y_{t+1} &= -R\sin\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} * w_l +
-#            R\sin\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} * w_r \\
-# \theta_{t+1} &= \frac{\Delta t}{R-\frac{W}{2}} * w_l \\
-# \dot{x}_{t+1} &= \frac{1}{2} \cos(\theta) * w_l + \frac{1}{2} \cos(\theta) * w_r \\
-# \dot{y}_{t+1} &= \frac{1}{2} \sin(\theta) * w_l + \frac{1}{2} \sin(\theta) * w_r \\
-# \dot{\theta}_{t+1} &= \frac{1}{W} * w_l + \frac{-1}{W} * w_r \\
-# \ddot{x}_{t+1} &= \frac{\dot{x}_{t+1} - \dot{x}_t}{\Delta t} \\
-# \ddot{y}_{t+1} &= \frac{\ddot{y}_{t+1} - \ddot{y}_t}{\Delta t} \\
-# \ddot{\theta}_{t+1} &= \frac{\ddot{\theta}_{t+1} - \ddot{\theta}_t}{\Delta t}\\
+# \Delta x_{t+1} &= \cos(\theta)\frac{1}{2}\Delta t*w_l + \cos(\theta)\frac{1}{2}\Delta t*w_r + \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
+# \Delta y_{t+1} &= \sin(\theta)\frac{1}{2}\Delta t*w_l + \sin(\theta)\frac{1}{2}\Delta t*w_r + \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
+# \Delta\theta_{t+1} &= \frac{R\Delta t}{W}w_l+\frac{-R\Delta t}{W}w_r + \frac{R\Delta t^2}{W2}\alpha_l + \frac{-R\Delta t^2}{W2}\alpha_r\\
+# \Delta\dot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
+# \Delta\dot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
+# \Delta\dot{\theta}_{t+1} &= \frac{R\Delta t}{W}\alpha_l + \frac{-R\Delta t}{W}\alpha_r \\
 # \end{align}
 # 
-# We write this in the matrix form of $x=Ax+Bu$
+# The equations derived above come from these simpler facts:
+# 
+# \begin{align}
+# \ddot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2} \\
+# \ddot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2} \\
+# \ddot{\theta}_{t+1} &= \frac{R}{W} * \alpha_l + \frac{-R}{W} * \alpha_r \\
+# \end{align}
+
+# ## If state is just position and velocity and acceleration
+# 
+# $$
+# \begin{bmatrix}
+# x_{t+1} \\
+# y_{t+1} \\
+# \theta_{t+1} \\
+# \dot{x}_{t+1} \\
+# \dot{y}_{t+1} \\
+# \dot{\theta}_{t+1} \\
+# \ddot{x}_{t+1} \\
+# \ddot{y}_{t+1} \\
+# \ddot{\theta}_{t+1} \\
+# \end{bmatrix} =
+# \begin{bmatrix}
+# 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 & 0 \\
+# 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 \\
+# 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t \\
+# 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+# \end{bmatrix}
+# \begin{bmatrix}
+# x \\
+# y \\
+# \theta \\
+# \dot{x} \\
+# \dot{y} \\
+# \dot{\theta} \\
+# \ddot{x} \\
+# \ddot{y} \\
+# \ddot{\theta} \\
+# \end{bmatrix} +
+# \begin{bmatrix}
+# \cos(\theta)\frac{1}{2}\Delta t & \cos(\theta)\frac{1}{2}\Delta t & \cos(\theta)\frac{1}{4}\Delta t^2 & \cos(\theta)\frac{1}{4}\Delta t^2 \\
+# \sin(\theta)\frac{1}{2}\Delta t & \sin(\theta)\frac{1}{2}\Delta t & \sin(\theta)\frac{1}{4}\Delta t^2 & \sin(\theta)\frac{1}{4}\Delta t^2 \\
+# \frac{R\Delta t}{W} & \frac{-R\Delta t}{W} & \frac{R\Delta t^2}{2W} & \frac{-R\Delta t^2}{2W} \\
+# 0 & 0 & \cos(\theta)\frac{1}{2}\Delta t & \cos(\theta)\frac{1}{2}\Delta t \\
+# 0 & 0 & \sin(\theta)\frac{1}{2}\Delta t & \sin(\theta)\frac{1}{2}\Delta t \\
+# 0 & 0 & \frac{R\Delta t}{W} & \frac{-R\Delta t}{W}\\
+# 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 \\
+# \end{bmatrix}
+# \begin{bmatrix}
+# w_l \\
+# w_r \\
+# \alpha_l \\
+# \alpha_r \\
+# \end{bmatrix}
+# $$
+
+# ## Questions for Michalson
+# 
+#  - Does the $Bu$ part mean a change in state or full actual state? If it's full actual state then this makes no sense
+#  - Should $u$ be $\alpha$ (wheel accelerations, which is assumed proportional to voltage) or $\omega$ (wheel speeds)?
+
+# If we include acceleration and bias/drift in our state vector we get a bunch of useless 1's
 # 
 # $$
 # \begin{bmatrix}
@@ -101,7 +160,7 @@
 # w_r \\
 # \end{bmatrix}
 # $$
-
+# 
 # What the heck should C be? C transforms the measurements into state.
 # 
 # Equations for acceleration. First remove the components of x/y due to misaligned axis, then apply scaling correction, then bias
@@ -120,38 +179,6 @@
 # \end{bmatrix}
 # $$
 
-# ## Simpler version with simpler state
-# 
-# $$
-# \begin{bmatrix}
-# x_{t+1} \\ y_{t+1} \\ \theta_{t+1} \\
-# \dot{x}_{t+1} \\ \dot{y}_{t+1} \\ \dot{\theta}_{t+1} \end{bmatrix} =
-# \begin{bmatrix}
-# 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 & 0 \\
-# 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 \\
-# 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t \\
-# 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
-# 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
-# \end{bmatrix}
-# \begin{bmatrix}
-# x \\ y \\ \theta \\ \dot{x} \\ \dot{y} \\ \dot{\theta} \\ \end{bmatrix} +
-# \begin{bmatrix}
-# R\cos\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} &
-# -R\cos\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} \\
-# -R\sin\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} &
-# R\sin\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} \\
-# \frac{\Delta t}{R-\frac{W}{2}} & 0 \\
-# \frac{1}{2} \cos(\theta) & \frac{1}{2} \cos(\theta) \\
-# \frac{1}{2} \sin(\theta) & \frac{1}{2} \sin(\theta) \\
-# \frac{1}{W} & \frac{-1}{W} \\
-# \end{bmatrix}
-# \begin{bmatrix}
-# w_l \\
-# w_r \\
-# \end{bmatrix}
-# $$
-
 # # Particle Filter
 # 
 #  - Take the current pose estimate of the robot
@@ -162,3 +189,8 @@
 #    - This is done using your sensor models
 #  - Keep each sample with a probability equal to w
 #  - To get one number, take a weighted average of all particles (weighted by their probabilities)
+
+# In[ ]:
+
+
+
