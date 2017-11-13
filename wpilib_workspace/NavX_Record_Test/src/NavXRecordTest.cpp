@@ -77,7 +77,7 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
   }
 
   // write headers
-  log << "imux,imuy,imuz,gyrox,gyroy,gyroz,t0,t1" << std::endl;
+  log << "accelx,accely,accelz,gyrox,gyroy,gyroz,time" << std::endl;
 
   while (c < number_of_samples) {
     // This buffer shouldn't be too big or you'll segfault everything!
@@ -106,14 +106,13 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
 
     std::cout << "saving some samples to file" << std::endl;
     for (size_t i = 0; i < buff_size; i++) {
-      log << std::setw(6)
+      log << std::setw(9)
           << buffer[i].imu[0] << ","
           << buffer[i].imu[1] << ","
           << buffer[i].imu[2] << ","
           << buffer[i].gyro[0] << ","
           << buffer[i].gyro[1] << ","
           << buffer[i].gyro[2] << ","
-          << time_to_sec(buffer[i].t0) << ","
           << time_to_sec(buffer[i].t1) << std::endl;
     }
   }
