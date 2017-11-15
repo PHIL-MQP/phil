@@ -12,6 +12,7 @@
 
 #include <RobotMap.h>
 #include <MoCapBot.h>
+#include <AHRS.h>
 
 Joystick *Robot::gamepad = nullptr;
 DriveBase *Robot::drive_base = nullptr;
@@ -28,7 +29,8 @@ void Robot::RobotInit() {
 
   gamepad = new frc::Joystick(0);
   drive_base = new DriveBase();
-  ahrs = new AHRS(SPI::Port::kMXP);
+  //ahrs = new AHRS(SPI::Port::kMXP);
+  ahrs = new AHRS(SerialPort::kMXP); /* Alternatives:  SPI::kMXP, I2C::kMXP or SerialPort::kUSB */
   tk1_spi = new frc::SPI(frc::SPI::Port::kOnboardCS0);
   tk1_i2c = new frc::I2C(frc::I2C::Port::kOnboard, 0);
   left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA,
