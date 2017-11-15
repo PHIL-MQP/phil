@@ -19,6 +19,8 @@ frc::I2C *Robot::tk1_i2c = nullptr;
 AHRS *Robot::ahrs = nullptr;
 frc::Encoder *Robot::left_encoder = nullptr;
 frc::Encoder *Robot::right_encoder = nullptr;
+frc::DigitalOutput *Robot::mocap_start_trigger = nullptr;
+frc::DigitalOutput *Robot::mocap_stop_trigger = nullptr;
 
 void Robot::RobotInit() {
   std::cout << "RobotInit" << std::endl;
@@ -30,6 +32,7 @@ void Robot::RobotInit() {
   tk1_i2c = new frc::I2C(frc::I2C::Port::kOnboard, 0);
   left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA, RobotMap::kLeftEnocderB);
   right_encoder = new frc::Encoder(RobotMap::kRightEnocderA, RobotMap::kRightEnocderB);
+
 
   tk1_spi->SetClockRate(500000);
   tk1_spi->SetMSBFirst();

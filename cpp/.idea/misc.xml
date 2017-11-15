@@ -5,5 +5,8 @@
     <sourceRoots>
       <file path="$PROJECT_DIR$" />
     </sourceRoots>
+    <excludeRoots>
+      <file path="$PROJECT_DIR$/rio_build" />
+    </excludeRoots>
   </component>
 </project>

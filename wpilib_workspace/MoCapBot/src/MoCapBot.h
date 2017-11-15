@@ -47,4 +47,6 @@ public:
 	static AHRS *ahrs;
 	static frc::Encoder *left_encoder;
 	static frc::Encoder *right_encoder;
+	static frc::DigitalOutput *mocap_start_trigger;
+	static frc::DigitalOutput *mocap_stop_trigger;
 };

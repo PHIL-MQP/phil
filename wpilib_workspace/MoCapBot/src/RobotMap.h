@@ -2,8 +2,8 @@
 
 namespace RobotMap {
 
-constexpr int kLeftMotor = 0;
-constexpr int kRightMotor = 1;
+constexpr int kLeftMotor = 9;
+constexpr int kRightMotor = 8;
 
 constexpr int kLeftEnocderA = 1;
 constexpr int kLeftEnocderB = 2;
