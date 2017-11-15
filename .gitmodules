@@ -1,9 +1,9 @@
 [submodule "cpp/libraries/ntcore"]
 	path = cpp/libraries/ntcore
-	url = git@github.com:wpilibsuite/ntcore.git
+	url = https://github.com/wpilibsuite/ntcore.git
 [submodule "cpp/libraries/cscore"]
 	path = cpp/libraries/cscore
-	url = git@github.com:wpilibsuite/cscore.git
+	url = http://github.com/wpilibsuite/cscore.git
 [submodule "cpp/libraries/wpiutil"]
 	path = cpp/libraries/wpiutil
-	url = git@github.com:wpilibsuite/wpiutil.git
+	url = https://github.com/wpilibsuite/wpiutil.git
