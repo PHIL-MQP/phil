@@ -31,7 +31,7 @@ public:
 
   void TeleopInit() override;
 
-  void DisabledPeriodic() override;
+  void DisabledInit() override;
 
   void TeleopPeriodic() override;
 
@@ -47,6 +47,6 @@ public:
 	static AHRS *ahrs;
 	static frc::Encoder *left_encoder;
 	static frc::Encoder *right_encoder;
-	static frc::DigitalOutput *mocap_start_trigger;
-	static frc::DigitalOutput *mocap_stop_trigger;
+	static frc::AnalogOutput *mocap_start_trigger;
+	static frc::AnalogOutput *mocap_stop_trigger;
 };

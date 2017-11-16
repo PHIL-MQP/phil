@@ -13,7 +13,7 @@ void JoystickTeleop::Initialize() {
 
 void JoystickTeleop::Execute() {
    double l = -Robot::gamepad->GetRawAxis(1);
-   double r = -Robot::gamepad->GetRawAxis(3);
+   double r = -Robot::gamepad->GetRawAxis(5);
    Robot::drive_base->SetSpeed(l, r);
 }
 
