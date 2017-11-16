@@ -28,6 +28,8 @@ set(NAVX_LIBRARIES navx_frc_cpp)
 add_subdirectory(libraries)
 #############################################################################
 
+set(PHIL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+
 # Tools. Only when not cross-compiling
 if (NOT ${RIO})
     add_subdirectory(tools)
@@ -37,7 +39,7 @@ endif()
 if (${RIO})
     file(GLOB_RECURSE phil_src src/*.cpp)
     add_library(phil ${phil_src})
-    target_include_directories(phil PRIVATE include ${WPILIB_INCLUDE_DIR} ${WPILIB_USER_INCLUDE_DIR})
+    target_include_directories(phil PRIVATE ${PHIL_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${WPILIB_USER_INCLUDE_DIR})
     target_link_libraries(phil ${WPILIB_LIBRARIES} ${NAVX_LIBRARIES})
 
     # install

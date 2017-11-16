@@ -26,7 +26,7 @@ inline double timeval_to_sec(struct timeval tv) {
 }
 
 constexpr size_t data_t_size = sizeof(data_t);
-constexpr socklen_t socket_address_size = sizeof(struct sockaddr_in);
+socklen_t sockaddr_size = sizeof(struct sockaddr_in);
 
 class UDPClient {
  public:
@@ -43,8 +43,8 @@ class UDPClient {
  private:
   int socket_fd;
   std::string tk1_hostname;
-  struct sockaddr_in client_address;
-  struct sockaddr_in server_address;
+  struct sockaddr_in client_addr;
+  struct sockaddr_in server_addr;
 
 };
 
