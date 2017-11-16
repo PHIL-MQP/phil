@@ -9,6 +9,8 @@
 #include <Encoder.h>
 #include <llvm/StringRef.h>
 
+#include <phil/udp.h>
+
 namespace phil {
 
 const llvm::StringRef kTableName("phil_table");
@@ -54,7 +56,17 @@ class Phil {
    * Literally just reads the value of network tables and returns it
    */
   pose_t GetPosition();
+
+  /**
+   * Send an arbitrary UDP message to the TK1.
+   */
+  void SendUDPToTK1(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
+
+  /**
+   * For communicating with the TK1
+   */
+  UDPClient udp_client;
+  double tk1_time_offset;
 };
 
-}
-
+} // end namespace

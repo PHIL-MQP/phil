@@ -7,6 +7,7 @@
 #include <Timer.h>
 #include <Commands/Scheduler.h>
 #include <opencv2/imgproc.hpp>
+#include <phil/phil.h>
 #include <SmartDashboard/SmartDashboard.h>
 
 #include <RobotMap.h>
@@ -67,6 +68,8 @@ void Robot::TeleopInit() {
       << std::endl;
 
   // tell the TK1 to start recording data
+  uint8_t data = 1;
+  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 
   // tell the motion capture to start
   Robot::mocap_start_trigger->SetVoltage(0);
@@ -117,14 +120,6 @@ void Robot::TeleopPeriodic() {
     log.flush();
 
   }
-
-//  uint8_t *raw_data = (uint8_t *)&data;
-//  tk1_spi->Write(raw_data, 12);
-//  tk1_i2c->WriteBulk(raw_data, 12);
-//
-//  double x = SmartDashboard::GetNumber("x", -1);
-//  SmartDashboard::PutNumber("y", 2.1);
-//  std::cout << x << std::endl;
 }
 
 START_ROBOT_CLASS(Robot)

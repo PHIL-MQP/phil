@@ -26,14 +26,12 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  socklen_t address_length = sizeof(struct sockaddr_in);
-
   struct sockaddr_in client_address = {0};
   client_address.sin_family = AF_INET;
   client_address.sin_port = htons(0);
   client_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  if (bind(socket_fd, (struct sockaddr *) &client_address, address_length) < 0) {
+  if (bind(socket_fd, (struct sockaddr *) &client_address, socket_address_size) < 0) {
     std::cerr << "bind failed: [" << strerror(errno) << "]" << std::endl;
     return EXIT_FAILURE;
   }
@@ -73,12 +71,12 @@ int main(int argc, char *argv[]) {
     gettimeofday(&tv, nullptr);
     data.rio_send_time_s = timeval_to_sec(tv);
 
-    if (sendto(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &server_address, address_length) < 0) {
+    if (sendto(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &server_address, socket_address_size) < 0) {
       std::cerr << "sendto failed: [" << strerror(errno) << "]" << std::endl;
     }
 
     ssize_t recvlen =
-        recvfrom(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &response_address, &address_length);
+        recvfrom(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &response_address, &socket_address_size);
 
     if (recvlen != data_t_size) {
       printf("received %zd bytes, expected %zu bytes\n", recvlen, data_t_size);
