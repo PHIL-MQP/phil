@@ -8,7 +8,7 @@
 #include <HAL/HAL.h>
 
 #include <IMU_Calibration.h>
-
+#include "csvReader.h"
 /**
  * This programs logs navX MXP values to a file for use in IMU Calibration
  *
