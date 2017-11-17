@@ -127,3 +127,4 @@ int manditory_init() {
 double time_to_sec(struct timeval tv) {
   return tv.tv_sec + (float) tv.tv_usec / 1000000.0;
 }
+
