@@ -30,7 +30,7 @@ void Robot::RobotInit() {
   gamepad = new frc::Joystick(0);
   drive_base = new DriveBase();
   //ahrs = new AHRS(SPI::Port::kMXP);
-  ahrs = new AHRS(SerialPort::kMXP); /* Alternatives:  SPI::kMXP, I2C::kMXP or SerialPort::kUSB */
+  ahrs = new AHRS(frc::SPI::kMXP); /* Alternatives:  SPI::kMXP, I2C::kMXP or SerialPort::kUSB */
   tk1_spi = new frc::SPI(frc::SPI::Port::kOnboardCS0);
   tk1_i2c = new frc::I2C(frc::I2C::Port::kOnboard, 0);
   left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA,
@@ -72,9 +72,9 @@ void Robot::TeleopInit() {
       << std::endl;
 
   // tell the TK1 to start recording data
-  uint8_t data = 1;
-  std::cout << "Signaling TK1" << std::endl;
-  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+//  uint8_t data = 1;
+//  std::cout << "Signaling TK1" << std::endl;
+//  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 
   // tell the motion capture to start
   std::cout << "Triggering Motion Capture" << std::endl;
@@ -123,7 +123,8 @@ void Robot::TeleopPeriodic() {
 
     buffer_idx = 0;
     for (data_t sample : buffer) {
-      log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y
+      log << std::setw(6)
+          << sample.raw_accel_x << "," << sample.raw_accel_y
           << "," << sample.raw_accel_z << "," << sample.raw_gyro_x << ","
           << sample.raw_gyro_y << "," << sample.raw_gyro_z << "," << sample.t
           << std::endl;

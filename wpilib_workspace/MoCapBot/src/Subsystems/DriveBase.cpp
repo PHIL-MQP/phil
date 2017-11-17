@@ -21,6 +21,6 @@ void DriveBase::Stop() {
 
 void DriveBase::SetSpeed(double left_speed, double right_speed) {
   left_motor->Set(left_speed);
-  right_motor->Set(right_speed);
+  right_motor->Set(-right_speed);
 }
 
