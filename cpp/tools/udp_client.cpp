@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 
-#include <phil/udp.h>
+#include <phil/common/udp.h>
 
 void show_help();
 

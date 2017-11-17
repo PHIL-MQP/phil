@@ -1,6 +1,8 @@
 __pycache__
 venv
 build
+tk1_build
+rio_build
 
 *.swp
 

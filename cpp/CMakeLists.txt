@@ -1,16 +1,17 @@
-project(tk1_wpiutil_test)
+project(phil)
 cmake_minimum_required(VERSION 2.8.0)
 
 option(RIO "cross-compile for RoboRIO" ON)
 if (${RIO})
     set(CMAKE_CXX_COMPILER "arm-frc-linux-gnueabi-g++")
-endif()
+endif ()
 
 #############################################################################
 ## Dependencies
 #############################################################################
 # flags and config
-find_package( OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
+find_package(aruco REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -std=c++11")
 
@@ -28,16 +29,14 @@ set(NAVX_LIBRARIES navx_frc_cpp)
 add_subdirectory(libraries)
 #############################################################################
 
-set(PHIL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+set(phil_include_dir ${CMAKE_SOURCE_DIR}/include)
+file(GLOB common_src src/common/*.cpp)
+file(GLOB phil_src src/*.cpp)
 
-# Tools. Only when not cross-compiling
-if (NOT ${RIO})
-    add_subdirectory(tools)
-endif()
+add_subdirectory(tools)
 
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
-    file(GLOB_RECURSE phil_src src/*.cpp)
     add_library(phil ${phil_src})
     target_include_directories(phil PRIVATE ${PHIL_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${WPILIB_USER_INCLUDE_DIR})
     target_link_libraries(phil ${WPILIB_LIBRARIES} ${NAVX_LIBRARIES})
@@ -45,4 +44,4 @@ if (${RIO})
     # install
     install(TARGETS phil DESTINATION $ENV{HOME}/wpilib/user/cpp/lib)
     install(DIRECTORY include/phil DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
-endif()
+endif ()
