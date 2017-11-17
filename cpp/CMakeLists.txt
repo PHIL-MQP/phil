@@ -1,7 +1,8 @@
 project(phil)
 cmake_minimum_required(VERSION 2.8.0)
 
-option(RIO "cross-compile for RoboRIO" ON)
+option(RIO "cross-compile for RoboRIO" OFF)
+option(TK1 "cross-compile for TK1" OFF)
 if (${RIO})
     set(CMAKE_CXX_COMPILER "arm-frc-linux-gnueabi-g++")
 endif ()
@@ -31,7 +32,8 @@ add_subdirectory(libraries)
 
 set(phil_include_dir ${CMAKE_SOURCE_DIR}/include)
 file(GLOB common_src src/common/*.cpp)
-file(GLOB phil_src src/*.cpp)
+file(GLOB phil_src src/phil/*.cpp)
+file(GLOB tk1_src src/tk1/*.cpp)
 
 add_subdirectory(tools)
 
@@ -44,4 +46,13 @@ if (${RIO})
     # install
     install(TARGETS phil DESTINATION $ENV{HOME}/wpilib/user/cpp/lib)
     install(DIRECTORY include/phil DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
+endif ()
+
+if (${TK1})
+    # build the executable that runs on the TK1
+    add_executable(phil_tk1 ${tk1_src})
+    target_include_directories(phil_tk1 PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
+    target_link_libraries(phil_tk1 ntcore cscore wpiutil)
+
+    # custom target to scp the program to the TK1 and run it?
 endif ()
