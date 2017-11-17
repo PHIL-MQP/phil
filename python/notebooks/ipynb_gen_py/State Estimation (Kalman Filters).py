@@ -31,8 +31,8 @@
 # The other values in x are not a function of x, but some are a function of u.
 # 
 # \begin{align}
-# \Delta x_{t+1} &= \cos(\theta)\frac{1}{2}\Delta t*w_l + \cos(\theta)\frac{1}{2}\Delta t*w_r + \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
-# \Delta y_{t+1} &= \sin(\theta)\frac{1}{2}\Delta t*w_l + \sin(\theta)\frac{1}{2}\Delta t*w_r + \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
+# \Delta x_{t+1} &= \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
+# \Delta y_{t+1} &= \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
 # \Delta\theta_{t+1} &= \frac{R\Delta t}{W}w_l+\frac{-R\Delta t}{W}w_r + \frac{R\Delta t^2}{W2}\alpha_l + \frac{-R\Delta t^2}{W2}\alpha_r\\
 # \Delta\dot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
 # \Delta\dot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
@@ -84,28 +84,45 @@
 # \ddot{\theta} \\
 # \end{bmatrix} +
 # \begin{bmatrix}
-# \cos(\theta)\frac{1}{2}\Delta t & \cos(\theta)\frac{1}{2}\Delta t & \cos(\theta)\frac{1}{4}\Delta t^2 & \cos(\theta)\frac{1}{4}\Delta t^2 \\
-# \sin(\theta)\frac{1}{2}\Delta t & \sin(\theta)\frac{1}{2}\Delta t & \sin(\theta)\frac{1}{4}\Delta t^2 & \sin(\theta)\frac{1}{4}\Delta t^2 \\
-# \frac{R\Delta t}{W} & \frac{-R\Delta t}{W} & \frac{R\Delta t^2}{2W} & \frac{-R\Delta t^2}{2W} \\
-# 0 & 0 & \cos(\theta)\frac{1}{2}\Delta t & \cos(\theta)\frac{1}{2}\Delta t \\
-# 0 & 0 & \sin(\theta)\frac{1}{2}\Delta t & \sin(\theta)\frac{1}{2}\Delta t \\
-# 0 & 0 & \frac{R\Delta t}{W} & \frac{-R\Delta t}{W}\\
-# 0 & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 \\
+# \cos(\theta_t)\frac{1}{4}\Delta t^2 & \cos(\theta_t)\frac{1}{4}\Delta t^2 \\
+# \sin(\theta_t)\frac{1}{4}\Delta t^2 & \sin(\theta_t)\frac{1}{4}\Delta t^2 \\
+# \frac{R\Delta t^2}{2W} & \frac{-R\Delta t^2}{2W} \\
+# \cos(\theta_t)\frac{1}{2}\Delta t & \cos(\theta_t)\frac{1}{2}\Delta t \\
+# \sin(\theta_t)\frac{1}{2}\Delta t & \sin(\theta_t)\frac{1}{2}\Delta t \\
+# \frac{R\Delta t}{W} & \frac{-R\Delta t}{W}\\
+# 0 & 0 \\
+# 0 & 0 \\
+# 0 & 0 \\
 # \end{bmatrix}
 # \begin{bmatrix}
-# w_l \\
-# w_r \\
 # \alpha_l \\
 # \alpha_r \\
 # \end{bmatrix}
 # $$
 
-# ## Questions for Michalson
+# ## General matrix dimensions for multi-sensor multi-state stuffs
+# 
+# N = number of state variables
+# M = number of control variables
+# L = number of measurements from all sensors
+# 
+# |matrix|size|
+# |----|---|
+# |A| NxN|
+# |B| NxM|
+# |C| LxN|
+# |K| NxL|
+# |z| Lx1|
+# |x| Nx1|
+# |P| NxN|
+# |Q| NxN|
+# |R| LxL|
+
+# ## Questions
 # 
 #  - Does the $Bu$ part mean a change in state or full actual state? If it's full actual state then this makes no sense
 #  - Should $u$ be $\alpha$ (wheel accelerations, which is assumed proportional to voltage) or $\omega$ (wheel speeds)?
+#  - On the slides example, why is P [[0,0],[0,q_x]]? What's with the process noise model?
 
 # If we include acceleration and bias/drift in our state vector we get a bunch of useless 1's
 # 
