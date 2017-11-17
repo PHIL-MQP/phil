@@ -61,7 +61,7 @@ def main():
         wrs.append(wr)
         al = 0
         ar = 0
-        w = np.array([[wl], [wr], [al], [ar]], dtype=np.float32)
+        w = np.array([[al], [ar]], dtype=np.float32)
         B = alpha * track_width_m
         T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
         dydt, dpdt = T @ np.array([wl, wr])
@@ -102,21 +102,21 @@ def main():
         theta = posterior_estimate[0, 2]
         W = track_width_m
         R = wheel_radius_m
-        B = np.array([[0.5 * cos(theta) * dt_s, 0.5 * cos(theta) * dt_s, 0.25 * cos(theta) * dt_s * dt_s,
+        B = np.array([[0.25 * cos(theta) * dt_s * dt_s,
                        0.25 * cos(theta) * dt_s * dt_s],
-                      [0.5 * sin(theta) * dt_s, 0.5 * sin(theta) * dt_s, 0.25 * sin(theta) * dt_s * dt_s,
+                      [0.25 * sin(theta) * dt_s * dt_s,
                        0.25 * sin(theta) * dt_s * dt_s],
-                      [R * dt_s / W, -R * dt_s / W, R * dt_s * dt_s / (2 * W), -R * dt_s * dt_s / (2 * W)],
-                      [0, 0, 0.5 * cos(theta) * dt_s, 0.5 * cos(theta) * dt_s],
-                      [0, 0, 0.5 * sin(theta) * dt_s, 0.5 * sin(theta) * dt_s],
-                      [0, 0, R * dt_s / W, -R * dt_s / W],
-                      [0, 0, 0, 0],
-                      [0, 0, 0, 0],
-                      [0, 0, 0, 0]
+                      [R * dt_s * dt_s / (2 * W), -R * dt_s * dt_s / (2 * W)],
+                      [0.5 * cos(theta) * dt_s, 0.5 * cos(theta) * dt_s],
+                      [0.5 * sin(theta) * dt_s, 0.5 * sin(theta) * dt_s],
+                      [R * dt_s / W, -R * dt_s / W],
+                      [0, 0],
+                      [0, 0],
+                      [0, 0]
                       ])
-        C = np.ones((4, 1))
+        C = np.ones((2, 1))
         u = w
-        measurement = np.vstack((acc_state, encoder_state))
+        measurement = np.vstack((acc_state))
 
         priori_estimate = (A @ posterior_estimate.T + B @ u).T
         priori_estimate_covariance = A @ estimate_covariance @ A.T + process_noise_variance
