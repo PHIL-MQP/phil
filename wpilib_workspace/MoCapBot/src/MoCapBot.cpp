@@ -39,8 +39,10 @@ void Robot::RobotInit() {
       RobotMap::kRightEnocderB);
   mocap_stop_trigger = new frc::AnalogOutput(RobotMap::kTriggerStop);
   mocap_start_trigger = new frc::AnalogOutput(RobotMap::kTriggerStart);
+
   mocap_start_trigger->SetVoltage(5);
   mocap_stop_trigger->SetVoltage(5);
+  running = false;
 
   tk1_spi->SetClockRate(500000);
   tk1_spi->SetMSBFirst();
@@ -71,17 +73,24 @@ void Robot::TeleopInit() {
 
   // tell the TK1 to start recording data
   uint8_t data = 1;
+  std::cout << "Signaling TK1" << std::endl;
   phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 
   // tell the motion capture to start
+  std::cout << "Triggering Motion Capture" << std::endl;
   Robot::mocap_start_trigger->SetVoltage(0);
   Robot::mocap_stop_trigger->SetVoltage(5);
+  running = true;
 }
 
 void Robot::DisabledInit() {
   std::cout << "DisabledInit" << std::endl;
-  Robot::mocap_stop_trigger->SetVoltage(0);
-  Robot::mocap_start_trigger->SetVoltage(5);
+  if (running) {
+    Robot::mocap_stop_trigger->SetVoltage(0);
+    Robot::mocap_start_trigger->SetVoltage(5);
+    running = false;
+  }
+
   if (log.is_open()) {
     log.close();
   }

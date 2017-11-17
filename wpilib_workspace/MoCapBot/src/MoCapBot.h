@@ -38,6 +38,7 @@ public:
   static constexpr size_t buff_size = 500;
   data_t buffer[buff_size];
   size_t buffer_idx = 0;
+  bool running = false;
   std::ofstream log;
 
   static frc::Joystick *gamepad;

@@ -1,10 +1,11 @@
 #include <phil/udp.h>
-#include <cstdlib>
 #include <iostream>
 #include <cstring>
 #include <netdb.h>
 
 namespace phil {
+
+socklen_t sockaddr_size = sizeof(struct sockaddr_in);
 
 UDPClient::UDPClient(const std::string &tk1_hostname) : tk1_hostname(tk1_hostname) {
 
@@ -25,7 +26,7 @@ UDPClient::UDPClient(const std::string &tk1_hostname) : tk1_hostname(tk1_hostnam
 
   struct timeval tv = {};
   tv.tv_sec = 0;
-  tv.tv_usec = 1000000; // 1 second
+  tv.tv_usec = 100000; // 1 second
   if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
     std::cerr << "setting socket timeout failed : [" << strerror(errno) << "]" << std::endl;
   }

@@ -26,7 +26,7 @@ inline double timeval_to_sec(struct timeval tv) {
 }
 
 constexpr size_t data_t_size = sizeof(data_t);
-socklen_t sockaddr_size = sizeof(struct sockaddr_in);
+extern socklen_t sockaddr_size;
 
 class UDPClient {
  public:
