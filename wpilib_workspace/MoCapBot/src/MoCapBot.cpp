@@ -29,8 +29,7 @@ void Robot::RobotInit() {
 
   gamepad = new frc::Joystick(0);
   drive_base = new DriveBase();
-  //ahrs = new AHRS(SPI::Port::kMXP);
-  ahrs = new AHRS(frc::SPI::kMXP); /* Alternatives:  SPI::kMXP, I2C::kMXP or SerialPort::kUSB */
+  ahrs = new AHRS(frc::SPI::kMXP);
   tk1_spi = new frc::SPI(frc::SPI::Port::kOnboardCS0);
   tk1_i2c = new frc::I2C(frc::I2C::Port::kOnboard, 0);
   left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA,
@@ -54,7 +53,11 @@ void Robot::RobotInit() {
 void Robot::TeleopInit() {
   // create the log to start capturing data
   std::cout << "TeleopInit" << std::endl;
-  log.open("/home/lvuser/mocap_imu_encoder_data.csv");
+
+  std::ostringstream filename;
+  filename << "/home/lvuser/mocap_data-" << frc::GetFPGATime() << ".csv";
+  log.open(filename.str());
+
   if(!log) {
     std::cout << strerror(errno) << '\n';
   }
@@ -72,9 +75,9 @@ void Robot::TeleopInit() {
       << std::endl;
 
   // tell the TK1 to start recording data
-//  uint8_t data = 1;
-//  std::cout << "Signaling TK1" << std::endl;
-//  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+  uint8_t data = 1;
+  std::cout << "Signaling TK1" << std::endl;
+  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 
   // tell the motion capture to start
   std::cout << "Triggering Motion Capture" << std::endl;

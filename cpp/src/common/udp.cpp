@@ -35,14 +35,15 @@ UDPClient::UDPClient(const std::string &tk1_hostname) : tk1_hostname(tk1_hostnam
   struct hostent *hp;
   hp = gethostbyname(tk1_hostname.c_str());
   if (hp == nullptr) {
-    std::cerr << "gethostbyname failed: [" << strerror(errno) << "]" << std::endl;
+    std::cerr << "gethostbyname of [" << tk1_hostname << "] failed: [" << strerror(errno) << "]" << std::endl;
+    std::cerr << "Are you *sure* that's the right hostname? Trying pinging it" << std::endl;
     return;
   }
 
   char *host_ip = hp->h_addr_list[0];
   printf("Found %s at IP %d.%d.%d.%d\n", tk1_hostname.c_str(), host_ip[0], host_ip[1], host_ip[2], host_ip[3]);
 
-  struct sockaddr_in server_addr = {0};
+  server_addr = {0};
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(kPort);
   memcpy((void *) &server_addr.sin_addr, hp->h_addr_list[0], hp->h_length);

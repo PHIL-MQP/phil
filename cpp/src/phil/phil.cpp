@@ -8,7 +8,7 @@ Phil *Phil::instance = nullptr;
 
 // TODO: don't hard code tk1 hostname
 Phil::Phil() :
-    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1"), tk1_time_offset(0) {
+    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1.local"), tk1_time_offset(0) {
   table = NetworkTable::GetTable(phil::kTableName);
 
   // initialize the table -- THIS IS BAD DON'T DO THIS

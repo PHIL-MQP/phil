@@ -39,7 +39,7 @@ add_subdirectory(tools)
 
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
-    add_library(phil ${phil_src})
+    add_library(phil ${phil_src} ${common_src})
     target_include_directories(phil PRIVATE ${PHIL_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${WPILIB_USER_INCLUDE_DIR})
     target_link_libraries(phil ${WPILIB_LIBRARIES} ${NAVX_LIBRARIES})
 
