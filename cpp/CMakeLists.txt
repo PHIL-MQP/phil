@@ -5,6 +5,8 @@ option(RIO "cross-compile for RoboRIO" OFF)
 option(TK1 "cross-compile for TK1" OFF)
 if (${RIO})
     set(CMAKE_CXX_COMPILER "arm-frc-linux-gnueabi-g++")
+else if (${TK1})
+    set(CMAKE_CXX_COMPILER "arm-linux-gnueabihf-g++")
 endif ()
 
 #############################################################################
