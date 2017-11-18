@@ -5,7 +5,7 @@ option(RIO "cross-compile for RoboRIO" OFF)
 option(TK1 "cross-compile for TK1" OFF)
 if (${RIO})
     set(CMAKE_CXX_COMPILER "arm-frc-linux-gnueabi-g++")
-else if (${TK1})
+elseif (${TK1})
     set(CMAKE_CXX_COMPILER "arm-linux-gnueabihf-g++")
 endif ()
 
@@ -32,20 +32,20 @@ add_subdirectory(libraries)
 #############################################################################
 
 set(phil_include_dir ${CMAKE_SOURCE_DIR}/include)
-file(GLOB common_src src/common/*.cpp)
-file(GLOB phil_src src/phil/*.cpp)
+file(GLOB phil_common_src src/phil_common/*.cpp)
+file(GLOB phil_rio_src src/phil_rio/*.cpp)
 file(GLOB tk1_src src/tk1/*.cpp)
 
 add_subdirectory(tools)
 
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
-    add_library(phil ${phil_src} ${common_src})
-    target_include_directories(phil PRIVATE ${phil_include_dir} ${NTCORE_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
-    target_link_libraries(phil navx_frc_cpp wpi)
+    add_library(phil_rio ${phil_rio_src} ${phil_common_src})
+    target_include_directories(phil_rio PRIVATE ${phil_include_dir} ${NTCORE_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
+    target_link_libraries(phil_rio navx_frc_cpp wpi)
 
     # install
-    install(TARGETS phil DESTINATION $ENV{HOME}/wpilib/user/cpp/lib)
+    install(TARGETS phil_rio DESTINATION $ENV{HOME}/wpilib/user/cpp/lib)
     install(DIRECTORY include/phil DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
 endif ()
 

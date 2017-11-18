@@ -1,10 +1,10 @@
-add_executable(udp_server udp_server.cpp ${common_src})
+add_executable(udp_server udp_server.cpp ${phil_common_src})
 target_include_directories(udp_server PRIVATE ${phil_include_dir})
 
-add_executable(udp_client udp_client.cpp ${common_src})
+add_executable(udp_client udp_client.cpp ${phil_common_src})
 target_include_directories(udp_client PRIVATE ${phil_include_dir})
 
-add_executable(test_udp_trigger_tk1 test_udp_trigger_tk1.cpp ${common_src})
+add_executable(test_udp_trigger_tk1 test_udp_trigger_tk1.cpp ${phil_common_src})
 target_include_directories(test_udp_trigger_tk1 PRIVATE ${phil_include_dir})
 
 # TK specific because opencv libraries are different there
@@ -22,7 +22,6 @@ if (${TK1})
             opencv_core
             opencv_imgproc
             opencv_highgui)
-    message(${CSCORE_INCLUDE_DIR})
     target_include_directories(mocap_record PRIVATE ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 endif ()
 
@@ -35,7 +34,7 @@ if (NOT ${RIO} AND NOT ${TK1})
             opencv_videoio
             opencv_highgui)
 
-    add_executable(mocap_record mocap_record.cpp ${common_src})
+    add_executable(mocap_record mocap_record.cpp ${phil_common_src})
     target_link_libraries(mocap_record
             aruco
             cscore
@@ -43,7 +42,6 @@ if (NOT ${RIO} AND NOT ${TK1})
             opencv_videoio
             opencv_imgproc
             opencv_highgui)
-    message(${CSCORE_INCLUDE_DIR})
     target_include_directories(mocap_record PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
 endif ()
