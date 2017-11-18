@@ -32,10 +32,8 @@ void Robot::RobotInit() {
   ahrs = new AHRS(frc::SPI::kMXP);
   tk1_spi = new frc::SPI(frc::SPI::Port::kOnboardCS0);
   tk1_i2c = new frc::I2C(frc::I2C::Port::kOnboard, 0);
-  left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA,
-      RobotMap::kLeftEnocderB);
-  right_encoder = new frc::Encoder(RobotMap::kRightEnocderA,
-      RobotMap::kRightEnocderB);
+  left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA, RobotMap::kLeftEnocderB);
+  right_encoder = new frc::Encoder(RobotMap::kRightEnocderA, RobotMap::kRightEnocderB);
   mocap_stop_trigger = new frc::AnalogOutput(RobotMap::kTriggerStop);
   mocap_start_trigger = new frc::AnalogOutput(RobotMap::kTriggerStart);
 
@@ -58,7 +56,7 @@ void Robot::TeleopInit() {
   filename << "/home/lvuser/mocap_data-" << frc::GetFPGATime() << ".csv";
   log.open(filename.str());
 
-  if(!log) {
+  if (!log) {
     std::cout << strerror(errno) << '\n';
   }
 
@@ -66,13 +64,8 @@ void Robot::TeleopInit() {
     std::cout << "log !good()" << std::endl;
   }
 
-  log
-      << "accel_x,accel_y,accel_z,"
-      << "gyro_x,gyro_y,gyro_z,"
-      << "mag_x,mag_y,mag_z,"
-      << "left_encoder_rate,right_encoder_rate,"
-      << "t0,t1"
-      << std::endl;
+  log << "accel_x,accel_y,accel_z," << "gyro_x,gyro_y,gyro_z," << "mag_x,mag_y,mag_z,"
+      << "left_encoder_rate,right_encoder_rate," << "t0,t1" << std::endl;
 
   // tell the TK1 to start recording data
   uint8_t data = 1;
@@ -126,11 +119,8 @@ void Robot::TeleopPeriodic() {
 
     buffer_idx = 0;
     for (data_t sample : buffer) {
-      log << std::setw(6)
-          << sample.raw_accel_x << "," << sample.raw_accel_y
-          << "," << sample.raw_accel_z << "," << sample.raw_gyro_x << ","
-          << sample.raw_gyro_y << "," << sample.raw_gyro_z << "," << sample.t
-          << std::endl;
+      log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y << "," << sample.raw_accel_z << ","
+          << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z << "," << sample.t << std::endl;
     }
     log.flush();
 

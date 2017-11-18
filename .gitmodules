@@ -7,3 +7,6 @@
 [submodule "cpp/libraries/wpiutil"]
 	path = cpp/libraries/wpiutil
 	url = https://github.com/wpilibsuite/wpiutil.git
+[submodule "cpp/libraries/navxmxp"]
+	path = cpp/libraries/navxmxp
+	url = git@github.com:kauailabs/navxmxp.git

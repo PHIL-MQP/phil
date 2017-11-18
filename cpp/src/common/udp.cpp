@@ -1,7 +1,8 @@
-#include <phil/common/udp.h>
 #include <iostream>
 #include <cstring>
 #include <netdb.h>
+
+#include <phil/common/udp.h>
 
 namespace phil {
 
@@ -58,8 +59,7 @@ data_t UDPClient::Transaction(data_t data) {
   }
 
   ssize_t recvlen =
-      recvfrom(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &response_addr,
-               const_cast<socklen_t *>(&sockaddr_size));
+      recvfrom(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
 
   if (recvlen != data_t_size) {
     fprintf(stderr, "received %zd bytes, expected %zu bytes\n", recvlen, data_t_size);
@@ -69,11 +69,19 @@ data_t UDPClient::Transaction(data_t data) {
   }
 }
 
+int UDPClient::Read(uint8_t *response, size_t response_size) {
+  struct sockaddr_in response_addr = {0};
+  int bytes_received = 0;
+
+  ssize_t recvlen = recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
+
+  return bytes_received;
+}
+
 void UDPClient::RawTransaction(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size) {
   struct sockaddr_in response_addr = {0};
 
-  if (sendto(socket_fd, request, request_size, 0, (struct sockaddr *) &server_addr, sockaddr_size)
-      < 0) {
+  if (sendto(socket_fd, request, request_size, 0, (struct sockaddr *) &server_addr, sockaddr_size) < 0) {
     std::cerr << "sendto failed: [" << strerror(errno) << "]" << std::endl;
   }
 
@@ -82,9 +90,7 @@ void UDPClient::RawTransaction(uint8_t *request, size_t request_size, uint8_t *r
     return;
   }
 
-  ssize_t recvlen =
-      recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &response_addr,
-               const_cast<socklen_t *>(&sockaddr_size));
+  ssize_t recvlen = recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
 }
 
 } // end namespace

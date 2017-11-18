@@ -38,6 +38,14 @@ class UDPClient {
    */
   data_t Transaction(data_t data);
 
+  /**
+   * Blocks until the next packet is received
+   * @param response the functions fills this pointer with data
+   * @param response_size the amount of data you expect to receive in bytes
+   * @return the number of bytes actuall received and put in data
+   */
+  int Read(uint8_t *response, size_t response_size);
+
   void RawTransaction(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
 
  private:

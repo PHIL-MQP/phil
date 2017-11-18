@@ -6,6 +6,8 @@
 #include <cscore.h>
 #include <opencv2/highgui.hpp>
 
+#include <phil/common/udp.h>
+
 int main(int argc, char **argv) {
   cs::UsbCamera camera{"usbcam", 0};
   camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, 30);
@@ -26,6 +28,9 @@ int main(int argc, char **argv) {
   }
 
   // wait for UDP message to start
+  phil::UDPClient udp_client("phil-tk1.local");
+  uint8_t message = 0;
+  int bytes_received = udp_client.Read(&message, 1);
 
   for (int i=0; i < 300; i++) {
     uint64_t time = sink.GrabFrame(frame);

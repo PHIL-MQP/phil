@@ -21,11 +21,10 @@ set(WPILIB_CPP_DIR $ENV{HOME}/wpilib/cpp/current)
 set(WPIUTIL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/wpiutil/src/main/native/include)
 set(NTCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/ntcore/src/main/native/include)
 set(CSCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/cscore/src/main/native/include)
+set(NAVX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/include
+                     ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
 set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include)
-set(WPILIB_USER_INCLUDE_DIR ${WPILIB_DIR}/user/cpp/include)
 set(WPILIB_LIBRARY_DIR ${WPILIB_CPP_DIR}/lib)
-set(WPILIB_LIBRARIES wpi)
-set(NAVX_LIBRARIES navx_frc_cpp)
 
 add_subdirectory(libraries)
 #############################################################################
@@ -40,8 +39,8 @@ add_subdirectory(tools)
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
     add_library(phil ${phil_src} ${common_src})
-    target_include_directories(phil PRIVATE ${PHIL_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${WPILIB_USER_INCLUDE_DIR})
-    target_link_libraries(phil ${WPILIB_LIBRARIES} ${NAVX_LIBRARIES})
+    target_include_directories(phil PRIVATE ${phil_include_dir} ${NTCORE_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
+    target_link_libraries(phil navx_frc_cpp wpi)
 
     # install
     install(TARGETS phil DESTINATION $ENV{HOME}/wpilib/user/cpp/lib)

@@ -35,7 +35,7 @@ if (NOT ${RIO} AND NOT ${TK1})
             opencv_videoio
             opencv_highgui)
 
-    add_executable(mocap_record mocap_record.cpp)
+    add_executable(mocap_record mocap_record.cpp ${common_src})
     target_link_libraries(mocap_record
             aruco
             cscore
@@ -44,6 +44,7 @@ if (NOT ${RIO} AND NOT ${TK1})
             opencv_imgproc
             opencv_highgui)
     message(${CSCORE_INCLUDE_DIR})
-    target_include_directories(mocap_record PRIVATE ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+    target_include_directories(mocap_record PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+
 endif ()
 
