@@ -7,10 +7,19 @@ target_include_directories(udp_client PRIVATE ${phil_include_dir})
 # anything using opencv won't compile on the RIO
 if (NOT ${RIO})
     add_executable(fisheye unwarp_fisheye.cpp)
-    target_link_libraries(fisheye opencv_core opencv_videoio opencv_imgproc opencv_highgui)
+    target_link_libraries(fisheye
+      opencv_core
+      opencv_imgproc
+      opencv_highgui)
 
-    add_executable(record_video record_video.cpp)
-    target_link_libraries(record_video aruco opencv_core opencv_videoio opencv_imgproc opencv_highgui opencv_imgcodecs)
-    target_include_directories(record_video PRIVATE ${OpenCV_INCLUDE_DIRS})
+    add_executable(mocap_record mocap_record.cpp)
+    target_link_libraries(mocap_record
+      aruco
+      cscore
+      opencv_core
+      opencv_imgproc
+      opencv_highgui)
+    message(${CSCORE_INCLUDE_DIR})
+    target_include_directories(mocap_record PRIVATE ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 endif ()
 
