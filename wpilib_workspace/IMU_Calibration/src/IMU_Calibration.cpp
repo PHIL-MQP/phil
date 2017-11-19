@@ -17,29 +17,29 @@
  * - Raw Gyro and Accelerometer Data
  *
  */
-int main(int argc, char **argv) {
-  int err_code = manditory_init();
-  if (err_code) {
-    return err_code;
-  }
-
-  std::cout << "starting capture" << std::endl;
-
-  AHRS *ahrs;
-
-  try {
-    ahrs = new AHRS(SPI::Port::kMXP);
-    err_code = collectSamples(7500, ahrs);
-    if (err_code) {
-      return err_code;
-    }
-  } catch (std::exception& ex) {
-    printf("Error instantiating navX MXP: %s", ex.what());
-    return EXIT_FAILURE;
-  }
-
-  return EXIT_SUCCESS;
-}
+//int main(int argc, char **argv) {
+//  int err_code = manditory_init();
+//  if (err_code) {
+//    return err_code;
+//  }
+//
+//  std::cout << "starting capture" << std::endl;
+//
+//  AHRS *ahrs;
+//
+//  try {
+//    ahrs = new AHRS(SPI::Port::kMXP);
+//    err_code = collectSamples(7500, ahrs);
+//    if (err_code) {
+//      return err_code;
+//    }
+//  } catch (std::exception& ex) {
+//    printf("Error instantiating navX MXP: %s", ex.what());
+//    return EXIT_FAILURE;
+//  }
+//
+//  return EXIT_SUCCESS;
+//}
 
 int collectSamples(size_t number_of_samples, AHRS *ahrs) {
   const size_t microsec_per_sample = 10000;
