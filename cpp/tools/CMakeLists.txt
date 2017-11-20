@@ -7,7 +7,9 @@ target_include_directories(udp_client PRIVATE ${phil_include_dir})
 add_executable(test_udp_trigger_tk1 test_udp_trigger_tk1.cpp ${phil_common_src})
 target_include_directories(test_udp_trigger_tk1 PRIVATE ${phil_include_dir})
 
-add_executable(imu_calibrate csvReader.cpp)
+if (NOT ${RIO})
+    add_executable(imu_calibrate csvReader.cpp)
+endif ()
 
 # TK specific because opencv libraries are different there
 if (${TK1})
