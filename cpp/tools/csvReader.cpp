@@ -15,19 +15,19 @@ using namespace std;
 
 
 
-//int main(int argc, char **argv) {
-//	vector< vector<float> > data_array = getData("imu_calibration_data_11_14.csv", 1, 3);
-//
-//	cout << data_array.size() << endl;
-//
-//	for (int i = 0; i < 3; i ++) {
-//		for (int j = 0; j < 6; j++) {
-//			cout << data_array[i][j] << endl;
-//		}
-//	}
-//
-//	return 0;
-//}
+int main(int argc, char **argv) {
+  vector< vector<float> > data_array = getData("imu_calibration_data_11_14.csv", 1, 3);
+
+  cout << data_array.size() << endl;
+
+  for (int i = 0; i < 3; i ++) {
+    for (int j = 0; j < 6; j++) {
+      cout << data_array[i][j] << endl;
+    }
+  }
+
+  return 0;
+}
 
 
 vector< vector<float> > getData(string fileName, int startRow, int endRow) {
