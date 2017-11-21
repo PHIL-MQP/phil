@@ -47,7 +47,7 @@ if (${RIO})
     target_link_libraries(phil_rio navx_frc_cpp wpi)
 
     # install
-    install(TARGETS phil_rio DESTINATION $ENV{HOME}/wpilib/user/cpp/lib)
+    install(TARGETS phil_rio DESTINATION ${WPILIB_DIR}/user/cpp/lib)
     install(DIRECTORY include/phil DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
 endif ()
 
