@@ -11793,7 +11793,8 @@ w_l \\
 w_r \\
 \alpha_l \\
 \alpha_r \\
-\end{bmatrix} $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
+\end{bmatrix} $$<p>Key prediction &amp; update equations</p>
+$$ \hat{x}_{t} = Ax_t + Bu_t $$$$ P_{t+1} = AP_tA^T + Q $$$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$$$ P_t = (I - K_tC)P_t $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
 \begin{align}
 x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
 y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
@@ -11805,7 +11806,7 @@ y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
 \begin{align}
 \Delta x_{t+1} &= \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
 \Delta y_{t+1} &= \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
-\Delta\theta_{t+1} &= \frac{R\Delta t}{W}w_l+\frac{-R\Delta t}{W}w_r + \frac{R\Delta t^2}{W2}\alpha_l + \frac{-R\Delta t^2}{W2}\alpha_r\\
+\Delta\theta_{t+1} &= \frac{R\Delta t^2}{W2}\alpha_l + \frac{-R\Delta t^2}{W2}\alpha_r\\
 \Delta\dot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
 \Delta\dot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
 \Delta\dot{\theta}_{t+1} &= \frac{R\Delta t}{W}\alpha_l + \frac{-R\Delta t}{W}\alpha_r \\
@@ -11887,49 +11888,102 @@ L = number of measurements from all sensors</p>
 <table>
 <thead><tr>
 <th>matrix</th>
+<th>variable name</th>
 <th>size</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>A</td>
+<td>A</td>
 <td>NxN</td>
 </tr>
 <tr>
+<td>B</td>
 <td>B</td>
 <td>NxM</td>
 </tr>
 <tr>
 <td>C</td>
+<td>C</td>
 <td>LxN</td>
 </tr>
 <tr>
+<td>K</td>
 <td>K</td>
 <td>NxL</td>
 </tr>
 <tr>
 <td>z</td>
+<td>measurement</td>
 <td>Lx1</td>
 </tr>
 <tr>
 <td>x</td>
+<td>priori/posterior_estimate</td>
 <td>Nx1</td>
 </tr>
 <tr>
 <td>P</td>
+<td>estimate_covariance</td>
 <td>NxN</td>
 </tr>
 <tr>
 <td>Q</td>
+<td>process_covariance</td>
 <td>NxN</td>
 </tr>
 <tr>
 <td>R</td>
+<td>measurement_covariance</td>
 <td>LxL</td>
 </tr>
 </tbody>
 </table>
 
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3>$$
+\begin{bmatrix}
+\text{Accelerometer }\ddot{x} \\
+\text{Accelerometer }\ddot{y} \\
+\text{Gyro }\dot{\theta} \\
+\text{Camera }x \\
+\text{Camera }y \\
+\text{Camera }\theta \\
+\text{Encoders }x \\
+\text{Encoders }y \\
+\text{Encoders }\theta \\
+\end{bmatrix} -
+\begin{bmatrix}
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+\theta \\
+\dot{x} \\
+\dot{y} \\
+\dot{\theta} \\
+\ddot{x} \\
+\ddot{y} \\
+\ddot{\theta} \\
+\end{bmatrix}
+$$
 </div>
 </div>
 </div>
@@ -11944,80 +11998,6 @@ L = number of measurements from all sensors</p>
 <li>On the slides example, why is P [[0,0],[0,q_x]]? What's with the process noise model?</li>
 </ul>
 
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>If we include acceleration and bias/drift in our state vector we get a bunch of useless 1's</p>
-$$
-\begin{bmatrix}
-x_{t+1} \\ y_{t+1} \\ \theta_{t+1} \\
-\dot{x}_{t+1} \\ \dot{y}_{t+1} \\ \dot{\theta}_{t+1} \\
-\ddot{x}_{t+1} \\ \ddot{y}_{t+1} \\ \ddot{\theta}_{t+1} \\
-d^x_{t+1} \\ d^y_{t+1} \\ d^z_{t+1} \\
-b^x_{t+1} \\ b^y_{t+1} \\ b^z_{t+1} \end{bmatrix} =
-\begin{bmatrix}
-1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
-\end{bmatrix}
-\begin{bmatrix}
-x \\ y \\ \theta \\ \dot{x} \\ \dot{y} \\ \dot{\theta} \\ \ddot{x} \\ \ddot{y} \\ \ddot{\theta}
-\\ a_x^d \\ a_y^d \\ a_z^d \\ a_x^b \\ a_y^b \\ a_z^b \\ \end{bmatrix} +
-\begin{bmatrix}
-R\cos\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} &
--R\cos\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} \\
--R\sin\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} &
-R\sin\Big(\frac{(\bar{v}_r-\bar{v}_l)\Delta t}{W}-\bar{\theta}\Big)\frac{\Delta t}{W} \\
-\frac{\Delta t}{R-\frac{W}{2}} & 0 \\
-\frac{1}{2} \cos(\theta) & \frac{1}{2} \cos(\theta) \\
-\frac{1}{2} \sin(\theta) & \frac{1}{2} \sin(\theta) \\
-\frac{1}{W} & \frac{-1}{W} \\
-? & ? \\
-? & ? \\
-? & ? \\
-? & ? \\
-? & ? \\
-? & ? \\
-? & ? \\
-? & ? \\
-? & ? \\
-\end{bmatrix}
-\begin{bmatrix}
-w_l \\
-w_r \\
-\end{bmatrix}
-$$<p>What the heck should C be? C transforms the measurements into state.</p>
-<p>Equations for acceleration. First remove the components of x/y due to misaligned axis, then apply scaling correction, then bias
-$$x_{t+1} = x_t + \frac{1}{2}\Delta t^2(\alpha_x*s_x+b_x)$$
-$$y_{t+1} = y_t + \frac{1}{2}\Delta t^2(\alpha_y*s_y+b_y)$$</p>
-$$
-x = 
-\begin{bmatrix}
-\frac{1}{2}\Delta t^2 & \frac{1}{2}\Delta t^2 & 0 \\
-\end{bmatrix}
-\begin{bmatrix}
-acc_x \\
-acc_y \\
-acc_z \\
-\end{bmatrix}
-$$
 </div>
 </div>
 </div>
@@ -12041,19 +12021,6 @@ $$
 
 </div>
 </div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-</div>
-</div>
-</div>
-
 </div>
     </div>
   </div>

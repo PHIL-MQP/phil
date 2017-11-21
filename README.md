@@ -7,6 +7,11 @@ This project contains:
  - An executable that is compiled and run on the TK1 to gather sensor data and make calls to the localization algorithms
  - A collection of various executable tools and programs for testing and debugging
 
+Make sure you run
+
+    git submodule init
+    git submodule update
+
 ## Code for the RoboRIO
 
 If you're writing code for a roboRIO , you want to use the first one, which is a library called `phil_rio`. Since it's meant to run on the RoboRIO, not your computer, we must use a compiler that works for the RoboRIO. To get these compilers, which are a components of what is called the toolchain, [look here](http://first.wpi.edu/FRC/roborio/toolchains/). You also need to install the [WPILib eclipse plugins](http://lmgtfy.com/?q=wpilib+eclipse+plugins). Once you have that do the following.
