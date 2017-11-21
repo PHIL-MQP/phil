@@ -48,10 +48,7 @@ double variance(std::vector<double> data){
 	}
 	return temp/(data.size()-1);
 }
-double minimize(){
 
-	return 0;
-}
 double calc_static_detector(){
 
 	return 0;
@@ -59,6 +56,12 @@ double calc_static_detector(){
 void levenberg_marquerd(){
 ////update residuals and params_acc
 	residuals = 0;
+
+}
+void calibrate_accel(){
+
+}
+void calibrate_gyro(){
 
 }
 void IMU_calibration(){
