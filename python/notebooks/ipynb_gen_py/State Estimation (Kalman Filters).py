@@ -164,12 +164,31 @@
 # \end{bmatrix}
 # $$
 
-# ## Questions
+# ### The process covariance matrix
 # 
-#  - Does the $Bu$ part mean a change in state or full actual state? If it's full actual state then this makes no sense
-#  - Should $u$ be $\alpha$ (wheel accelerations, which is assumed proportional to voltage) or $\omega$ (wheel speeds)?
-#  - On the slides example, why is P [[0,0],[0,q_x]]? What's with the process noise model?
+# $$
+# \begin{bmatrix}
+# W_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & W_2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & W_3 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & W_4 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & W_5 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & W_6 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & W_7 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & W_8 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & W_9 \\
+# \end{bmatrix}
+# $$
 
+# $$ K_t = (P_tC^T)(CP_tC^T + R)^{-1} $$
+# $$ K_t(CP_tC^T + R) = (P_tC^T)(CP_tC^T + R)^{-1}(CP_tC^T + R) $$
+# $$ K_t(CP_tC^T + R) = (P_tC^T) $$
+# $$ (CP_tC^T + R)^TK_t^T = (P_tC^T)^T $$
+# 
+# Now we have it in the form  $Ax=b$ where $A = (CP_tC^T + R)^T$, $x=k^T$ and $B=(P_tC^T)^T$ so we can now use `np.linalg.solve()`
+
+# ---
+# 
 # # Particle Filter
 # 
 #  - Take the current pose estimate of the robot
@@ -180,3 +199,8 @@
 #    - This is done using your sensor models
 #  - Keep each sample with a probability equal to w
 #  - To get one number, take a weighted average of all particles (weighted by their probabilities)
+
+# In[ ]:
+
+
+

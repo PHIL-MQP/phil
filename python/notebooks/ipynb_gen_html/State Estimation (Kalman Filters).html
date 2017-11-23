@@ -11992,11 +11992,28 @@ $$
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Questions">Questions<a class="anchor-link" href="#Questions">&#182;</a></h2><ul>
-<li>Does the $Bu$ part mean a change in state or full actual state? If it's full actual state then this makes no sense</li>
-<li>Should $u$ be $\alpha$ (wheel accelerations, which is assumed proportional to voltage) or $\omega$ (wheel speeds)?</li>
-<li>On the slides example, why is P [[0,0],[0,q_x]]? What's with the process noise model?</li>
-</ul>
+<h3 id="The-process-covariance-matrix">The process covariance matrix<a class="anchor-link" href="#The-process-covariance-matrix">&#182;</a></h3>$$
+\begin{bmatrix}
+W_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & W_2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & W_3 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & W_4 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & W_5 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & W_6 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & W_7 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & W_8 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & W_9 \\
+\end{bmatrix}
+$$
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+$$ K_t = (P_tC^T)(CP_tC^T + R)^{-1} $$$$ K_t(CP_tC^T + R) = (P_tC^T)(CP_tC^T + R)^{-1}(CP_tC^T + R) $$$$ K_t(CP_tC^T + R) = (P_tC^T) $$$$ (CP_tC^T + R)^TK_t^T = (P_tC^T)^T $$<p>Now we have it in the form  $Ax=b$ where $A = (CP_tC^T + R)^T$, $x=k^T$ and $B=(P_tC^T)^T$ so we can now use <code>np.linalg.solve()</code></p>
 
 </div>
 </div>
@@ -12006,6 +12023,7 @@ $$
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<hr>
 <h1 id="Particle-Filter">Particle Filter<a class="anchor-link" href="#Particle-Filter">&#182;</a></h1><ul>
 <li>Take the current pose estimate of the robot</li>
 <li>Sample points $X=[x^0_t, \dots, x^m_t]$ around it (guess positions near your current estimate)</li>
@@ -12021,6 +12039,19 @@ $$
 
 </div>
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+</div>
+</div>
+</div>
+
 </div>
     </div>
   </div>

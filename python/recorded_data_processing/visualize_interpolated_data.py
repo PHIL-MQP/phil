@@ -52,11 +52,9 @@ def main():
     posterior_estimate = np.zeros((N, 1), dtype=np.float32)
     W = 0.01  # process variance
     # do the Q matrix thingy
-    process_covariance = np.array([[W / 20 * dt_s ** 5, W / 8 * dt_s ** 4, W / 6 * dt_s ** 3],
-                                   [W / 8 * dt_s ** 4, W / 3 * dt_s ** 3, W / 2 * dt_s ** 2],
-                                   [W / 6 * dt_s ** 3, W / 2 * dt_s ** 2, W * dt_s]])
-    estimate_covariance = np.ones((N, N))
+    process_covariance = np.diag([.01, .01, .01, .01, .01, .01, .01, .01, .01])
     measurement_variance = np.zeros((L, L))
+    estimate_covariance = np.zeros((N, N))
     next(reader)  # skip header
     first_row = next(reader)
     wls.append(float(first_row[0]))
@@ -135,7 +133,7 @@ def main():
         priori_estimate = (A @ posterior_estimate + B @ u)
         priori_estimate_covariance = A @ estimate_covariance @ A.T + process_covariance
         thingy = C @ estimate_covariance @ C.T + measurement_variance
-        K = estimate_covariance @ C.T @ np.linalg.inv(thingy)
+        K = np.linalg.solve(thingy.T, (estimate_covariance @ C.T).T)
         posterior_estimate = priori_estimate + K @ (measurement - C @ priori_estimate)
         estimate_covariance = (np.eye(N) - K) @ priori_estimate_covariance
         estimate_covariances.append(estimate_covariance)
