@@ -8,7 +8,38 @@ namespace phil {
 
 socklen_t sockaddr_size = sizeof(struct sockaddr_in);
 
-UDPClient::UDPClient(const std::string &tk1_hostname) : tk1_hostname(tk1_hostname) {
+UDPServer::UDPServer() {
+  if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    std::cerr << "socket failed: [" << strerror(errno) << "]" << std::endl;
+    return;
+  }
+
+  struct sockaddr_in addr = {0};
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_port = htons(kPort);
+
+  if (bind(socket_fd, (struct sockaddr *) &addr, sockaddr_size) < 0) {
+    std::cerr << "bind failed: [" << strerror(errno) << "]" << std::endl;
+    return;
+  }
+
+}
+
+ssize_t UDPServer::Read(uint8_t *response, size_t response_size) {
+  struct sockaddr_in remote_addr = {0};
+  ssize_t recvlen =
+      recvfrom(socket_fd, (uint8_t *) &response, response_size, 0, (struct sockaddr *) &remote_addr, &sockaddr_size);
+  return recvlen;
+}
+
+void UDPServer::SetTimeout(struct timeval timeout) {
+  if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+    std::cerr << "setting socket timeout failed : [" << strerror(errno) << "]" << std::endl;
+  }
+}
+
+UDPClient::UDPClient(const std::string &server_hostname) : server_hostname(server_hostname) {
 
   if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     std::cerr << "socket failed: [" << strerror(errno) << "]" << std::endl;
@@ -27,15 +58,15 @@ UDPClient::UDPClient(const std::string &tk1_hostname) : tk1_hostname(tk1_hostnam
 
   // look up hostname of the tk1
   struct hostent *hp;
-  hp = gethostbyname(tk1_hostname.c_str());
+  hp = gethostbyname(server_hostname.c_str());
   if (hp == nullptr) {
-    std::cerr << "gethostbyname of [" << tk1_hostname << "] failed: [" << strerror(errno) << "]" << std::endl;
-    std::cerr << "Are you *sure* that's the right hostname? Trying pinging it" << std::endl;
+    std::cerr << "gethostbyname of [" << server_hostname << "] failed." << std::endl;
+    std::cerr << "Are you *sure* that's the right hostname? Trying pinging it." << std::endl;
     return;
   }
 
   char *host_ip = hp->h_addr_list[0];
-  printf("Found %s at IP %d.%d.%d.%d\n", tk1_hostname.c_str(), host_ip[0], host_ip[1], host_ip[2], host_ip[3]);
+  printf("Found %s at IP %d.%d.%d.%d\n", server_hostname.c_str(), host_ip[0], host_ip[1], host_ip[2], host_ip[3]);
 
   server_addr = {0};
   server_addr.sin_family = AF_INET;
@@ -68,13 +99,10 @@ data_t UDPClient::Transaction(data_t data) {
   }
 }
 
-int UDPClient::Read(uint8_t *response, size_t response_size) {
+ssize_t  UDPClient::Read(uint8_t *response, size_t response_size) {
   struct sockaddr_in response_addr = {0};
-  int bytes_received = 0;
-
   ssize_t recvlen = recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
-
-  return bytes_received;
+  return recvlen;
 }
 
 void UDPClient::RawTransaction(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size) {
@@ -91,5 +119,4 @@ void UDPClient::RawTransaction(uint8_t *request, size_t request_size, uint8_t *r
 
   ssize_t recvlen = recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
 }
-
 } // end namespace

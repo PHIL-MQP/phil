@@ -28,9 +28,31 @@ inline double timeval_to_sec(struct timeval tv) {
 constexpr size_t data_t_size = sizeof(data_t);
 extern socklen_t sockaddr_size;
 
+class UDPServer {
+ public:
+  UDPServer();
+
+  /**
+   * Blocks until the next packet is received
+   * @param response the functions fills this pointer with data
+   * @param response_size the amount of data you expect to receive in bytes
+   * @return the number of bytes actuall received and put in data
+   */
+  ssize_t Read(uint8_t *response, size_t response_size);
+
+  /**
+   * Sets the timeout for future calls to sendto and recvfrom
+   * @param timeout timeout
+   */
+  void SetTimeout(timeval timeout);
+
+ private:
+  int socket_fd;
+};
+
 class UDPClient {
  public:
-  explicit UDPClient(const std::string &tk1_hostname);
+  explicit UDPClient(const std::string &server_hostname);
 
   /**
    * Sends data to TK1. This assumes data has been filled and stamped. This function may block for up to 1 second.
@@ -44,15 +66,19 @@ class UDPClient {
    * @param response_size the amount of data you expect to receive in bytes
    * @return the number of bytes actuall received and put in data
    */
-  int Read(uint8_t *response, size_t response_size);
+  ssize_t Read(uint8_t *response, size_t response_size);
 
   void RawTransaction(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
 
+  /**
+   * Sets the timeout for future calls to sendto and recvfrom
+   * @param timeout timeout
+   */
   void SetTimeout(timeval timeout);
 
  private:
   int socket_fd;
-  std::string tk1_hostname;
+  std::string server_hostname;
   struct sockaddr_in client_addr;
   struct sockaddr_in server_addr;
 

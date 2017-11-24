@@ -1,14 +1,31 @@
 #include <iostream>
-#include <stdio.h>
-#include <errno.h>
 #include <cstring>
 #include <fstream>
 #include <cscore.h>
 #include <opencv2/highgui.hpp>
 
 #include <phil/common/udp.h>
+#include <phil/common/args.h>
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
+  args::ArgumentParser parser("This program records camera frames and their timestamps",
+                              "This program is meant to run on TK1 during Motion Capture"
+                                  "recording tests. However, it is general purpose and could be used on a laptop."
+                                  "It cannot be built for the RoboRIO.");
+  args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+  args::ValueFlag<std::string>
+      server_hostname_flag(parser, "hostname", "hostname of the server sending start/stop", {'o'});
+
+  try
+  {
+    parser.ParseCLI(argc, argv);
+  }
+  catch (args::Help &e)
+  {
+    std::cout << parser;
+    return 0;
+  }
+
   cs::UsbCamera camera{"usbcam", 0};
   camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, 30);
   cs::MjpegServer mjpegServer{"httpserver", 8081};
@@ -27,17 +44,22 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+  std::string hostname = "phil-tk1.local";
+  if (server_hostname_flag) {
+    hostname = args::get(server_hostname_flag);
+  }
+
   // wait for UDP message to start
-  phil::UDPClient udp_client("phil-tk1.local");
+  phil::UDPServer udp_server;
   uint8_t message = 0;
-  udp_client.Read(&message, 1);
+  udp_server.Read(&message, 1);
 
   struct timeval timeout = {0};
   timeout.tv_usec = 10;
   timeout.tv_sec = 0;
-  udp_client.SetTimeout(timeout);
+  udp_server.SetTimeout(timeout);
 
-  for (int i=0; i < 1000; i++) {
+  for (int i = 0; i < 1000; i++) {
     uint64_t time = sink.GrabFrame(frame);
     if (time == 0) {
       std::cout << "error: " << sink.GetError() << std::endl;
@@ -48,7 +70,7 @@ int main(int argc, char **argv) {
     time_stamps_file << time << std::endl;
 
     // check for UDP message to stop
-    int bytes_received = udp_client.Read(&message, 1);
+    ssize_t bytes_received = udp_server.Read(&message, 1);
     if (bytes_received > 0) {
       break;
     }
