@@ -199,8 +199,3 @@
 #    - This is done using your sensor models
 #  - Keep each sample with a probability equal to w
 #  - To get one number, take a weighted average of all particles (weighted by their probabilities)
-
-# In[ ]:
-
-
-

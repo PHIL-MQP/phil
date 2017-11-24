@@ -1,14 +1,14 @@
 
 # coding: utf-8
 
-# In[216]:
+# In[1]:
 
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
 
-# In[217]:
+# In[2]:
 
 data_dir = "../../recorded_sensor_data/mocap_11_17_18-00-00/"
 imu_file = data_dir + "mocap_imu_encoder_data.csv"
@@ -39,7 +39,7 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[218]:
+# In[3]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -50,7 +50,7 @@ def yawdiff(y1, y2):
     return diff;
 
 
-# In[219]:
+# In[4]:
 
 print("Seconds of IMU data recorded: ", imu_data[-1][-1] - imu_data[0][-1])
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
@@ -71,10 +71,10 @@ plt.legend()
 plt.show()
 
 
-# In[65]:
+# In[6]:
 
-states = np.ndarray((mocap_data.shape[0], 9))
-state = np.zeros(9)
+mocap_states = np.ndarray((mocap_data.shape[0], 9))
+mocap_state = np.zeros(9)
 for mocap_idx in range(1, len(mocap_data)):
     data = mocap_data[mocap_idx]
     last_data = mocap_data[mocap_idx - 1]
@@ -84,31 +84,31 @@ for mocap_idx in range(1, len(mocap_data)):
     tx = data[5]
     ty = data[6]
     tz = data[7]
-    state[0] = tx
-    state[1] = ty
+    mocap_state[0] = tx
+    mocap_state[1] = ty
     drz = yawdiff(rz, last_data[4]) # handles wrap-around
-    state[2] += drz
-    states[mocap_idx] = state
+    mocap_state[2] += drz
+    mocap_states[mocap_idx] = mocap_state
 
 
-# In[214]:
+# In[7]:
 
 plt.figure(figsize=(10,10))
-plt.plot(states[:,2], label='theta')
+plt.plot(mocap_states[:,2], label='theta')
 plt.legend()
 plt.title("Unwrapped Angle")
 plt.show()
 
 
-# In[215]:
+# In[17]:
 
 plt.figure(figsize=(10,10))
-plt.scatter(states[:,0], states[:,1], marker='.', s=1, color='r')
+plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r')
 plt.axis("square")
 plt.show()
 
 
-# In[80]:
+# In[18]:
 
 plt.plot(imu_data[:,0], label="IMU x")
 plt.plot(imu_data[:,1], label="IMU y")
@@ -118,7 +118,7 @@ plt.legend()
 plt.show()
 
 
-# In[81]:
+# In[19]:
 
 plt.plot(imu_data[:,3], label="Gyro x")
 plt.plot(imu_data[:,4], label="Gyro y")
@@ -128,7 +128,7 @@ plt.legend()
 plt.show()
 
 
-# In[117]:
+# In[20]:
 
 means = np.mean(imu_data,axis=0)
 print("Average Accel X value:", means[0])
@@ -136,7 +136,7 @@ print("Average Accel Y value:", means[1])
 print("Average Accel Z value:", means[2])
 
 
-# In[91]:
+# In[21]:
 
 yaws = []
 yaw = 0
@@ -149,56 +149,60 @@ for data in imu_data:
     last_t = data[-1]
 
 
-# In[92]:
+# In[22]:
 
 plt.plot(yaws, label="integrated gyro")
 plt.show()
 
 
-# In[221]:
+# In[23]:
 
-x = 0
-y = 0
-vx = 0
-vy = 0
-last_t = imu_data[0][-1]
-xs = []
-ys = []
-vxs = []
-vys = []
-x_bias = 0 #.0385
-y_bias = 0 #.041
-x_scale = 1000
-y_scale = 1000
-for data in imu_data:
-    ax = (data[0] - x_bias) * x_scale
-    ay = (data[1] - y_bias) * y_scale
-    dt_s = data[-1] - last_t
-    vx += ax * dt_s
-    vy += ay * dt_s
-    x += vx * dt_s + 0.5 * ax * dt_s ** 2
-    y += vy * dt_s + 0.5 * ay * dt_s ** 2
-    last_t = data[-1]
-    vxs.append(vx)
-    vys.append(vy)
-    xs.append(x)
-    ys.append(y)
+def DoubleIntegrateIMU(x_bias, y_bias, x_scale, y_scale):
+    x = 0
+    y = 0
+    vx = 0
+    vy = 0
+    last_t = imu_data[0][-1]
+    xs = []
+    ys = []
+    vxs = []
+    vys = []
+    for data in imu_data:
+        ax = (data[0] - x_bias) * x_scale
+        ay = (data[1] - y_bias) * y_scale
+        dt_s = data[-1] - last_t
+        vx += ax * dt_s
+        vy += ay * dt_s
+        x += vx * dt_s + 0.5 * ax * dt_s ** 2
+        y += vy * dt_s + 0.5 * ay * dt_s ** 2
+        last_t = data[-1]
+        vxs.append(vx)
+        vys.append(vy)
+        xs.append(x)
+        ys.append(y)
+    
+    return xs, ys, vxs, vys
 
 
-# In[222]:
+# In[24]:
 
-plt.plot(vxs, label="vxs")
-plt.plot(vys, label="vys")
+no_bias = DoubleIntegrateIMU(x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
+calib = DoubleIntegrateIMU(x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
+plt.plot(no_bias[2], label="no bias vxs")
+plt.plot(no_bias[3], label="no bias vys")
+plt.plot(calib[2], label="calibrated vxs")
+plt.plot(calib[3], label="calibrated vys")
 plt.title("velocities from integrating accelerometer")
 plt.legend()
 plt.show()
 
 
-# In[223]:
+# In[25]:
 
 plt.figure(figsize=(10,10))
-plt.scatter(xs, ys, marker='.', s=1, color='b', label='Accelerometer')
-plt.scatter(states[:,0], states[:,1], marker='.', s=1, color='r', label='MoCap')
+plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
+plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
+plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
 plt.title("Accelerometer versus MoCap")
 plt.legend()
 plt.show()

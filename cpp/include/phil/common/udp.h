@@ -48,6 +48,8 @@ class UDPClient {
 
   void RawTransaction(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
 
+  void SetTimeout(timeval timeout);
+
  private:
   int socket_fd;
   std::string tk1_hostname;

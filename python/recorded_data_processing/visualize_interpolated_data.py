@@ -44,8 +44,8 @@ def main():
     encoder_ys = []
     filtered_xs = []
     filtered_ys = []
-    dynamics_xs = []
-    dynamics_ys = []
+    priori_xs = []
+    priori_ys = []
     wls = []
     wrs = []
     estimate_covariances = []
@@ -60,11 +60,10 @@ def main():
     wls.append(float(first_row[0]))
     wrs.append(float(first_row[1]))
     for row in reader:
-        # this is wrong, don't use measured speed as control inputs
-        # we didn't measure actual control inputs on turtlebot
-        # so we just set a* to 0 because we suck
         wl = float(row[0])
         wr = float(row[1])
+        # this is wrong, but we didn't measure actual control inputs on turtlebot
+        # so we compute theoretical acceleration
         al = (wl - wls[-1]) / dt_s
         ar = (wr - wrs[-1]) / dt_s
         wls.append(wl)
@@ -73,11 +72,11 @@ def main():
         B = alpha * track_width_m
         T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
         dydt, dpdt = T @ np.array([wl, wr])
-        encoder_state[0] = posterior_estimate[0] + np.cos(posterior_estimate[2]) * dydt * dt_s
-        encoder_state[1] = posterior_estimate[1] + np.sin(posterior_estimate[2]) * dydt * dt_s
-        encoder_state[2] = posterior_estimate[2] + dpdt * dt_s
-        encoder_xs.append(encoder_state[0])
-        encoder_ys.append(encoder_state[1])
+        encoder_state[0] = encoder_state[0] + np.cos(encoder_state[2]) * dydt * dt_s
+        encoder_state[1] = encoder_state[1] + np.sin(encoder_state[2]) * dydt * dt_s
+        encoder_state[2] = encoder_state[2] + dpdt * dt_s
+        encoder_xs.append(encoder_state[0].copy())
+        encoder_ys.append(encoder_state[1].copy())
 
         # double integrate accelerometer data
         acc_x = float(row[2]) * acc_scale
@@ -88,8 +87,8 @@ def main():
         acc_state[4] += dt_s * acc_y
         acc_state[6] += acc_x
         acc_state[7] += acc_y
-        acc_xs.append(acc_state[0])
-        acc_ys.append(acc_state[1])
+        acc_xs.append(acc_state[0].copy())
+        acc_ys.append(acc_state[1].copy())
 
         # kalman filter
         A = np.array([[1, 0, 0, dt_s, 0, 0, 0.5 * dt_s * dt_s, 0, 0],
@@ -133,25 +132,37 @@ def main():
         priori_estimate = (A @ posterior_estimate + B @ u)
         priori_estimate_covariance = A @ estimate_covariance @ A.T + process_covariance
         thingy = C @ estimate_covariance @ C.T + measurement_variance
-        K = np.linalg.solve(thingy.T, (estimate_covariance @ C.T).T)
+        try:
+            K = np.linalg.solve(thingy.T, (estimate_covariance @ C.T).T).T
+        except np.linalg.LinAlgError as e:
+            if np.all(thingy) == 0:
+                K = np.zeros((N, L))
+            else:
+                K = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 1, 0, 0, 0, 0, 0, 0]])
+                # raise e
         posterior_estimate = priori_estimate + K @ (measurement - C @ priori_estimate)
-        estimate_covariance = (np.eye(N) - K) @ priori_estimate_covariance
-        estimate_covariances.append(estimate_covariance)
-        filtered_xs.append(posterior_estimate[0, 0])
-        filtered_ys.append(posterior_estimate[0, 1])
-        dynamics_xs.append(priori_estimate[0, 0])
-        dynamics_ys.append(priori_estimate[0, 1])
+        estimate_covariance = (np.eye(N) - K @ C) @ priori_estimate_covariance
+        estimate_covariances.append(estimate_covariance.copy())
+        filtered_xs.append(posterior_estimate[0].copy())
+        filtered_ys.append(posterior_estimate[1].copy())
+        priori_xs.append(priori_estimate[0].copy())
+        priori_ys.append(priori_estimate[1].copy())
 
-    plt.plot(estimate_covariances[:][0], label='estimate covariance of X')
-    plt.plot(estimate_covariances[:][1], label='estimate covariance of Y')
-    plt.legend()
+    # plt.plot(estimate_covariances[:][0], label='estimate covariance of X')
+    # plt.plot(estimate_covariances[:][1], label='estimate covariance of Y')
+    # plt.legend()
 
     plt.figure()
     plt.plot(filtered_xs, filtered_ys, linestyle='--', label='filtered')
-    plt.plot(dynamics_xs, dynamics_ys, label='priori')
-    plt.plot(encoder_xs, encoder_ys, marker='.', label='encoders')
-    plt.plot(acc_xs, acc_ys, marker='.', label='accel')
-    plt.scatter(0, 0, marker='o', c='red')  # show starting point
+    # plt.plot(priori_xs, priori_ys, linestyle='--', label='priori')
+    plt.plot(encoder_xs, encoder_ys, linestyle='-', label='encoders')
+    # plt.plot(acc_xs, acc_ys, marker='.', label='accel')
+    plt.scatter(0, 0, marker='o', s=50, c='red')  # show starting point
     plt.legend()
     plt.axis("equal")
 

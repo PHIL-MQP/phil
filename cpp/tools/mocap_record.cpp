@@ -30,9 +30,14 @@ int main(int argc, char **argv) {
   // wait for UDP message to start
   phil::UDPClient udp_client("phil-tk1.local");
   uint8_t message = 0;
-  int bytes_received = udp_client.Read(&message, 1);
+  udp_client.Read(&message, 1);
 
-  for (int i=0; i < 300; i++) {
+  struct timeval timeout = {0};
+  timeout.tv_usec = 10;
+  timeout.tv_sec = 0;
+  udp_client.SetTimeout(timeout);
+
+  for (int i=0; i < 1000; i++) {
     uint64_t time = sink.GrabFrame(frame);
     if (time == 0) {
       std::cout << "error: " << sink.GetError() << std::endl;
@@ -43,6 +48,10 @@ int main(int argc, char **argv) {
     time_stamps_file << time << std::endl;
 
     // check for UDP message to stop
+    int bytes_received = udp_client.Read(&message, 1);
+    if (bytes_received > 0) {
+      break;
+    }
   }
 
   time_stamps_file.close();

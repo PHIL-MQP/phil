@@ -25,13 +25,6 @@ UDPClient::UDPClient(const std::string &tk1_hostname) : tk1_hostname(tk1_hostnam
     return;
   }
 
-  struct timeval tv = {};
-  tv.tv_sec = 0;
-  tv.tv_usec = 100000; // 1 second
-  if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-    std::cerr << "setting socket timeout failed : [" << strerror(errno) << "]" << std::endl;
-  }
-
   // look up hostname of the tk1
   struct hostent *hp;
   hp = gethostbyname(tk1_hostname.c_str());
@@ -48,6 +41,12 @@ UDPClient::UDPClient(const std::string &tk1_hostname) : tk1_hostname(tk1_hostnam
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(kPort);
   memcpy((void *) &server_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
+}
+
+void UDPClient::SetTimeout(struct timeval timeout) {
+  if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+    std::cerr << "setting socket timeout failed : [" << strerror(errno) << "]" << std::endl;
+  }
 }
 
 data_t UDPClient::Transaction(data_t data) {
