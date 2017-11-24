@@ -1,14 +1,14 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
 
-# In[2]:
+# In[3]:
 
 data_dir = "../../recorded_sensor_data/mocap_11_17_18-00-00/"
 imu_file = data_dir + "mocap_imu_encoder_data.csv"
@@ -39,7 +39,7 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[3]:
+# In[4]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -50,13 +50,13 @@ def yawdiff(y1, y2):
     return diff;
 
 
-# In[4]:
+# In[5]:
 
 print("Seconds of IMU data recorded: ", imu_data[-1][-1] - imu_data[0][-1])
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 
-# In[5]:
+# In[6]:
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -71,7 +71,7 @@ plt.legend()
 plt.show()
 
 
-# In[6]:
+# In[7]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 9))
 mocap_state = np.zeros(9)
@@ -91,7 +91,7 @@ for mocap_idx in range(1, len(mocap_data)):
     mocap_states[mocap_idx] = mocap_state
 
 
-# In[7]:
+# In[8]:
 
 plt.figure(figsize=(10,10))
 plt.plot(mocap_states[:,2], label='theta')
@@ -100,7 +100,7 @@ plt.title("Unwrapped Angle")
 plt.show()
 
 
-# In[17]:
+# In[9]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r')
@@ -108,7 +108,7 @@ plt.axis("square")
 plt.show()
 
 
-# In[18]:
+# In[10]:
 
 plt.plot(imu_data[:,0], label="IMU x")
 plt.plot(imu_data[:,1], label="IMU y")
@@ -118,7 +118,7 @@ plt.legend()
 plt.show()
 
 
-# In[19]:
+# In[11]:
 
 plt.plot(imu_data[:,3], label="Gyro x")
 plt.plot(imu_data[:,4], label="Gyro y")
@@ -128,7 +128,7 @@ plt.legend()
 plt.show()
 
 
-# In[20]:
+# In[12]:
 
 means = np.mean(imu_data,axis=0)
 print("Average Accel X value:", means[0])
@@ -136,7 +136,7 @@ print("Average Accel Y value:", means[1])
 print("Average Accel Z value:", means[2])
 
 
-# In[21]:
+# In[13]:
 
 yaws = []
 yaw = 0
@@ -149,13 +149,13 @@ for data in imu_data:
     last_t = data[-1]
 
 
-# In[22]:
+# In[14]:
 
 plt.plot(yaws, label="integrated gyro")
 plt.show()
 
 
-# In[23]:
+# In[15]:
 
 def DoubleIntegrateIMU(x_bias, y_bias, x_scale, y_scale):
     x = 0
@@ -184,7 +184,7 @@ def DoubleIntegrateIMU(x_bias, y_bias, x_scale, y_scale):
     return xs, ys, vxs, vys
 
 
-# In[24]:
+# In[16]:
 
 no_bias = DoubleIntegrateIMU(x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
 calib = DoubleIntegrateIMU(x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
@@ -197,7 +197,7 @@ plt.legend()
 plt.show()
 
 
-# In[25]:
+# In[17]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
@@ -208,7 +208,49 @@ plt.legend()
 plt.show()
 
 
-# ## Find X/Y accelerometer scales & biases that make the IMU data closest to the other position data
+# # Camera Stuff
+
+# In[36]:
+
+import cv2
+
+
+# In[40]:
+
+img_dir = "../../recorded_sensor_data/practice_image_processing/"
+vid_file = img_dir + "out.avi"
+vid = cv2.VideoCapture(vid_file)
+img_timestamp_file = img_dir + "frame_time_stamps.csv"
+img_timestamp_reader = csv.reader(open(img_timestamp_file))
+camera_xs = []
+camera_ys = []
+for timestamp in img_timestamp_reader:
+    t = float(timestamp[0])
+    ok, frame = vid.read()
+    
+    # (t, frame)
+    # detect markers in frame
+    
+    # compute position relative to markers
+    camera_x = 0
+    camera_y = 0
+    
+    camera_xs.append(camera_x)
+    camera_ys.append(camera_y)
+    
+    if not ok:
+        break
+
+
+# In[41]:
+
+plt.figure(figsize=(10,10))
+plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')
+plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
+plt.title("Accelerometer versus MoCap")
+plt.legend()
+plt.show()
+
 
 # In[ ]:
 

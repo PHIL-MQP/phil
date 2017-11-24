@@ -34,7 +34,7 @@ int main(int argc, const char **argv) {
   sink.SetSource(camera);
 
   cv::Mat frame;
-  cv::VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 30, cv::Size(320, 240));
+  cv::VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
 
   std::ofstream time_stamps_file;
   time_stamps_file.open("frame_time_stamps.csv");
@@ -68,9 +68,6 @@ int main(int argc, const char **argv) {
 
     video.write(frame);
     time_stamps_file << time << std::endl;
-
-    cv::imshow("test", frame);
-    cv::waitKey(10);
 
     // check for UDP message to stop
     ssize_t bytes_received = udp_server.Read(&message, 1);
