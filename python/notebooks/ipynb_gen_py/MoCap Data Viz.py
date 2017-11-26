@@ -1,14 +1,14 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
 
-# In[3]:
+# In[2]:
 
 data_dir = "../../recorded_sensor_data/mocap_11_17_18-00-00/"
 imu_file = data_dir + "mocap_imu_encoder_data.csv"
@@ -39,7 +39,7 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[4]:
+# In[3]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -50,13 +50,13 @@ def yawdiff(y1, y2):
     return diff;
 
 
-# In[5]:
+# In[4]:
 
 print("Seconds of IMU data recorded: ", imu_data[-1][-1] - imu_data[0][-1])
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 
-# In[6]:
+# In[5]:
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -71,7 +71,7 @@ plt.legend()
 plt.show()
 
 
-# In[7]:
+# In[6]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 9))
 mocap_state = np.zeros(9)
@@ -91,7 +91,7 @@ for mocap_idx in range(1, len(mocap_data)):
     mocap_states[mocap_idx] = mocap_state
 
 
-# In[8]:
+# In[7]:
 
 plt.figure(figsize=(10,10))
 plt.plot(mocap_states[:,2], label='theta')
@@ -100,7 +100,7 @@ plt.title("Unwrapped Angle")
 plt.show()
 
 
-# In[9]:
+# In[8]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r')
@@ -108,7 +108,7 @@ plt.axis("square")
 plt.show()
 
 
-# In[10]:
+# In[9]:
 
 plt.plot(imu_data[:,0], label="IMU x")
 plt.plot(imu_data[:,1], label="IMU y")
@@ -118,7 +118,7 @@ plt.legend()
 plt.show()
 
 
-# In[11]:
+# In[10]:
 
 plt.plot(imu_data[:,3], label="Gyro x")
 plt.plot(imu_data[:,4], label="Gyro y")
@@ -128,7 +128,7 @@ plt.legend()
 plt.show()
 
 
-# In[12]:
+# In[11]:
 
 means = np.mean(imu_data,axis=0)
 print("Average Accel X value:", means[0])
@@ -136,7 +136,7 @@ print("Average Accel Y value:", means[1])
 print("Average Accel Z value:", means[2])
 
 
-# In[13]:
+# In[12]:
 
 yaws = []
 yaw = 0
@@ -149,25 +149,27 @@ for data in imu_data:
     last_t = data[-1]
 
 
-# In[14]:
+# In[13]:
 
 plt.plot(yaws, label="integrated gyro")
 plt.show()
 
 
-# In[15]:
+# ## Double Integrating Accelerometer
 
-def DoubleIntegrateIMU(x_bias, y_bias, x_scale, y_scale):
+# In[14]:
+
+def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_scale):
     x = 0
     y = 0
     vx = 0
     vy = 0
-    last_t = imu_data[0][-1]
+    last_t = accelerometer_data[0][-1]
     xs = []
     ys = []
     vxs = []
     vys = []
-    for data in imu_data:
+    for data in accelerometer_data:
         ax = (data[0] - x_bias) * x_scale
         ay = (data[1] - y_bias) * y_scale
         dt_s = data[-1] - last_t
@@ -184,10 +186,10 @@ def DoubleIntegrateIMU(x_bias, y_bias, x_scale, y_scale):
     return xs, ys, vxs, vys
 
 
-# In[16]:
+# In[15]:
 
-no_bias = DoubleIntegrateIMU(x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
-calib = DoubleIntegrateIMU(x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
+no_bias = DoubleIntegrateAccelerometer(imu_data, x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
+calib = DoubleIntegrateAccelerometer(imu_data, x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
 plt.plot(calib[2], label="calibrated vxs")
@@ -197,7 +199,7 @@ plt.legend()
 plt.show()
 
 
-# In[17]:
+# In[16]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
@@ -208,14 +210,79 @@ plt.legend()
 plt.show()
 
 
+# ## Testing on Turtlebot accelerometer data
+
+# In[77]:
+
+turtlebot_dir = "../../recorded_sensor_data/data_capture_11_02_01-09-00/"
+data_file = turtlebot_dir + "interpolated_data.csv"
+reader = csv.reader(open(data_file, 'r'))
+
+accelerometer_data = []
+encoder_x = 0
+encoder_y = 0
+encoder_theta = 0
+encoder_xs = []
+encoder_ys = []
+alpha = 1.0
+wheel_radius_m = 0.038
+track_width_m = 0.23
+dt_s = 0.1
+
+next(reader)
+for data in reader:
+    wl = float(data[0])
+    wr = float(data[1])
+    ax = float(data[2])
+    ay = float(data[3])
+    t = float(data[-1])
+    
+    accelerometer_data.append([ax, ay, t])
+    B = alpha * track_width_m
+    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
+    dydt, dpdt = T @ np.array([wl, wr])
+    encoder_x = encoder_x + np.cos(encoder_theta) * dydt * dt_s
+    encoder_y = encoder_y + np.sin(encoder_theta) * dydt * dt_s
+    encoder_theta += dpdt * dt_s
+    
+    encoder_xs.append(encoder_x)
+    encoder_ys.append(encoder_y)
+
+means = np.mean(accelerometer_data,axis=0)
+print("Average Accel X value:", means[0])
+print("Average Accel Y value:", means[1])
+
+no_bias = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=0, y_bias=0, x_scale=1, y_scale=1)
+calib = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=-0.0094, y_bias=0.004, x_scale=2, y_scale=2)
+calib2 = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=-0.0094, y_bias=0.0047, x_scale=2, y_scale=2)
+
+plt.plot(no_bias[2], label="no bias vxs")
+plt.plot(no_bias[3], label="no bias vys")
+plt.plot(calib[2], label="calibrated vxs")
+plt.plot(calib[3], label="calibrated vys")
+plt.title("velocities from integrating accelerometer")
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10,10))
+plt.scatter(encoder_xs, encoder_ys, marker='.', s=2, color='r', label='Encoder Data')
+# plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
+plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
+plt.scatter(calib2[0], calib2[1], marker='.', s=1, color='k', label='Accelerometer, with different bias')
+plt.title("Accelerometer versus Encoder (Turtlebot)")
+plt.axis("square")
+plt.legend()
+plt.show()
+
+
 # # Camera Stuff
 
-# In[36]:
+# In[ ]:
 
 import cv2
 
 
-# In[40]:
+# In[ ]:
 
 img_dir = "../../recorded_sensor_data/practice_image_processing/"
 vid_file = img_dir + "out.avi"
@@ -242,7 +309,7 @@ for timestamp in img_timestamp_reader:
         break
 
 
-# In[41]:
+# In[ ]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')

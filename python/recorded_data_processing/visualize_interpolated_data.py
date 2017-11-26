@@ -75,6 +75,7 @@ def main():
         encoder_state[0] = encoder_state[0] + np.cos(encoder_state[2]) * dydt * dt_s
         encoder_state[1] = encoder_state[1] + np.sin(encoder_state[2]) * dydt * dt_s
         encoder_state[2] = encoder_state[2] + dpdt * dt_s
+        print(encoder_state)
         encoder_xs.append(encoder_state[0].copy())
         encoder_ys.append(encoder_state[1].copy())
 
