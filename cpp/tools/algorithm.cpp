@@ -5,32 +5,38 @@
  *      Author: nicol
  */
 #include <unistd.h>
-#include <exception>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 #include <math.h>
-#include <SPI.h>
-#include <HAL/HAL.h>
+#include <eigen3/Eigen/Dense>
+#include <vector>
 
-#include <IMU_Calibration.h>
-std::vector<double> a_xt;
-std::vector<double> a_yt;
-std::vector<double> a_zt;
+
+using namespace std;
+using namespace Eigen;
+
+vector<double> a_xt;
+vector<double> a_yt;
+vector<double> a_zt;
 
 int k=0;
-double b_g = 0;
-double w_s = 0;
-double w_s_bias = 0;
-double m_intf[100][3];
+
+
 double s_init=0;
 double threshold = 0;
 double s_intervals = 0;
 double residuals = 0;
 double params_acc = 0;
-void read_data(){
-	m_intf[0][0] = 0;
+
+//void read_data(){
+//    m_inf[0][0] = 0;
+//}
+//
+
+int main(int argc, char** argv) {
+    
+    
+    return 0;
 }
+
 double mean(std::vector<double> data){
 	double sum = 0.0;
 	for(double a=0; a<data.size(); a++){
@@ -66,8 +72,12 @@ void calibrate_gyro(){
 }
 void IMU_calibration(){
 
-
-	w_s_bias = w_s*b_g;
+    Vector3d b_g;
+    Vector3d w_s;
+    Vector3d w_s_biasfree;
+    MatrixXd m_inf(3, 100);
+    
+	w_s_biasfree = w_s - b_g;
 	s_init = sqrt((variance(a_xt)*variance(a_xt))+(variance(a_yt)*variance(a_yt))+(variance(a_zt)*variance(a_zt)));
 	int j = 0;
 	for(int i = 0; i < k; i++){
@@ -75,25 +85,25 @@ void IMU_calibration(){
 		s_intervals = calc_static_detector();
 		levenberg_marquerd();
 
-		m_intf[i][0] = residuals;
-		m_intf[i][1] = params_acc;
-		m_intf[i][2] = threshold;
-		m_intf[i][3] = s_intervals;
+		m_inf(0, i) = residuals;
+		m_inf(1, i) = params_acc;
+		m_inf(2, i) = threshold;
+		m_inf(3, i) = s_intervals;
 
 
 	}
 	int lowest = 0;
 	for(int i = 0; i < k; i++){
-		if(m_intf[i][0] < m_intf[i+1][0]){
+		if(m_inf(0, i) < m_inf(0, i+1)){
 			lowest = i;
 		}
 	}
 	int index_opt = lowest;//index of minimum residual in m_inf
-	residuals = m_intf[index_opt][0];
-	params_acc = m_intf[index_opt][1];
+	residuals = m_inf(0, index_opt);
+	params_acc = m_inf(1, index_opt);
 
 	double a_0 = 0; //calibrate a_s using params_acc????/
-	w_s = levenberg_marquerd();
+	//w_s = levenberg_marquerd();
 
 }
 
