@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <phil/phil.h>
+#include <SmartDashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 
 namespace phil {
