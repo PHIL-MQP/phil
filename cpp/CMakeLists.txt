@@ -42,6 +42,7 @@ set(NAVX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_
                      ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
 set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include)
 
+# Allows us to build TestRobotProgram
 if (${RIO})
     link_directories(${WPILIB_CPP_DIR}/reflib/linux/athena/shared ${WPILIB_COMMON_DIR}/lib/linux/athena/shared)
 endif ()
@@ -61,12 +62,11 @@ add_subdirectory(tools)
 if (${RIO})
     add_library(phil_rio ${phil_rio_src} ${phil_common_src})
     target_include_directories(phil_rio PRIVATE ${phil_include_dir} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
-    target_link_libraries(phil_rio navx_frc_cpp wpi)
 
     # Test program
     add_executable(TestRobotProgram src/test/TestRobotProgram.cpp)
     target_include_directories(TestRobotProgram PRIVATE ${phil_include_dir} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
-    target_link_libraries(TestRobotProgram wpi phil_rio)
+    target_link_libraries(TestRobotProgram phil_rio navx_frc_cpp wpi ntcore wpiutil)
 
     # install
     install(TARGETS phil_rio DESTINATION ${WPILIB_DIR}/user/cpp/lib)
