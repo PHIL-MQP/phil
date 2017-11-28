@@ -36,7 +36,6 @@ def main():
     N = 9
     L = 6
     M = 2
-    acc_state = np.zeros((N, 1), dtype=np.float32)
     acc_xs = []
     acc_ys = []
     encoder_state = np.zeros((3, 1), dtype=np.float32)  # for computing x/y/theta from encoders to go in z
@@ -48,6 +47,8 @@ def main():
     priori_ys = []
     wls = []
     wrs = []
+    als = []
+    ars = []
     estimate_covariances = []
     posterior_estimate = np.zeros((N, 1), dtype=np.float32)
     W = 0.01  # process variance
@@ -66,6 +67,8 @@ def main():
         # so we compute theoretical acceleration
         al = (wl - wls[-1]) / dt_s
         ar = (wr - wrs[-1]) / dt_s
+        als.append(al)
+        ars.append(ar)
         wls.append(wl)
         wrs.append(wr)
         u = np.array([[al], [ar]], dtype=np.float32)
@@ -75,21 +78,12 @@ def main():
         encoder_state[0] = encoder_state[0] + np.cos(encoder_state[2]) * dydt * dt_s
         encoder_state[1] = encoder_state[1] + np.sin(encoder_state[2]) * dydt * dt_s
         encoder_state[2] = encoder_state[2] + dpdt * dt_s
-        print(encoder_state)
         encoder_xs.append(encoder_state[0].copy())
         encoder_ys.append(encoder_state[1].copy())
 
         # double integrate accelerometer data
         acc_x = float(row[2]) * acc_scale
         acc_y = float(row[3]) * acc_scale
-        acc_state[0] += dt_s * posterior_estimate[3] + 0.5 * pow(dt_s, 2) * acc_x
-        acc_state[1] += dt_s * posterior_estimate[4] + 0.5 * pow(dt_s, 2) * acc_y
-        acc_state[3] += dt_s * acc_x
-        acc_state[4] += dt_s * acc_y
-        acc_state[6] += acc_x
-        acc_state[7] += acc_y
-        acc_xs.append(acc_state[0].copy())
-        acc_ys.append(acc_state[1].copy())
 
         # kalman filter
         A = np.array([[1, 0, 0, dt_s, 0, 0, 0.5 * dt_s * dt_s, 0, 0],
@@ -154,9 +148,9 @@ def main():
         priori_xs.append(priori_estimate[0].copy())
         priori_ys.append(priori_estimate[1].copy())
 
-    # plt.plot(estimate_covariances[:][0], label='estimate covariance of X')
-    # plt.plot(estimate_covariances[:][1], label='estimate covariance of Y')
-    # plt.legend()
+    plt.plot(als, label='als')
+    plt.plot(ars, label='ars')
+    plt.legend()
 
     plt.figure()
     plt.plot(filtered_xs, filtered_ys, linestyle='--', label='filtered')
@@ -167,7 +161,7 @@ def main():
     plt.legend()
     plt.axis("equal")
 
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':

@@ -33,3 +33,11 @@ This library is platform independent, and it's called `phil_common`. The point o
 ## Code for the TK1
 
 The TK1 will have a program running that accumulates the IMU + Encoder data from the RIO/NavX, reads camera images, and any other sources of snesor data. It makes sure all of these have consistent time stamps and manages any synchronization issues. it then passes sensor readings to the common processing code, gets the resulting localization information, and puts that in network tables.
+
+## Building on Windows
+
+First install cmake. You'll also need to download opencv and extract it to somewhere useful (program files) and do `git clone https://github.com/aruco/aruco.git` and install that.
+
+If you want to build the rio libraries, you need to install the WPILIb eclipse plugins and the WPILib toolchain. At this moment in time we are using the Beta3 stuff, so make sure you download the [beta 3 toolchain](http://first.wpi.edu/FRC/roborio/toolchains/FRC-2018-Windows-Toolchain-5.4.msi) and use this url for the plugins: [http://first.wpi.edu/FRC/roborio/beta/eclipse](http://first.wpi.edu/FRC/RoboRIO/beta/eclipse)
+
+If you want to build for your laptop you need a windows compiler, which you can get with Visual Studio. You should run the x64 Native tools command prompt and use `cmake .. -G "Unix Makefiles"`. You need to install `make` and add it to your path
