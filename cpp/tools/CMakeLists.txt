@@ -1,17 +1,19 @@
-add_executable(udp_server udp_server.cpp ${phil_common_src})
-target_include_directories(udp_server PRIVATE ${phil_include_dir})
+if (NOT WIN32)
+    add_executable(udp_server udp_server.cpp ${phil_common_src})
+    target_include_directories(udp_server PRIVATE ${phil_include_dir})
 
-add_executable(udp_client udp_client.cpp ${phil_common_src})
-target_include_directories(udp_client PRIVATE ${phil_include_dir})
+    add_executable(udp_client udp_client.cpp ${phil_common_src})
+    target_include_directories(udp_client PRIVATE ${phil_include_dir})
 
-add_executable(test_udp_trigger_tk1 test_udp_trigger_tk1.cpp ${phil_common_src})
-target_include_directories(test_udp_trigger_tk1 PRIVATE ${phil_include_dir})
-
-add_executable(ntcore_main ntcore_main.cpp)
-target_include_directories(ntcore_main PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR})
-target_link_libraries(ntcore_main wpiutil ntcore)
+    add_executable(test_udp_trigger_tk1 test_udp_trigger_tk1.cpp ${phil_common_src})
+    target_include_directories(test_udp_trigger_tk1 PRIVATE ${phil_include_dir})
+endif ()
 
 if (NOT ${RIO})
+    add_executable(ntcore_main ntcore_main.cpp)
+    target_include_directories(ntcore_main PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR})
+    target_link_libraries(ntcore_main ntcore)
+
     add_executable(imu_calibrate csvReader.cpp)
 endif ()
 
