@@ -5,13 +5,22 @@
  *      Author: nicol
  */
 #include <unistd.h>
+#include <iostream>
 #include <math.h>
 #include <eigen3/Eigen/Dense>
 #include <vector>
-
+#include "csvReader.h"
 
 using namespace std;
 using namespace Eigen;
+
+//definations, will go to header file later
+Matrix4f get_angular_velocity(int t);
+Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z);
+Vector3f integrate_angular_velocity(int start, int end, int dt);
+
+//
+
 
 vector<double> a_xt;
 vector<double> a_yt;
@@ -33,7 +42,10 @@ double params_acc = 0;
 
 int main(int argc, char** argv) {
  
-    
+    Vector3f integration = integrate_angular_velocity(2, 8001, 10);
+    cout << integration(0) << endl;
+    cout << integration(1) << endl;
+    cout << integration(2) << endl;
     return 0;
 }
 
@@ -124,9 +136,28 @@ Matrix4f get_angular_velocity(int t) {
     return angular_velocity_2_quaternion(w_x, w_y, w_z);
 }
 
+/**
+	@int start - the start index of the csv file row number
+	@int end - the end index of the 
+	@int dt - time in unit of ms
+**/
+Vector3f integrate_angular_velocity(int start, int end, int dt) {
+	vector < vector<float> > data = getData(imu_data_filename, start, end);
+
+	Vector3f res;
+
+	for (int i = 0; i < data.size(); i++) {
+		res(0) += data[i][3] * dt;
+		res(1) += data[i][4] * dt;
+		res(2) += data[i][5] * dt;
+	}
+
+	return res;
+}
+
 
 Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z) {
-    Matrix4fn quaternion;
+    Matrix4f quaternion;
     //need to implement ewwww
     return quaternion;
 }

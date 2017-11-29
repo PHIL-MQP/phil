@@ -10,7 +10,9 @@
 
 using namespace std;
 
-string imu_data_filename = "../../recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv";
+extern string imu_data_filename;
+
+vector<float> getData(string file_name, int row_number);
 
 vector< vector<float> > getData(string fileName, int startRow, int endRow);
 
