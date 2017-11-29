@@ -32,7 +32,7 @@ double params_acc = 0;
 //
 
 int main(int argc, char** argv) {
-    
+ 
     
     return 0;
 }
@@ -72,10 +72,10 @@ void calibrate_gyro(){
 }
 void IMU_calibration(){
 
-    Vector3d b_g;
-    Vector3d w_s;
-    Vector3d w_s_biasfree;
-    MatrixXd m_inf(3, 100);
+    Vector3f b_g;
+    Vector3f w_s;
+    Vector3f w_s_biasfree;
+    MatrixXf m_inf(3, 100);
     
 	w_s_biasfree = w_s - b_g;
 	s_init = sqrt((variance(a_xt)*variance(a_xt))+(variance(a_yt)*variance(a_yt))+(variance(a_zt)*variance(a_zt)));
@@ -104,9 +104,32 @@ void IMU_calibration(){
 
 	double a_0 = 0; //calibrate a_s using params_acc????/
 	//w_s = levenberg_marquerd();
-
 }
 
+Matrix4f rk4_method(int t_k, int dt, Matrix4f q_k) {
+    Matrix4f k1, k2, k3, k4;
+    
+    k1 = 0.5 * get_angular_velocity(t_k) * q_k;
+    
+    
+    
+    return k1;
+}
+
+
+Matrix4f get_angular_velocity(int t) {
+    float w_x, w_y, w_z;
+    //need to implement the algorithm to read data from the csv
+    
+    return angular_velocity_2_quaternion(w_x, w_y, w_z);
+}
+
+
+Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z) {
+    Matrix4fn quaternion;
+    //need to implement ewwww
+    return quaternion;
+}
 
 
 
