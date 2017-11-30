@@ -21,6 +21,8 @@ struct data_t {
   double x;
   double y;
   double z;
+  double left_input;
+  double right_input;
   double left_encoder_rate;
   double right_encoder_rate;
   double left_motor;
