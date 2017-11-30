@@ -58,7 +58,6 @@ void Robot::TeleopInit() {
 
   log << "accel_x,accel_y,accel_z,"
       << "gyro_x,gyro_y,gyro_z,"
-      << "mag_x,mag_y,mag_z,"
       << "x,y,z,"
       << "left_encoder_rate,right_encoder_rate,"
       << "fpga time,navx time"
@@ -117,13 +116,16 @@ void Robot::TeleopPeriodic() {
   sample.left_motor = drive_base->left_motor->Get();
   sample.right_motor = drive_base->right_motor->GetInverted();
 
-  std::cout << std::setw(6)
+  std::cout
+	  << "["
+	  << std::setw(6)
       << sample.raw_accel_x << "," << sample.raw_accel_y << "," << sample.raw_accel_z
       << "," << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z
       << "," << sample.x << "," << sample.y << "," << sample.z
       << "," << sample.left_encoder_rate << "," << sample.right_encoder_rate
       << "," << sample.fpga_t
       << "," << sample.navx_t
+	  << "]"
       << std::endl;
 
   log << std::setw(6)
