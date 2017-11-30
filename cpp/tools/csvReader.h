@@ -10,6 +10,9 @@
 
 using namespace std;
 
+extern string imu_data_filename;
+
+vector<float> getData(string file_name, int row_number);
 
 vector< vector<float> > getData(string fileName, int startRow, int endRow);
 

@@ -13,7 +13,6 @@ public:
 	void SetSpeed(double left_speed, double right_speed);
 	void Init();
 
-private:
 	frc::SpeedController *left_motor;
 	frc::SpeedController *right_motor;
 };

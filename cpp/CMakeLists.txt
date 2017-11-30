@@ -8,7 +8,7 @@ if (${RIO})
     set(CMAKE_AR "arm-frc-linux-gnueabi-ar" CACHE FILEPATH "Archiver" FORCE)
     set(CMAKE_RANLIB "arm-frc-linux-gnueabi-ranlib" CACHE FILEPATH "Ranlib" FORCE)
 
-    if (WIN32)
+    if (${CMAKE_HOST_WIN32})
         include_directories("C:/frc/usr/include")
     endif ()
 elseif (${TK1})
@@ -26,8 +26,9 @@ endif ()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -std=c++11")
 
-if (WIN32)
+if (${CMAKE_HOST_WIN32})
     set(HOME $ENV{HOMEPATH})
+    STRING(REGEX REPLACE "\\\\" "/" HOME ${HOME})
 else ()
     set(HOME $ENV{HOME})
 endif ()
@@ -41,6 +42,7 @@ set(CSCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/cscore/src/main/native/incl
 set(NAVX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/include
                      ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
 set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include)
+
 
 # Allows us to build TestRobotProgram
 if (${RIO})

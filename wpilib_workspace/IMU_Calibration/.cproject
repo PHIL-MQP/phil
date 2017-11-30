@@ -46,7 +46,6 @@
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.1895838080" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
 								<option id="gnu.cpp.link.option.libs.1363675797" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="navx_frc_cpp"/>
-									<listOptionValue builtIn="false" value="phil"/>
 									<listOptionValue builtIn="false" value="wpi"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.1566479969" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
@@ -54,7 +53,7 @@
 									<listOptionValue builtIn="false" value="&quot;${WPILIB}/cpp/current/reflib/linux/athena/shared&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${WPILIB}/common/current/lib/linux/athena/shared&quot;"/>
 								</option>
-								<option id="gnu.cpp.link.option.flags.675338432" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-Wl,-rpath,/opt/GenICam_v3_0_NI/bin/Linux32_ARM" valueType="string"/>
+								<option id="gnu.cpp.link.option.flags.675338432" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-pthread -Wl,-rpath,/opt/GenICam_v3_0_NI/bin/Linux32_ARM,-rpath,/usr/local/frc/lib" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.132949138" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
