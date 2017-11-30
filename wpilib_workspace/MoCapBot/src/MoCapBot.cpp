@@ -60,6 +60,7 @@ void Robot::TeleopInit() {
       << "gyro_x,gyro_y,gyro_z,"
       << "x,y,z,"
       << "left_encoder_rate,right_encoder_rate,"
+      << "left_input,right_input,"
       << "fpga time,navx time"
       << std::endl;
 
@@ -111,6 +112,8 @@ void Robot::TeleopPeriodic() {
   sample.z = ahrs->GetDisplacementZ();
   sample.left_encoder_rate = left_encoder->GetRate();
   sample.right_encoder_rate = right_encoder->GetRate();
+  sample.left_input = gamepad->GetRawAxis(1);
+  sample.right_input = -gamepad->GetRawAxis(5);
   sample.fpga_t = frc::Timer::GetFPGATimestamp();
   sample.navx_t = ahrs->GetLastSensorTimestamp();
   sample.left_motor = drive_base->left_motor->Get();
@@ -123,6 +126,7 @@ void Robot::TeleopPeriodic() {
       << "," << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z
       << "," << sample.x << "," << sample.y << "," << sample.z
       << "," << sample.left_encoder_rate << "," << sample.right_encoder_rate
+	  << "," << sample.left_input << "," << sample.right_input
       << "," << sample.fpga_t
       << "," << sample.navx_t
 	  << "]"
@@ -133,6 +137,7 @@ void Robot::TeleopPeriodic() {
       << "," << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z
       << "," << sample.x << "," << sample.y << "," << sample.z
       << "," << sample.left_encoder_rate << "," << sample.right_encoder_rate
+	  << "," << sample.left_input << "," << sample.right_input
       << "," << sample.fpga_t
       << "," << sample.navx_t
       << std::endl;
