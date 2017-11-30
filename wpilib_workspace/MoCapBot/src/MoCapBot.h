@@ -5,6 +5,7 @@
 #include <Subsystems/DriveBase.h>
 #include <IterativeRobot.h>
 #include <Joystick.h>
+#include <AnalogOutput.h>
 
 // An important question is what data from the NavX should we bag? (which functions do we call)
 struct data_t {
@@ -17,9 +18,15 @@ struct data_t {
   double raw_mag_x;
   double raw_mag_y;
   double raw_mag_z;
+  double x;
+  double y;
+  double z;
   double left_encoder_rate;
   double right_encoder_rate;
-  double t;
+  double left_motor;
+  double right_motor;
+  double fpga_t;
+  long navx_t;
 };
 
 class Robot: public frc::IterativeRobot {
@@ -35,16 +42,11 @@ public:
 
   void TeleopPeriodic() override;
 
-  static constexpr size_t buff_size = 500;
-  data_t buffer[buff_size];
-  size_t buffer_idx = 0;
   bool running = false;
   std::ofstream log;
 
   static frc::Joystick *gamepad;
   static DriveBase *drive_base;
-  static frc::SPI *tk1_spi;
-  static frc::I2C *tk1_i2c;
 	static AHRS *ahrs;
 	static frc::Encoder *left_encoder;
 	static frc::Encoder *right_encoder;

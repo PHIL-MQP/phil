@@ -9,7 +9,7 @@ target_include_directories(test_udp_trigger_tk1 PRIVATE ${phil_include_dir})
 
 add_executable(ntcore_main ntcore_main.cpp)
 target_include_directories(ntcore_main PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR})
-target_link_libraries(ntcore_main ntcore)
+target_link_libraries(ntcore_main wpiutil ntcore)
 
 if (NOT ${RIO})
     add_executable(imu_calibrate csvReader.cpp)
