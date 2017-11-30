@@ -34,11 +34,18 @@ int main(int argc, const char **argv) {
   cs::CvSink sink{"sink"};
   sink.SetSource(camera);
 
+  time_t now = time(0);
+  tm *ltm = localtime(&now);
+  char video_filename[50];
+  char timestamp_filename[50];
+  strftime(video_filename, 50, "out_%m_%d_%H-%M-%S.avi", ltm);
+  strftime(timestamp_filename, 50, "timestamps_%m_%d_%H-%M-%S.csv", ltm);
+
   cv::Mat frame;
-  cv::VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
+  cv::VideoWriter video(video_filename, CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
 
   std::ofstream time_stamps_file;
-  time_stamps_file.open("frame_time_stamps.csv");
+  time_stamps_file.open(timestamp_filename);
 
   if (!time_stamps_file.good()) {
     std::cerr << "Time stamp file failed to open: " << strerror(errno) << std::endl;
