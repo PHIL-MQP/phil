@@ -1,4 +1,5 @@
 #include <iostream>
+#include <errno.h>
 #include <cstring>
 #include <fstream>
 #include <cscore.h>
@@ -54,6 +55,8 @@ int main(int argc, const char **argv) {
   uint8_t message = 0;
   udp_server.Read(&message, 1);
 
+  std::cout << "Starting recording" << std::endl;
+
   struct timeval timeout = {0};
   timeout.tv_usec = 10;
   timeout.tv_sec = 0;
@@ -76,6 +79,7 @@ int main(int argc, const char **argv) {
     }
   }
 
+  std::cout << "Stopping recording" << std::endl;
   time_stamps_file.close();
 
   return EXIT_SUCCESS;
