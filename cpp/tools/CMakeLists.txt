@@ -14,7 +14,7 @@ if (NOT ${RIO})
     target_include_directories(ntcore_main PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR})
     target_link_libraries(ntcore_main ntcore)
 
-    add_executable(imu_calibrate csvReader.cpp)
+#    add_executable(imu_calibrate csvReader.cpp)
 endif ()
 
 # TK specific because opencv libraries are different there
