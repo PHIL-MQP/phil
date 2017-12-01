@@ -4,10 +4,10 @@
 #include <opencv2/core/mat.hpp>
 #include <networktables/NetworkTableInstance.h>
 #include "phil/common/udp.h"
-#include "phil/phil.h"
+#include "phil/common/common.h"
 
 int main(int argc, char **argv) {
-  std::cout << "tk1 main program..." << std::endl;
+  std::cout << "main main program..." << std::endl;
 
   // camera server
   cs::UsbCamera camera{"usbcam", 0};
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&data), phil::data_t_size);
 
     if (bytes_received != phil::data_t_size) {
-      std::cerr << "bytes does not match data_t_sze: [" << strerror(errno) << "]" << std::endl;
+      std::cerr << "bytes does not match data_t_size: [" << strerror(errno) << "]" << std::endl;
       continue;
     }
 
