@@ -1,4 +1,4 @@
-if ((NOT WIN32) AND (NOT CMAKE_HOST_WIN32))
+if (NOT WIN32)
     add_executable(udp_server udp_server.cpp ${phil_common_src})
     target_include_directories(udp_server PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 
