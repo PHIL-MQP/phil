@@ -2,7 +2,9 @@
 #include <cstring>
 #include <cscore.h>
 #include <opencv2/core/mat.hpp>
-#include "../../include/phil/common/udp.h"
+#include <networktables/NetworkTableInstance.h>
+#include "phil/common/udp.h"
+#include "phil/phil.h"
 
 int main(int argc, char **argv) {
   std::cout << "tk1 main program..." << std::endl;
@@ -18,6 +20,11 @@ int main(int argc, char **argv) {
   // comms with the roborio
   phil::UDPServer server;
 
+  // network tables
+  auto inst = nt::NetworkTableInstance::GetDefault();
+  std::shared_ptr<NetworkTable> table;
+  table = inst.GetTable(phil::kTableName);
+
   cv::Mat frame;
   bool done = false;
   while (!done) {
@@ -32,7 +39,13 @@ int main(int argc, char **argv) {
 
     // grab latest camera frame
     uint64_t time = sink.GrabFrame(frame);
+
+    // do localization
+
+
+    std::vector<double> pose = {0, 0, 0};
+    table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>(pose));
   }
 
-  return 0;
+  return -1;
 }
