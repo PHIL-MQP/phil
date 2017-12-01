@@ -78,7 +78,7 @@ endif ()
 if (${TK1})
     # build the executable that runs on the TK1
     add_executable(phil_tk1 ${tk1_src})
-    target_include_directories(phil_tk1 PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
+    target_include_directories(phil_tk1 PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
     target_link_libraries(phil_tk1 ntcore cscore wpiutil)
 
     # custom target to scp the program to the TK1 and run it?

@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <WPILib.h>
-#include <phil/phil.h>
+#include <phil/phil_rio/phil_rio.h>
 
 class Robot : public frc::IterativeRobot {
   void RobotInit() override {

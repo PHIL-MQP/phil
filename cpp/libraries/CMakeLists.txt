@@ -13,7 +13,10 @@ if (NOT ${RIO})
 
     file(GLOB cscore_native_src cscore/src/main/native/cpp/*.cpp)
     add_library(cscore ${cscore_native_src})
-    target_link_libraries(cscore ntcore wpiutil ${OpenCV_LIBS})
+    target_link_libraries(cscore ntcore wpiutil
+            opencv_core
+            opencv_imgproc
+            opencv_highgui)
     target_include_directories(cscore PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
 endif ()
 

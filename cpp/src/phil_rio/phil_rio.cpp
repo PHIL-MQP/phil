@@ -1,7 +1,7 @@
 #include <array>
 #include <iostream>
 
-#include <phil/phil.h>
+#include <phil/phil_rio/phil_rio.h>
 #include <SmartDashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
 
