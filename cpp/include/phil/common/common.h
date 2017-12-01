@@ -21,4 +21,6 @@ struct pose_t {
   double theta;
 };
 
+pose_t compute_pose();
+
 }

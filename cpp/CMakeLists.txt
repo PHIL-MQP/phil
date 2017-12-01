@@ -68,8 +68,9 @@ add_subdirectory(libraries)
 
 set(phil_include_dir ${CMAKE_SOURCE_DIR}/include)
 file(GLOB phil_common_src src/phil_common/*.cpp)
-file(GLOB phil_rio_src src/phil_rio/*.cpp src/localization/*.cpp)
-file(GLOB main_src src/main/*.cpp src/localization/*.cpp)
+file(GLOB localization_src src/localization/*.cpp)
+file(GLOB phil_rio_src src/phil_rio/*.cpp)
+file(GLOB main_src src/main/*.cpp)
 
 add_subdirectory(tools)
 
