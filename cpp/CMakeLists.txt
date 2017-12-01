@@ -24,6 +24,20 @@ if (NOT ${RIO})
     find_package(aruco REQUIRED)
 endif ()
 
+if (${TK1})
+    set(phil_opencv_libs
+            opencv_core
+            opencv_imgproc
+            opencv_highgui)
+elseif (NOT ${RIO})
+    set(phil_opencv_libs
+            opencv_core
+            opencv_imgproc
+            opencv_videoio
+            opencv_imgcodecs
+            opencv_highgui)
+endif ()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -std=c++11")
 
 if (${CMAKE_HOST_WIN32})
@@ -40,7 +54,7 @@ set(WPIUTIL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/wpiutil/src/main/native/in
 set(NTCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/ntcore/src/main/native/include)
 set(CSCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/cscore/src/main/native/include)
 set(NAVX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/include
-                     ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
+        ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
 set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include)
 
 
@@ -55,7 +69,7 @@ add_subdirectory(libraries)
 set(phil_include_dir ${CMAKE_SOURCE_DIR}/include)
 file(GLOB phil_common_src src/phil_common/*.cpp)
 file(GLOB phil_rio_src src/phil_rio/*.cpp)
-file(GLOB tk1_src src/tk1/*.cpp)
+file(GLOB main_src src/main/*.cpp)
 
 add_subdirectory(tools)
 
@@ -75,11 +89,10 @@ if (${RIO})
     install(DIRECTORY include/phil DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
 endif ()
 
-if (${TK1})
-    # build the executable that runs on the TK1
-    add_executable(phil_tk1 ${tk1_src})
-    target_include_directories(phil_tk1 PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
-    target_link_libraries(phil_tk1 ntcore cscore wpiutil)
+if (NOT ${RIO})
+    add_executable(phil_main ${main_src} ${phil_common_src})
+    target_include_directories(phil_main PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
+    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs})
 
     # custom target to scp the program to the TK1 and run it?
 endif ()

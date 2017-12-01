@@ -15,7 +15,6 @@ void show_help();
 using namespace phil;
 
 int main(int argc, char *argv[]) {
-
   if (argc != 2) {
     show_help();
     return EXIT_FAILURE;
@@ -96,6 +95,6 @@ void show_help() {
   std::cout << "USAGE: ./udp_client hostname"
             << std::endl
             << std::endl
-            << "Example: ./udp_client phil-tk1.local"
+            << "Example: ./udp_client phil-main.local"
             << std::endl;
 }

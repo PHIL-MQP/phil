@@ -14,7 +14,9 @@ const llvm::StringRef kTrackWidth("track_width");
 struct pose_t {
   double x;
   double y;
-  double phi;
+  double theta;
 };
+
+pose_t compute_pose();
 
 }

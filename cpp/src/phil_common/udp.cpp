@@ -56,7 +56,7 @@ UDPClient::UDPClient(const std::string &server_hostname) : server_hostname(serve
     return;
   }
 
-  // look up hostname of the tk1
+  // look up hostname of the main
   struct hostent *hp;
   hp = gethostbyname(server_hostname.c_str());
   if (hp == nullptr) {

@@ -18,7 +18,7 @@ struct data_t {
 };
 
 inline void print_data_t(data_t d) {
-  printf("rio:%f, tk1:%f\n", d.rio_send_time_s, d.tk1_recv_time_s);
+  printf("rio:%f, main:%f\n", d.rio_send_time_s, d.tk1_recv_time_s);
 };
 
 inline double timeval_to_sec(struct timeval tv) {

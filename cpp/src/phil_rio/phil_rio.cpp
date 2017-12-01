@@ -9,9 +9,9 @@ namespace phil {
 
 Phil *Phil::instance = nullptr;
 
-// TODO: don't hard code tk1 hostname
+// TODO: don't hard code main hostname
 Phil::Phil() :
-    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1.local"), tk1_time_offset(0) {
+    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-main.local"), tk1_time_offset(0) {
   auto inst = nt::NetworkTableInstance::GetDefault();
   table = inst.GetTable(phil::kTableName);
 
@@ -50,10 +50,10 @@ void Phil::ReadSensorsAndProcessLocally() {
   double track_width = frc::SmartDashboard::GetNumber(phil::kTrackWidth, -1);
 
   std::cout << "do math here..." << std::endl;
+  pose_t pose = phil::compute_pose();
 
   // post to network tables
-  std::vector<double> pose = {0, 0, 0};
-  table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>(pose));
+  table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
 }
 
 void Phil::ReadSensorsAndProcessOnTK1() {
@@ -83,7 +83,7 @@ phil::pose_t Phil::GetPosition() {
 
   pose.x = pose_ref.at(0);
   pose.y = pose_ref.at(1);
-  pose.phi = pose_ref.at(2);
+  pose.theta = pose_ref.at(2);
 
   return pose;
 }
