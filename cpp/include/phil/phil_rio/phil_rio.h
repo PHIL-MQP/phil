@@ -7,6 +7,7 @@
 
 #include <AHRS.h>
 #include <Encoder.h>
+#include <SpeedController.h>
 
 #include <phil/common/udp.h>
 #include <phil/common/common.h>
@@ -21,6 +22,8 @@ class Phil {
 
   frc::Encoder *left_encoder;
   frc::Encoder *right_encoder;
+  frc::SpeedController *left_motor;
+  frc::SpeedController *right_motor;
   AHRS *ahrs;
   std::shared_ptr<NetworkTable> table;
 

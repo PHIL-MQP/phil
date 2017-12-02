@@ -4,7 +4,7 @@
 #include <opencv2/core/mat.hpp>
 #include <networktables/NetworkTableInstance.h>
 #include "phil/common/udp.h"
-#include "phil/common/common.h"
+#include "phil/localization/localization.h"
 
 int main(int argc, char **argv) {
   std::cout << "main main program..." << std::endl;
@@ -29,8 +29,8 @@ int main(int argc, char **argv) {
   bool done = false;
   while (!done) {
     // read some sensor data from roborio
-    phil::data_t data = {0};
-    ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&data), phil::data_t_size);
+    phil::data_t rio_data = {0};
+    ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
 
     if (bytes_received != phil::data_t_size) {
       std::cerr << "bytes does not match data_t_size: [" << strerror(errno) << "]" << std::endl;
@@ -41,10 +41,10 @@ int main(int argc, char **argv) {
     uint64_t time = sink.GrabFrame(frame);
 
     // do localization
+    double time_s = time / 1e7; // convert 100's of nanoseconds to seconds
+    phil::pose_t pose = phil::compute_pose(time_s, frame, rio_data);
 
-
-    std::vector<double> pose = {0, 0, 0};
-    table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>(pose));
+    table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
   }
 
   return -1;
