@@ -157,7 +157,7 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[14]:
+# In[25]:
 
 def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_scale):
     x = 0
@@ -169,6 +169,8 @@ def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_
     ys = []
     vxs = []
     vys = []
+    axs = []
+    ays = []
     for data in accelerometer_data:
         ax = (data[0] - x_bias) * x_scale
         ay = (data[1] - y_bias) * y_scale
@@ -178,15 +180,17 @@ def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_
         x += vx * dt_s + 0.5 * ax * dt_s ** 2
         y += vy * dt_s + 0.5 * ay * dt_s ** 2
         last_t = data[-1]
+        axs.append(ax)
+        ays.append(ay)
         vxs.append(vx)
         vys.append(vy)
         xs.append(x)
         ys.append(y)
     
-    return xs, ys, vxs, vys
+    return xs, ys, vxs, vys, axs, ays
 
 
-# In[15]:
+# In[26]:
 
 no_bias = DoubleIntegrateAccelerometer(imu_data, x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
 calib = DoubleIntegrateAccelerometer(imu_data, x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
@@ -199,7 +203,7 @@ plt.legend()
 plt.show()
 
 
-# In[16]:
+# In[27]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
@@ -212,7 +216,7 @@ plt.show()
 
 # ## Testing on Turtlebot accelerometer data
 
-# In[77]:
+# In[29]:
 
 turtlebot_dir = "../../recorded_sensor_data/data_capture_11_02_01-09-00/"
 data_file = turtlebot_dir + "interpolated_data.csv"
@@ -254,7 +258,16 @@ print("Average Accel Y value:", means[1])
 
 no_bias = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=0, y_bias=0, x_scale=1, y_scale=1)
 calib = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=-0.0094, y_bias=0.004, x_scale=2, y_scale=2)
-calib2 = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=-0.0094, y_bias=0.0047, x_scale=2, y_scale=2)
+calib2 = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=means[0], y_bias=means[1], x_scale=2, y_scale=2)
+calib3 = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=-0.0094, y_bias=0.0047, x_scale=2, y_scale=2)
+
+plt.plot(no_bias[4], label="no bias axs")
+plt.plot(no_bias[5], label="no bias ays")
+plt.plot(calib[4], label="calibrated axs")
+plt.plot(calib[5], label="calibrated ays")
+plt.title("Accelerations")
+plt.legend()
+plt.show()
 
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
@@ -269,6 +282,7 @@ plt.scatter(encoder_xs, encoder_ys, marker='.', s=2, color='r', label='Encoder D
 # plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
 plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
 plt.scatter(calib2[0], calib2[1], marker='.', s=1, color='k', label='Accelerometer, with different bias')
+plt.scatter(calib3[0], calib3[1], marker='.', s=1, color='b', label='Accelerometer, with different bias')
 plt.title("Accelerometer versus Encoder (Turtlebot)")
 plt.axis("square")
 plt.legend()
@@ -277,12 +291,12 @@ plt.show()
 
 # # Camera Stuff
 
-# In[ ]:
+# In[18]:
 
 import cv2
 
 
-# In[ ]:
+# In[19]:
 
 img_dir = "../../recorded_sensor_data/practice_image_processing/"
 vid_file = img_dir + "out.avi"
@@ -309,7 +323,7 @@ for timestamp in img_timestamp_reader:
         break
 
 
-# In[ ]:
+# In[20]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')
@@ -317,9 +331,4 @@ plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', la
 plt.title("Accelerometer versus MoCap")
 plt.legend()
 plt.show()
-
-
-# In[ ]:
-
-
 

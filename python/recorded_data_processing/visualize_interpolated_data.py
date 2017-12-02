@@ -53,9 +53,9 @@ def main():
     posterior_estimate = np.zeros((N, 1), dtype=np.float32)
     W = 0.01  # process variance
     # do the Q matrix thingy
-    process_covariance = np.diag([.01, .01, .01, .01, .01, .01, .01, .01, .01])
-    measurement_variance = np.zeros((L, L))
-    estimate_covariance = np.zeros((N, N))
+    process_covariance = np.eye(N) * 1e-3
+    measurement_variance = np.eye(L) * 1e-3
+    estimate_covariance = np.eye(N) * 1e-3
     next(reader)  # skip header
     first_row = next(reader)
     wls.append(float(first_row[0]))
@@ -148,21 +148,8 @@ def main():
         controls = B @ u
         priori_estimate = dynamics + controls
         priori_estimate_covariance = A @ estimate_covariance @ A.T + process_covariance
-        thingy = C @ estimate_covariance @ C.T + measurement_variance
-        try:
-            K = np.linalg.solve(thingy.T, (estimate_covariance @ C.T).T).T
-            # print("not fuck")
-        except np.linalg.LinAlgError as e:
-            # print("fuck")
-            # print(thingy.T)
-            # raise e
-            if np.all(thingy) == 0:
-                # print(thingy)
-                K = np.zeros((N, L))
-            else:
-                raise e
+        K = np.linalg.solve((C @ estimate_covariance @ C.T + measurement_variance).T, (estimate_covariance @ C.T).T).T
 
-        K = just_acc
         posterior_estimate = priori_estimate + K @ (measurement - C @ priori_estimate)
         estimate_covariance = (np.eye(N) - K @ C) @ priori_estimate_covariance
         estimate_covariances.append(estimate_covariance.copy())

@@ -11882,9 +11882,9 @@ $$
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="General-matrix-dimensions-for-multi-sensor-multi-state-stuffs">General matrix dimensions for multi-sensor multi-state stuffs<a class="anchor-link" href="#General-matrix-dimensions-for-multi-sensor-multi-state-stuffs">&#182;</a></h2><p>N = number of state variables
-M = number of control variables
-L = number of measurements from all sensors</p>
+<h2 id="General-matrix-dimensions-for-multi-sensor-multi-state-stuffs">General matrix dimensions for multi-sensor multi-state stuffs<a class="anchor-link" href="#General-matrix-dimensions-for-multi-sensor-multi-state-stuffs">&#182;</a></h2><p>N = number of state variables</p>
+<p>M = number of control variables</p>
+<p>L = number of measurements from all sensors</p>
 <table>
 <thead><tr>
 <th>matrix</th>
@@ -11922,6 +11922,11 @@ L = number of measurements from all sensors</p>
 <td>x</td>
 <td>priori/posterior_estimate</td>
 <td>Nx1</td>
+</tr>
+<tr>
+<td>u</td>
+<td>control input</td>
+<td>Mx1</td>
 </tr>
 <tr>
 <td>P</td>

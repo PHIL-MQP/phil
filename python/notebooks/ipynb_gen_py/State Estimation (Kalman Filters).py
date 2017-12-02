@@ -111,8 +111,11 @@
 # ## General matrix dimensions for multi-sensor multi-state stuffs
 # 
 # N = number of state variables
+# 
 # M = number of control variables
+# 
 # L = number of measurements from all sensors
+# 
 # 
 # |matrix|variable name|size|
 # |------|-----------|----|
@@ -122,6 +125,7 @@
 # | K | K | NxL |
 # | z | measurement | Lx1 |
 # | x | priori/posterior_estimate | Nx1 |
+# | u | control input | Mx1 |
 # | P | estimate_covariance | NxN |
 # | Q | process_covariance  | NxN |
 # | R | measurement_covariance | LxL |
