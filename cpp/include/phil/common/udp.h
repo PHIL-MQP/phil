@@ -11,8 +11,26 @@ namespace phil {
 constexpr uint16_t kPort = 6789;
 
 struct data_t {
+  double raw_accel_x;
+  double raw_accel_y;
+  double raw_accel_z;
+  double raw_gyro_x;
+  double raw_gyro_y;
+  double raw_gyro_z;
+  double raw_mag_x;
+  double raw_mag_y;
+  double raw_mag_z;
+  double navx_x;
+  double navx_y;
+  double navx_z;
+  double left_input;
+  double right_input;
   double left_encoder_rate;
   double right_encoder_rate;
+  double left_motor;
+  double right_motor;
+  double fpga_t;
+  long navx_t;
   double rio_send_time_s;
   double tk1_recv_time_s;
 };
