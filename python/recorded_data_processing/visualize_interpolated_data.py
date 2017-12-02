@@ -62,11 +62,11 @@ def main():
     wrs.append(float(first_row[1]))
 
     just_gyro = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 1, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0]]).T
+                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                          [0, 0, 0, 0, 0, 1, 0, 0, 0],
+                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                          [0, 0, 0, 0, 0, 0, 0, 0, 0]]).T
     just_acc = np.array([[0, 0, 0, 0, 0, 0, 1, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 1, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -89,9 +89,11 @@ def main():
         ar = (wr - wrs[-1]) / dt_s
         wls.append(wl)
         wrs.append(wr)
-        u = np.array([[al], [ar]], dtype=np.float32)
-        B = alpha * track_width_m
-        T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
+        linear_al = al * wheel_radius_m
+        linear_ar = ar * wheel_radius_m
+        u = np.array([[linear_al], [linear_ar]], dtype=np.float32)
+        T = wheel_radius_m / (alpha * track_width_m) * np.array(
+            [[(alpha * track_width_m) / 2.0, (alpha * track_width_m) / 2.0], [-1, 1]])
         dydt, dpdt = T @ np.array([wl, wr])
         encoder_state[0] = encoder_state[0] + np.cos(encoder_state[2]) * dydt * dt_s
         encoder_state[1] = encoder_state[1] + np.sin(encoder_state[2]) * dydt * dt_s
@@ -144,7 +146,7 @@ def main():
 
         dynamics = A @ posterior_estimate
         controls = B @ u
-        priori_estimate = dynamics # + controls
+        priori_estimate = dynamics + controls
         priori_estimate_covariance = A @ estimate_covariance @ A.T + process_covariance
         thingy = C @ estimate_covariance @ C.T + measurement_variance
         try:
