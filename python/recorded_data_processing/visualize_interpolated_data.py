@@ -12,6 +12,8 @@ import os
 
 
 def main():
+    np.set_printoptions(suppress=True)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("data_directory", help="directory with data")
 
@@ -30,14 +32,12 @@ def main():
     alpha = 1.0
     wheel_radius_m = 0.038
     track_width_m = 0.23
-    acc_scale = 1
+    acc_scale = 2  # just a guess
     dt_s = 0.1  # the rate of the interpolation
 
     N = 9
     L = 6
     M = 2
-    acc_xs = []
-    acc_ys = []
     encoder_state = np.zeros((3, 1), dtype=np.float32)  # for computing x/y/theta from encoders to go in z
     encoder_xs = []
     encoder_ys = []
@@ -60,6 +60,26 @@ def main():
     first_row = next(reader)
     wls.append(float(first_row[0]))
     wrs.append(float(first_row[1]))
+
+    just_gyro = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 1, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0]]).T
+    just_acc = np.array([[0, 0, 0, 0, 0, 0, 1, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 1, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0]]).T
+    just_encoders = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 1, 0, 0, 0, 0, 0, 0]]).T
+
     for row in reader:
         wl = float(row[0])
         wr = float(row[1])
@@ -67,8 +87,6 @@ def main():
         # so we compute theoretical acceleration
         al = (wl - wls[-1]) / dt_s
         ar = (wr - wrs[-1]) / dt_s
-        als.append(al)
-        ars.append(ar)
         wls.append(wl)
         wrs.append(wr)
         u = np.array([[al], [ar]], dtype=np.float32)
@@ -82,8 +100,8 @@ def main():
         encoder_ys.append(encoder_state[1].copy())
 
         # double integrate accelerometer data
-        acc_x = float(row[2]) * acc_scale
-        acc_y = float(row[3]) * acc_scale
+        acc_x = (float(row[2]) - -0.0094) * acc_scale
+        acc_y = (float(row[3]) - 0.0047) * acc_scale
 
         # kalman filter
         A = np.array([[1, 0, 0, dt_s, 0, 0, 0.5 * dt_s * dt_s, 0, 0],
@@ -124,22 +142,25 @@ def main():
         measurement = np.array(
             [[acc_x], [acc_y], [gyro_theta], [encoder_state[0]], [encoder_state[1]], [encoder_state[2]]])
 
-        priori_estimate = (A @ posterior_estimate + B @ u)
+        dynamics = A @ posterior_estimate
+        controls = B @ u
+        priori_estimate = dynamics # + controls
         priori_estimate_covariance = A @ estimate_covariance @ A.T + process_covariance
         thingy = C @ estimate_covariance @ C.T + measurement_variance
         try:
             K = np.linalg.solve(thingy.T, (estimate_covariance @ C.T).T).T
+            # print("not fuck")
         except np.linalg.LinAlgError as e:
+            # print("fuck")
+            # print(thingy.T)
+            # raise e
             if np.all(thingy) == 0:
+                # print(thingy)
                 K = np.zeros((N, L))
             else:
-                K = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [1, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 1, 0, 0, 0, 0, 0, 0]])
-                # raise e
+                raise e
+
+        K = just_acc
         posterior_estimate = priori_estimate + K @ (measurement - C @ priori_estimate)
         estimate_covariance = (np.eye(N) - K @ C) @ priori_estimate_covariance
         estimate_covariances.append(estimate_covariance.copy())
@@ -148,20 +169,19 @@ def main():
         priori_xs.append(priori_estimate[0].copy())
         priori_ys.append(priori_estimate[1].copy())
 
-    plt.plot(als, label='als')
-    plt.plot(ars, label='ars')
-    plt.legend()
+    # plt.plot(als, label='als')
+    # plt.plot(ars, label='ars')
+    # plt.legend()
 
     plt.figure()
     plt.plot(filtered_xs, filtered_ys, linestyle='--', label='filtered')
     # plt.plot(priori_xs, priori_ys, linestyle='--', label='priori')
     plt.plot(encoder_xs, encoder_ys, linestyle='-', label='encoders')
-    # plt.plot(acc_xs, acc_ys, marker='.', label='accel')
     plt.scatter(0, 0, marker='o', s=50, c='red')  # show starting point
     plt.legend()
     plt.axis("equal")
 
-    # plt.show()
+    plt.show()
 
 
 if __name__ == '__main__':
