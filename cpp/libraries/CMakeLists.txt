@@ -27,3 +27,5 @@ if (${RIO})
     target_include_directories(navx_frc_cpp PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${HAL_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
     install(TARGETS navx_frc_cpp DESTINATION ${WPILIB_DIR}/user/cpp/lib)
 endif ()
+
+add_subdirectory(navXTimeSync)

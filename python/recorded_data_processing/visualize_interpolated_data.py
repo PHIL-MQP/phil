@@ -36,7 +36,7 @@ def main():
     dt_s = 0.1  # the rate of the interpolation
 
     N = 9
-    L = 6
+    L = 3
     M = 2
     encoder_state = np.zeros((3, 1), dtype=np.float32)  # for computing x/y/theta from encoders to go in z
     encoder_xs = []
@@ -47,8 +47,6 @@ def main():
     priori_ys = []
     wls = []
     wrs = []
-    als = []
-    ars = []
     estimate_covariances = []
     posterior_estimate = np.zeros((N, 1), dtype=np.float32)
     W = 0.01  # process variance
@@ -137,18 +135,22 @@ def main():
                       # [1, 0, 0, 0, 0, 0, 0, 0, 0],
                       # [0, 1, 0, 0, 0, 0, 0, 0, 0],
                       # [0, 0, 1, 0, 0, 0, 0, 0, 0],
-                      [1, 0, 0, 0, 0, 0, 0, 0, 0],
-                      [0, 1, 0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 1, 0, 0, 0, 0, 0, 0]])
+                      # [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                      # [0, 1, 0, 0, 0, 0, 0, 0, 0],
+                      # [0, 0, 1, 0, 0, 0, 0, 0, 0],
+                      ])
         gyro_theta = float(row[5])
         measurement = np.array(
             [[acc_x], [acc_y], [gyro_theta], [encoder_state[0]], [encoder_state[1]], [encoder_state[2]]])
+        measurement = np.array([[acc_x], [acc_y], [gyro_theta]])
 
         dynamics = A @ posterior_estimate
         controls = B @ u
         priori_estimate = dynamics + controls
         priori_estimate_covariance = A @ estimate_covariance @ A.T + process_covariance
         K = np.linalg.solve((C @ estimate_covariance @ C.T + measurement_variance).T, (estimate_covariance @ C.T).T).T
+
+        K = np.zeros((N, L))  # to turn off measurements
 
         posterior_estimate = priori_estimate + K @ (measurement - C @ priori_estimate)
         estimate_covariance = (np.eye(N) - K @ C) @ priori_estimate_covariance
@@ -158,13 +160,8 @@ def main():
         priori_xs.append(priori_estimate[0].copy())
         priori_ys.append(priori_estimate[1].copy())
 
-    # plt.plot(als, label='als')
-    # plt.plot(ars, label='ars')
-    # plt.legend()
-
     plt.figure()
     plt.plot(filtered_xs, filtered_ys, linestyle='--', label='filtered')
-    # plt.plot(priori_xs, priori_ys, linestyle='--', label='priori')
     plt.plot(encoder_xs, encoder_ys, linestyle='-', label='encoders')
     plt.scatter(0, 0, marker='o', s=50, c='red')  # show starting point
     plt.legend()

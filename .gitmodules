@@ -10,3 +10,6 @@
 [submodule "cpp/libraries/navxmxp"]
 	path = cpp/libraries/navxmxp
 	url = https://github.com/kauailabs/navxmxp.git
+[submodule "cpp/libraries/cpp/libraries/navXTimeSync"]
+	path = cpp/libraries/cpp/libraries/navXTimeSync
+	url = https://github.com/FRC900/navXTimeSync.git
