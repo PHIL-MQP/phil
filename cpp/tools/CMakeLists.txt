@@ -7,6 +7,8 @@ if (NOT WIN32)
 
     add_executable(test_udp_trigger test_udp_trigger_tk1.cpp ${phil_common_src})
     target_include_directories(test_udp_trigger PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
+
+    add_executable()
 endif ()
 
 if (NOT ${RIO})
