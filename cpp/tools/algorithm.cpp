@@ -8,23 +8,28 @@
 #include <iostream>
 #include <math.h>
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry> 
 #include <vector>
+#include <math.h>
+#include <string>
+
 #include "csvReader.h"
 
-using namespace std;
-using namespace Eigen;
+#define PI 3.14159265
 
 //definations, will go to header file later
-Matrix4f get_angular_velocity(int t);
-Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z);
-Vector3f integrate_angular_velocity(int start, int end, int dt);
+Eigen::Matrix4f get_angular_velocity(int t);
+Eigen::Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z);
+Eigen::Vector3f integrate_angular_velocity(std::string filename, int start, int end, float dt);
+void calculate_expect_acc(std::string filename, int start, int end, float dt);
+float degree_to_radian(float degree);
 
 //
 
 
-vector<double> a_xt;
-vector<double> a_yt;
-vector<double> a_zt;
+std::vector<double> a_xt;
+std::vector<double> a_yt;
+std::vector<double> a_zt;
 
 int k=0;
 
@@ -41,11 +46,10 @@ double params_acc = 0;
 //
 
 int main(int argc, char** argv) {
- 
-    Vector3f integration = integrate_angular_velocity(2, 8001, 10);
-    cout << integration(0) << endl;
-    cout << integration(1) << endl;
-    cout << integration(2) << endl;
+ 		
+
+    calculate_expect_acc(std::string(argv[3]), std::stoi(argv[1]), std::stoi(argv[2]), 0.001);
+    // cout << expected_acc << endl;
     return 0;
 }
 
@@ -84,10 +88,10 @@ void calibrate_gyro(){
 }
 void IMU_calibration(){
 
-    Vector3f b_g;
-    Vector3f w_s;
-    Vector3f w_s_biasfree;
-    MatrixXf m_inf(3, 100);
+    Eigen::Vector3f b_g;
+    Eigen::Vector3f w_s;
+    Eigen::Vector3f w_s_biasfree;
+    Eigen::MatrixXf m_inf(3, 100);
     
 	w_s_biasfree = w_s - b_g;
 	s_init = sqrt((variance(a_xt)*variance(a_xt))+(variance(a_yt)*variance(a_yt))+(variance(a_zt)*variance(a_zt)));
@@ -118,8 +122,8 @@ void IMU_calibration(){
 	//w_s = levenberg_marquerd();
 }
 
-Matrix4f rk4_method(int t_k, int dt, Matrix4f q_k) {
-    Matrix4f k1, k2, k3, k4;
+Eigen::Matrix4f rk4_method(int t_k, int dt, Eigen::Matrix4f q_k) {
+    Eigen::Matrix4f k1, k2, k3, k4;
     
     k1 = 0.5 * get_angular_velocity(t_k) * q_k;
     
@@ -129,22 +133,38 @@ Matrix4f rk4_method(int t_k, int dt, Matrix4f q_k) {
 }
 
 
-Matrix4f get_angular_velocity(int t) {
+Eigen::Matrix4f get_angular_velocity(int t) {
     float w_x, w_y, w_z;
     //need to implement the algorithm to read data from the csv
     
     return angular_velocity_2_quaternion(w_x, w_y, w_z);
 }
 
+
+void calculate_expect_acc(std::string filename, int start, int end, float dt) {
+	std::vector<float> start_data = getData(filename, start);
+
+	Eigen::Vector3f angles = integrate_angular_velocity(filename, start, end, dt);
+
+	Eigen::Matrix3f rotation_matrix;
+	rotation_matrix = Eigen::AngleAxisf(start_data[0], Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(start_data[1],  Eigen::Vector3f::UnitY()) * Eigen::AngleAxisf(start_data[2], Eigen::Vector3f::UnitZ());
+  
+	// printf("%f\n", rotation_matrix(2, 1));
+ 	std::cout << "hi" << std::endl;
+
+	printf("%f\n", (rotation_matrix * angles)[0]);
+}
+
+
 /**
 	@int start - the start index of the csv file row number
 	@int end - the end index of the 
-	@int dt - time in unit of ms
+	@int dt - time in unit of second
+	@Eigen::Vector3f
 **/
-Vector3f integrate_angular_velocity(int start, int end, int dt) {
-	vector < vector<float> > data = getData(imu_data_filename, start, end);
-
-	Vector3f res;
+Eigen::Vector3f integrate_angular_velocity(std::string filename, int start, int end, float dt) {
+	std::vector < std::vector<float> > data = getData(filename, start, end);
+	Eigen::Vector3f res;
 
 	for (int i = 0; i < data.size(); i++) {
 		res(0) += data[i][3] * dt;
@@ -152,12 +172,20 @@ Vector3f integrate_angular_velocity(int start, int end, int dt) {
 		res(2) += data[i][5] * dt;
 	}
 
+	res(0) = degree_to_radian(res(0));
+	res(1) = degree_to_radian(res(1));
+	res(2) = degree_to_radian(res(2));
+
 	return res;
 }
 
 
-Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z) {
-    Matrix4f quaternion;
+float degree_to_radian(float degree) {
+	return degree / 180 * PI;
+}
+
+Eigen::Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z) {
+    Eigen::Matrix4f quaternion;
     //need to implement ewwww
     return quaternion;
 }

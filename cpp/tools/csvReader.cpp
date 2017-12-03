@@ -11,26 +11,13 @@
 #include <vector>
 #include "csvReader.h"
 
-using namespace std;
-
-string imu_data_filename = "../../recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv";
-
-// int main(int argc, char **argv) {
-//   vector<float> data_array = getData(imu_data_file_name, 7999);
-
-//   for (int i = 0; i < data_array.size(); i++) {
-//   	cout << data_array[i] << endl;
-//   }
-
-//   return 0;
-// }
 
 
-vector<float> getData(string file_name, int row_number) {
-	vector<float> res;
-	ifstream file(file_name);
+std::vector<float> getData(std::string file_name, int row_number) {
+	std::vector<float> res;
+	std::ifstream file(file_name);
 
-	string acc_x, acc_y, acc_z,gyro_x, gyro_y, gyro_z, time;
+	std::string acc_x, acc_y, acc_z,gyro_x, gyro_y, gyro_z, time;
 
 	if(!file.is_open()) {
 		return res;
@@ -61,13 +48,13 @@ vector<float> getData(string file_name, int row_number) {
 	return res;
 }
 
-vector< vector<float> > getData(string file_name, int start_row, int end_row) {
+std::vector< std::vector<float> > getData(std::string file_name, int start_row, int end_row) {
 
-	vector< vector<float> > res;
+	std::vector< std::vector<float> > res;
 
-	ifstream file(file_name);
+	std::ifstream file(file_name);
 
-	string acc_x, acc_y, acc_z,gyro_x, gyro_y, gyro_z, time;
+	std::string acc_x, acc_y, acc_z,gyro_x, gyro_y, gyro_z, time;
 
 	if(!file.is_open()) {
 		return res;
@@ -88,7 +75,7 @@ vector< vector<float> > getData(string file_name, int start_row, int end_row) {
 
 
 		if (i >= start_row) {
-			vector<float> temp;
+			std::vector<float> temp;
 			temp.push_back(myAtof(acc_x));
 			temp.push_back(myAtof(acc_y));
 			temp.push_back(myAtof(acc_z));
@@ -105,8 +92,8 @@ vector< vector<float> > getData(string file_name, int start_row, int end_row) {
 	return res;
 }
 
-float myAtof ( string &num){
-   float tmp;
+float myAtof ( std::string &num){
+   float tmp = 0;
    sscanf ( num.c_str(), "%f" , &tmp);
    return tmp;
 }
