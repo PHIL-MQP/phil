@@ -5,8 +5,10 @@
  *      Author: nicol
  */
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <eigen3/Eigen/Dense>
+#include <vector>
+#include <eigen3/unsupported/Eigen/NonLinearOptimization>
 
 #include "csvReader.h"
 
@@ -19,7 +21,13 @@ Eigen::Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z);
 
 Eigen::Vector3f integrate_angular_velocity(std::string filename, int start, int end, float dt);
 
-void calculate_expect_acc(std::string filename, int start, int end, float dt);
+Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, float dt);
+
+Eigen::Vector3f get_acc_eigen_vector(std::vector<float> input);
+
+Eigen::Vector3f get_gyro_eigen_vector(std::vector<float> input);
+
+Eigen::Matrix3f make_rotation_matrix(float theta_x, float theta_y, float theta_z);
 
 float degree_to_radian(float degree);
 
@@ -45,8 +53,13 @@ double params_acc = 0;
 
 int main(int argc, char **argv) {
 
-  calculate_expect_acc(std::string(argv[3]), std::stoi(argv[1]), std::stoi(argv[2]), 0.001);
-  // cout << expected_acc << endl;
+  Eigen::Vector3f expected_acc = calculate_expect_acc(std::string(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), 0.001);
+  Eigen::Vector3f real_acc = get_acc_eigen_vector(getData(std::string(argv[1]), std::stoi(argv[3]) + 1));
+  
+  std::cout << std::endl << "expected acc:" << std::endl ;
+  std::cout << expected_acc.normalized() << std::endl;
+  std::cout << std::endl << "real acc:" << std::endl;
+  std::cout << real_acc.normalized() << std::endl;
   return 0;
 }
 
@@ -139,17 +152,47 @@ Eigen::Matrix4f get_angular_velocity(int t) {
   return angular_velocity_2_quaternion(w_x, w_y, w_z);
 }
 
-void calculate_expect_acc(std::string filename, int start, int end, float dt) {
-  std::vector<float> start_data = getData(filename, start);
+Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, float dt) {
+  Eigen::Vector3f inital_acc = get_acc_eigen_vector(getData(filename, start));
 
   Eigen::Vector3f angles = integrate_angular_velocity(filename, start, end, dt);
 
-  Eigen::Matrix3f rotation_matrix;
-  rotation_matrix = Eigen::AngleAxisf(start_data[0], Eigen::Vector3f::UnitX())
-      * Eigen::AngleAxisf(start_data[1], Eigen::Vector3f::UnitY())
-      * Eigen::AngleAxisf(start_data[2], Eigen::Vector3f::UnitZ());
 
-  std::cout << rotation_matrix * angles << std::endl;
+  std::cout << "angles:"<< std::endl << angles << std::endl;
+
+  Eigen::Matrix3f rotation_matrix;
+  rotation_matrix = Eigen::AngleAxisf(angles(0), Eigen::Vector3f::UnitX())
+      * Eigen::AngleAxisf(angles(1), Eigen::Vector3f::UnitY())
+      * Eigen::AngleAxisf(angles(2), Eigen::Vector3f::UnitZ());
+
+  // std::cout << "compare" << std::endl;
+  // std::cout << make_rotation_matrix(angles(0), angles(1), angles(2)) << std::endl;
+  // std::cout << rotation_matrix << std:: endl;
+
+  return (rotation_matrix * inital_acc.normalized());
+}
+
+Eigen::Matrix3f make_rotation_matrix(float theta_x, float theta_y, float theta_z) {
+	Eigen::Matrix3f rotation_matix_x, rotation_matix_y, rotation_matix_z;
+	rotation_matix_x << 1, 0, 0,
+											0, cos(theta_x), -1 * sin(theta_x),
+											0, sin(theta_x), cos(theta_x);
+	rotation_matix_y << cos(theta_y), 0, sin(theta_y),
+											0, 1, 0,
+											-1 * sin(theta_y), 0, cos(theta_y);
+	rotation_matix_z << cos(theta_z), -1 * sin(theta_z), 0,
+											sin(theta_z), cos(theta_z), 0,
+											0, 0, 1;
+	return rotation_matix_x * rotation_matix_y * rotation_matix_z;
+} 
+
+
+Eigen::Vector3f get_acc_eigen_vector(std::vector<float> input) {
+	return Eigen::Vector3f(input[0], input[1], input[2]);
+}
+
+Eigen::Vector3f get_gyro_eigen_vector(std::vector<float> input) {
+	return Eigen::Vector3f(input[3], input[4], input[5]);
 }
 
 /**
