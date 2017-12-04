@@ -11799,11 +11799,14 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plot</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
 </pre></div>
 
 </div>
@@ -11916,14 +11919,80 @@ sample variance: 0.0322222222222
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>References:</p>
-<p><a href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf</a>
-<a href="http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395">http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395</a>
-<a href="https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7">https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7</a>
-<a href="https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0">https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0</a>
-<a href="https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp">https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp</a></p>
+<ul>
+<li><a href="https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf">https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf</a></li>
+<li><a href="http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395">http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395</a></li>
+<li><a href="https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7">https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7</a></li>
+<li><a href="https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0">https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0</a></li>
+<li><a href="https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp">https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp</a></li>
+</ul>
 
 </div>
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data_filename</span> <span class="o">=</span> <span class="s2">&quot;recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv&quot;</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">data_filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">))</span>
+
+<span class="nb">next</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span> <span class="c1"># skip header</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">row</span><span class="p">])</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="iterate-over-the-Tinit-period-to-compute-the-gyro-biases">iterate over the Tinit period to compute the gyro biases<a class="anchor-link" href="#iterate-over-the-Tinit-period-to-compute-the-gyro-biases">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">Tinit</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">samples_per_second</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">Tinit_idx</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">samples_per_second</span>
+<span class="n">init_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">Tinit_idx</span><span class="p">]</span>
+<span class="n">gyro_biases</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">init_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;gyro_biases:&quot;</span><span class="p">,</span> <span class="n">gyro_biases</span><span class="p">)</span>
+<span class="n">sample_variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">init_data</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>gyro_biases: [ 0.0654159   0.13007117  0.08329117]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">

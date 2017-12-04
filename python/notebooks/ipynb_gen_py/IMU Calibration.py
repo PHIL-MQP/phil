@@ -5,10 +5,13 @@
 
 # ## Code setup
 
-# In[1]:
+# In[8]:
 
 import matplotlib.pyplot as plot
 import numpy as np
+import csv
+import sys
+import os
 
 
 # # The Algorithm
@@ -45,11 +48,36 @@ print("sample variance:", sample_variance)
 
 # References:
 # 
-# https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf
-# http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395
-# https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7
-# https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0
-# https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp
+#  - https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf
+#  - http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395
+#  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7
+#  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0
+#  - https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp
+
+# In[20]:
+
+data_filename = "recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv"
+reader = csv.reader(open(data_filename, 'r'))
+
+next(reader) # skip header
+data = []
+for row in reader:
+    data.append([float(x) for x in row])
+data = np.array(data)
+
+
+# ## iterate over the Tinit period to compute the gyro biases
+
+# In[32]:
+
+Tinit = 4
+samples_per_second = 100
+Tinit_idx = 4 * samples_per_second
+init_data = data[:Tinit_idx]
+gyro_biases = np.mean(init_data, axis=0)[3:6]
+print("gyro_biases:", gyro_biases)
+sample_variance = np.var(init_data)
+
 
 # In[ ]:
 
