@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <cscore.h>
-#include <opencv2/core/mat.hpp>
+#include <opencv2/opencv.hpp>
 #include <networktables/NetworkTableInstance.h>
 #include "phil/common/udp.h"
 #include "phil/localization/localization.h"

@@ -1,5 +1,4 @@
-#include <opencv2/videoio.hpp>
-#include <opencv/cv.hpp>
+#include <opencv2/opencv.hpp>
 #include <aruco/aruco.h>
 
 void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam) {

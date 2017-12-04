@@ -31,13 +31,15 @@ if (NOT ${RIO})
     target_link_libraries(mocap_record aruco cscore ${phil_opencv_libs})
     target_include_directories(mocap_record PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
-    add_executable(auto_diff_test auto_diff_test.cpp)
-    target_include_directories(auto_diff_test PRIVATE ${phil_include_dir}/eigen3)
-
     if (NOT CMAKE_HOST_WIN32)
         add_executable(record_imu_calibration_data record_imu_calibration_data.cpp)
         target_include_directories(record_imu_calibration_data PRIVATE ${LINUX_NAVX_DRIVER_INCLUDE_DIR})
         target_link_libraries(record_imu_calibration_data linux_navx_driver)
     endif ()
+
+    add_executable(localize localize.cpp ${phil_common_src})
+    target_link_libraries(localize ${phil_opencv_libs} aruco cscore)
+    target_include_directories(localize PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+
 endif ()
 
