@@ -5,7 +5,7 @@
 
 # ## Code setup
 
-# In[8]:
+# In[1]:
 
 import matplotlib.pyplot as plot
 import numpy as np
@@ -24,7 +24,7 @@ import os
 
 # #### A quick code example of this part:
 
-# In[5]:
+# In[2]:
 
 x = [1.1, 1.2, 0.9, 0.9, 1.3, 0.8]
 expected_value = np.mean(x)
@@ -51,21 +51,48 @@ print("sample variance:", sample_variance)
 # In order to run the LM minimization, you need to define the jacobian of the error you want to minimize with respect to the parameters.
 # For the first LM run, our error tern is $e={\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2$. The parameters here are $[\alpha_{yz}, \alpha_{zy}, \alpha_{zx}, s^a_x, s^a_y, s^a_z, b^a_x, b^a_y, b^a_z]$, which means the jacobian will look like this:
 # 
-# $\begin{bmatrix}
+# $$\begin{bmatrix}
 # \frac{\partial e_1}{\partial \alpha_{yz}} & \frac{\partial e_1}{\partial \alpha_{zy}} & \frac{\partial e_1}{\partial \alpha_{zx}} & \frac{\partial e_1}{\partial s^a_x} & \frac{\partial e_1}{\partial s^a_y} & \frac{\partial e_1}{\partial s^a_z} & \frac{\partial e_1}{\partial b^a_x} & \frac{\partial e_1}{\partial b^a_y} & \frac{\partial e_1}{\partial b^a_z} \\
 # \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \\
 # \frac{\partial e_M}{\partial \alpha_{yz}} & \frac{\partial e_M}{\partial \alpha_{zy}} & \frac{\partial e_M}{\partial \alpha_{zx}} & \frac{\partial e_M}{\partial s^a_x} & \frac{\partial e_M}{\partial s^a_y} & \frac{\partial e_M}{\partial s^a_z} & \frac{\partial e_M}{\partial b^a_x} & \frac{\partial e_M}{\partial b^a_y} & \frac{\partial e_M}{\partial b^a_z} \\
-# \end{bmatrix}$
+# \end{bmatrix}$$
 # 
 # We can solve for these analytically.
 # 
-# $\begin{align}
-# \frac{\partial e_1}{\partial \alpha_{yz}} &= \frac{\partial}{\partial \alpha_{yz}}\Big({\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2\Big) \\
+# $$\begin{align}
+# \frac{\partial e_i}{\partial \alpha_{yz}} &= \frac{\partial}{\partial \alpha_{yz}}\Big({\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2\Big) \\
 #  &= \frac{\partial}{\partial \alpha_{yz}}{\lVert g\rVert}^2-\frac{\partial}{\partial \alpha_{yz}}{\lVert T^aK^a(a^S+b^a)\rVert}^2 \\
 #  &= -\frac{\partial}{\partial \alpha_{yz}}{\lVert T^aK^a(a^S+b^a)\rVert}^2 \\
-#  &= -\frac{\partial}{\partial \alpha_{yz}}\sqrt{\sum{T^aK^a(a^S+b^a)}}^2 \\
-#  &= -\frac{\partial}{\partial \alpha_{yz}}\sum{T^aK^a(a^S+b^a)} \\
-# \end{align}$
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\sqrt{\sum{\Big(T^aK^a(a^S+b^a)\Big)^2}}^2 \\
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Big(T^aK^a(a^S+b^a)\Big)^2} \\
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}1&-\alpha_{yz}&\alpha_{zy}\\0&1&-\alpha_{zx}\\0&0&1\\\end{bmatrix}\begin{bmatrix}s_x^a&0&0\\0&s_y^a&0\\0&0&s_z^a\\\end{bmatrix}\Bigg(\begin{bmatrix}a_{x,i}^s\\a_{y,i}^s\\a_{z,i}^s\end{bmatrix}+\begin{bmatrix}b_x^a\\b_y^a\\b_z^a\end{bmatrix}\Bigg)\Bigg)^2} \\
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}1&-\alpha_{yz}&\alpha_{zy}\\0&1&-\alpha_{zx}\\0&0&1\\\end{bmatrix}\begin{bmatrix}s_x^a&0&0\\0&s_y^a&0\\0&0&s_z^a\\\end{bmatrix}\begin{bmatrix}a_{x,i}^s+b_x^a\\a_{y,i}^s+b_y^a\\a_{z,i}^s+b_z^a\end{bmatrix}\Bigg)^2} \\
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}1&-\alpha_{yz}&\alpha_{zy}\\0&1&-\alpha_{zx}\\0&0&1\\\end{bmatrix}\begin{bmatrix}s_x^a(a_{x,i}^s+b_x^a)\\s_y^a(a_{y,i}^s+b_y^a)\\s_z^a(a_{z,i}^s+b_z^a)\end{bmatrix}\Bigg)^2} \\
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\\s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\\s_z^a(a_{z,i}^s+b_z^a)\\\end{bmatrix}\Bigg)^2} \\
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+#  &= -\frac{\partial}{\partial \alpha_{yz}}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+#  &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{yz}}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+#  &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{yz}}\big(\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)\big) \\
+#  &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(s_y^a(a_{y,i}^s+b_y^a)\big) \\
+# \end{align}$$
+# 
+# And then we do this for all the other variables
+# 
+# $$\begin{align}
+# \frac{\partial e_i}{\partial \alpha_{zy}} &= -\frac{\partial}{\partial \alpha_{zy}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+# &= -\frac{\partial}{\partial \alpha_{zy}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+# &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zy}}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+# &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zy}}\big(\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+# &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(s_z^a(a_{z,i}^s+b_z^a)\big) \\
+# \end{align}$$
+# 
+# $$\begin{align}
+# \frac{\partial e_i}{\partial \alpha_{zx}} &= -\frac{\partial}{\partial \alpha_{zx}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+#  &= -\frac{\partial}{\partial \alpha_{zx}}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+#  &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zx}}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+#  &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zx}}\big(-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+#  &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\big(-s_z^a(a_{z,i}^s+b_z^a)\big) \\
+# \end{align}$$
 
 # References:
 # 
@@ -75,7 +102,7 @@ print("sample variance:", sample_variance)
 #  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0
 #  - https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp
 
-# In[20]:
+# In[3]:
 
 data_filename = "recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv"
 reader = csv.reader(open(data_filename, 'r'))
@@ -89,7 +116,7 @@ data = np.array(data)
 
 # ## iterate over the Tinit period to compute the gyro biases
 
-# In[32]:
+# In[4]:
 
 Tinit = 4
 samples_per_second = 100
