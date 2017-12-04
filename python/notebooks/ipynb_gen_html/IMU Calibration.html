@@ -11897,7 +11897,7 @@ sample variance: 0.0322222222222
 </ul>
 </li>
 <li>Do the LM optimization (magic call the Eigen).<ul>
-<li>For this LM, we need to provide a functor that has <code>int operator()(const Eigen::VectorXf &amp;x, Eigen::VectorXf &amp;fvec) const</code> and <code>int df(const Eigen::VectorXf &amp;x, Eigen::MatrixXf &amp;fjac) const</code>. For <code>operator()</code> it should fill <code>fvec</code> with the values of the equation ${\lVert g\rVert}^2 - \lVert T^aK^a(a^S+b^a)\rVert$, where ${\lVert g\rVert}^2 = 9.8$. For <code>df</code>, you fill <code>fjac</code> with each error term $\frac{\partial e_1}{\partial \theta^{acc}}, \dots, \frac{\partial e_k}{\partial \theta^{acc}}$.<ul>
+<li>For this LM, we need to provide a functor that has <code>int operator()(const Eigen::VectorXf &amp;x, Eigen::VectorXf &amp;fvec) const</code> and <code>int df(const Eigen::VectorXf &amp;x, Eigen::MatrixXf &amp;fjac) const</code>. For <code>operator()</code> it should fill <code>fvec</code> with the values of the equation $e_k={\lVert g\rVert}^2 - {\lVert T^aK^a(a_k^S+b^a)\rVert}^2$, where ${\lVert g\rVert}^2 = 9.8$. For <code>df</code>, you fill <code>fjac</code> with each error term $\frac{\partial e_1}{\partial \theta^{acc}}, \dots, \frac{\partial e_k}{\partial \theta^{acc}}$.<ul>
 <li>Compute the residuals for the final optimized parameters</li>
 <li>Save (residuals, params, threshold, intervals) if they're the best ones so far</li>
 </ul>
@@ -11909,6 +11909,30 @@ sample variance: 0.0322222222222
 <li>Calibrate the accelerometer $a^o = T^aK^a(a^S+b^a)$</li>
 <li>Calibrate the gyroscope using another LM. This time in <code>int operator()</code> you fill <code>fvec</code> with $\lVert(u_{a,k} - u_{g,k})\rVert$ and also the partials into <code>fjac</code>.</li>
 </ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Setting-up-the-Jacobians">Setting up the Jacobians<a class="anchor-link" href="#Setting-up-the-Jacobians">&#182;</a></h2><p>In order to run the LM minimization, you need to define the jacobian of the error you want to minimize with respect to the parameters.
+For the first LM run, our error tern is $e={\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2$. The parameters here are $[\alpha_{yz}, \alpha_{zy}, \alpha_{zx}, s^a_x, s^a_y, s^a_z, b^a_x, b^a_y, b^a_z]$, which means the jacobian will look like this:</p>
+<p>$\begin{bmatrix}
+\frac{\partial e_1}{\partial \alpha_{yz}} & \frac{\partial e_1}{\partial \alpha_{zy}} & \frac{\partial e_1}{\partial \alpha_{zx}} & \frac{\partial e_1}{\partial s^a_x} & \frac{\partial e_1}{\partial s^a_y} & \frac{\partial e_1}{\partial s^a_z} & \frac{\partial e_1}{\partial b^a_x} & \frac{\partial e_1}{\partial b^a_y} & \frac{\partial e_1}{\partial b^a_z} \\
+\vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \\
+\frac{\partial e_M}{\partial \alpha_{yz}} & \frac{\partial e_M}{\partial \alpha_{zy}} & \frac{\partial e_M}{\partial \alpha_{zx}} & \frac{\partial e_M}{\partial s^a_x} & \frac{\partial e_M}{\partial s^a_y} & \frac{\partial e_M}{\partial s^a_z} & \frac{\partial e_M}{\partial b^a_x} & \frac{\partial e_M}{\partial b^a_y} & \frac{\partial e_M}{\partial b^a_z} \\
+\end{bmatrix}$</p>
+<p>We can solve for these analytically.</p>
+<p>$\begin{align}
+\frac{\partial e_1}{\partial \alpha_{yz}} &= \frac{\partial}{\partial \alpha_{yz}}\Big({\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2\Big) \\
+ &= \frac{\partial}{\partial \alpha_{yz}}{\lVert g\rVert}^2-\frac{\partial}{\partial \alpha_{yz}}{\lVert T^aK^a(a^S+b^a)\rVert}^2 \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}{\lVert T^aK^a(a^S+b^a)\rVert}^2 \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sqrt{\sum{T^aK^a(a^S+b^a)}}^2 \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sum{T^aK^a(a^S+b^a)} \\
+\end{align}$</p>
 
 </div>
 </div>
