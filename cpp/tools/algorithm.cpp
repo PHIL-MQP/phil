@@ -31,9 +31,6 @@ Eigen::Matrix3f make_rotation_matrix(float theta_x, float theta_y, float theta_z
 
 float degree_to_radian(float degree);
 
-//
-
-
 std::vector<double> a_xt;
 std::vector<double> a_yt;
 std::vector<double> a_zt;
@@ -46,21 +43,18 @@ double s_intervals = 0;
 double residuals = 0;
 double params_acc = 0;
 
-//void read_data(){
-//    m_inf[0][0] = 0;
-//}
-//
-
 int main(int argc, char **argv) {
+  // Process the initial Tinit data
+
+
 
   Eigen::Vector3f expected_acc = calculate_expect_acc(std::string(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), 0.001);
   Eigen::Vector3f real_acc = get_acc_eigen_vector(getData(std::string(argv[1]), std::stoi(argv[3]) + 1));
-  
+
   std::cout << std::endl << "expected acc:" << std::endl ;
   std::cout << expected_acc.normalized() << std::endl;
   std::cout << std::endl << "real acc:" << std::endl;
   std::cout << real_acc.normalized() << std::endl;
-  return 0;
 }
 
 double mean(std::vector<double> data) {
@@ -184,7 +178,7 @@ Eigen::Matrix3f make_rotation_matrix(float theta_x, float theta_y, float theta_z
 											sin(theta_z), cos(theta_z), 0,
 											0, 0, 1;
 	return rotation_matix_x * rotation_matix_y * rotation_matix_z;
-} 
+}
 
 
 Eigen::Vector3f get_acc_eigen_vector(std::vector<float> input) {
@@ -197,7 +191,7 @@ Eigen::Vector3f get_gyro_eigen_vector(std::vector<float> input) {
 
 /**
 	@int start - the start index of the csv file row number
-	@int end - the end index of the 
+	@int end - the end index of the
 	@int dt - time in unit of second
 	@Eigen::Vector3f
 **/
