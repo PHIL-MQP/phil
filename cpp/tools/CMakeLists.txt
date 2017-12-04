@@ -28,5 +28,10 @@ if (NOT ${RIO})
     add_executable(mocap_record mocap_record.cpp ${phil_common_src})
     target_link_libraries(mocap_record aruco cscore ${phil_opencv_libs})
     target_include_directories(mocap_record PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+
+    add_executable(localize localize.cpp ${phil_common_src})
+    target_link_libraries(localize ${phil_opencv_libs} aruco cscore )
+    target_include_directories(localize PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+
 endif ()
 
