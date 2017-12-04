@@ -11799,7 +11799,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plot</span>
@@ -11850,7 +11850,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.1</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.3</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">]</span>
@@ -11920,20 +11920,40 @@ sample variance: 0.0322222222222
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Setting-up-the-Jacobians">Setting up the Jacobians<a class="anchor-link" href="#Setting-up-the-Jacobians">&#182;</a></h2><p>In order to run the LM minimization, you need to define the jacobian of the error you want to minimize with respect to the parameters.
 For the first LM run, our error tern is $e={\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2$. The parameters here are $[\alpha_{yz}, \alpha_{zy}, \alpha_{zx}, s^a_x, s^a_y, s^a_z, b^a_x, b^a_y, b^a_z]$, which means the jacobian will look like this:</p>
-<p>$\begin{bmatrix}
+$$\begin{bmatrix}
 \frac{\partial e_1}{\partial \alpha_{yz}} & \frac{\partial e_1}{\partial \alpha_{zy}} & \frac{\partial e_1}{\partial \alpha_{zx}} & \frac{\partial e_1}{\partial s^a_x} & \frac{\partial e_1}{\partial s^a_y} & \frac{\partial e_1}{\partial s^a_z} & \frac{\partial e_1}{\partial b^a_x} & \frac{\partial e_1}{\partial b^a_y} & \frac{\partial e_1}{\partial b^a_z} \\
 \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \\
 \frac{\partial e_M}{\partial \alpha_{yz}} & \frac{\partial e_M}{\partial \alpha_{zy}} & \frac{\partial e_M}{\partial \alpha_{zx}} & \frac{\partial e_M}{\partial s^a_x} & \frac{\partial e_M}{\partial s^a_y} & \frac{\partial e_M}{\partial s^a_z} & \frac{\partial e_M}{\partial b^a_x} & \frac{\partial e_M}{\partial b^a_y} & \frac{\partial e_M}{\partial b^a_z} \\
-\end{bmatrix}$</p>
-<p>We can solve for these analytically.</p>
-<p>$\begin{align}
-\frac{\partial e_1}{\partial \alpha_{yz}} &= \frac{\partial}{\partial \alpha_{yz}}\Big({\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2\Big) \\
+\end{bmatrix}$$<p>We can solve for these analytically.</p>
+$$\begin{align}
+\frac{\partial e_i}{\partial \alpha_{yz}} &= \frac{\partial}{\partial \alpha_{yz}}\Big({\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2\Big) \\
  &= \frac{\partial}{\partial \alpha_{yz}}{\lVert g\rVert}^2-\frac{\partial}{\partial \alpha_{yz}}{\lVert T^aK^a(a^S+b^a)\rVert}^2 \\
  &= -\frac{\partial}{\partial \alpha_{yz}}{\lVert T^aK^a(a^S+b^a)\rVert}^2 \\
- &= -\frac{\partial}{\partial \alpha_{yz}}\sqrt{\sum{T^aK^a(a^S+b^a)}}^2 \\
- &= -\frac{\partial}{\partial \alpha_{yz}}\sum{T^aK^a(a^S+b^a)} \\
-\end{align}$</p>
-
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sqrt{\sum{\Big(T^aK^a(a^S+b^a)\Big)^2}}^2 \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Big(T^aK^a(a^S+b^a)\Big)^2} \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}1&-\alpha_{yz}&\alpha_{zy}\\0&1&-\alpha_{zx}\\0&0&1\\\end{bmatrix}\begin{bmatrix}s_x^a&0&0\\0&s_y^a&0\\0&0&s_z^a\\\end{bmatrix}\Bigg(\begin{bmatrix}a_{x,i}^s\\a_{y,i}^s\\a_{z,i}^s\end{bmatrix}+\begin{bmatrix}b_x^a\\b_y^a\\b_z^a\end{bmatrix}\Bigg)\Bigg)^2} \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}1&-\alpha_{yz}&\alpha_{zy}\\0&1&-\alpha_{zx}\\0&0&1\\\end{bmatrix}\begin{bmatrix}s_x^a&0&0\\0&s_y^a&0\\0&0&s_z^a\\\end{bmatrix}\begin{bmatrix}a_{x,i}^s+b_x^a\\a_{y,i}^s+b_y^a\\a_{z,i}^s+b_z^a\end{bmatrix}\Bigg)^2} \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}1&-\alpha_{yz}&\alpha_{zy}\\0&1&-\alpha_{zx}\\0&0&1\\\end{bmatrix}\begin{bmatrix}s_x^a(a_{x,i}^s+b_x^a)\\s_y^a(a_{y,i}^s+b_y^a)\\s_z^a(a_{z,i}^s+b_z^a)\end{bmatrix}\Bigg)^2} \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\sum{\Bigg(\begin{bmatrix}s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\\s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\\s_z^a(a_{z,i}^s+b_z^a)\\\end{bmatrix}\Bigg)^2} \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+ &= -\frac{\partial}{\partial \alpha_{yz}}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+ &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{yz}}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+ &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{yz}}\big(\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)\big) \\
+ &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(s_y^a(a_{y,i}^s+b_y^a)\big) \\
+\end{align}$$<p>And then we do this for all the other variables</p>
+$$\begin{align}
+\frac{\partial e_i}{\partial \alpha_{zy}} &= -\frac{\partial}{\partial \alpha_{zy}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -\frac{\partial}{\partial \alpha_{zy}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zy}}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zy}}\big(\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(s_z^a(a_{z,i}^s+b_z^a)\big) \\
+\end{align}$$$$\begin{align}
+\frac{\partial e_i}{\partial \alpha_{zx}} &= -\frac{\partial}{\partial \alpha_{zx}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+ &= -\frac{\partial}{\partial \alpha_{zx}}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+ &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zx}}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+ &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zx}}\big(-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+ &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\big(-s_z^a(a_{z,i}^s+b_z^a)\big) \\
+\end{align}$$
 </div>
 </div>
 </div>
@@ -11956,7 +11976,7 @@ For the first LM run, our error tern is $e={\lVert g\rVert}^2-{\lVert T^aK^a(a^S
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">data_filename</span> <span class="o">=</span> <span class="s2">&quot;recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv&quot;</span>
@@ -11985,7 +12005,7 @@ For the first LM run, our error tern is $e={\lVert g\rVert}^2-{\lVert T^aK^a(a^S
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">Tinit</span> <span class="o">=</span> <span class="mi">4</span>
