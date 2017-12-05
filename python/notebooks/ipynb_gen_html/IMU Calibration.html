@@ -11942,17 +11942,89 @@ $$\begin{align}
  &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(s_y^a(a_{y,i}^s+b_y^a)\big) \\
 \end{align}$$<p>And then we do this for all the other variables</p>
 $$\begin{align}
+%
+% alpha_zy
+%
 \frac{\partial e_i}{\partial \alpha_{zy}} &= -\frac{\partial}{\partial \alpha_{zy}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
 &= -\frac{\partial}{\partial \alpha_{zy}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
 &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zy}}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
 &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zy}}\big(\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
 &= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(s_z^a(a_{z,i}^s+b_z^a)\big) \\
-\end{align}$$$$\begin{align}
+%
+% alpha_zx
+%
 \frac{\partial e_i}{\partial \alpha_{zx}} &= -\frac{\partial}{\partial \alpha_{zx}}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
  &= -\frac{\partial}{\partial \alpha_{zx}}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
  &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zx}}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
  &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial \alpha_{zx}}\big(-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
  &= -2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\big(-s_z^a(a_{z,i}^s+b_z^a)\big) \\
+%
+% s_x
+%
+\frac{\partial e_i}{\partial s_x^a} &= -\frac{\partial}{\partial s_x^a}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_x^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial
+s_x^a}\big(s_x^a(a_{x,i}^s+b_x^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_x^a}(a_{x,i}^s+b_x^a) \\
+%
+% s_y
+%
+\frac{\partial e_i}{\partial s_y^a} &= -\frac{\partial}{\partial s_y^a}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -\frac{\partial}{\partial s_y^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+-\frac{\partial}{\partial s_y^a}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_y^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_y^a}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_y^a}\big(-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)\big)+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_y^a}\big(s_y^a(a_{y,i}^s+b_y^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(-\alpha_{yz}(a_{y,i}^s+b_y^a)\big)+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)(a_{y,i}^s+b_y^a) \\
+%
+% s_z
+%
+\frac{\partial e_i}{\partial s_z^a} &= -\frac{\partial}{\partial s_z^a}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-
+\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -\frac{\partial}{\partial s_z^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+-\frac{\partial}{\partial s_z^a}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+-\frac{\partial}{\partial s_z^a}\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_z^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_z^a}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_z^a}\big(s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_z^a}\big(\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_z^a}\big(-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial s_z^a}\big(s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\big(\alpha_{zy}(a_{z,i}^s+b_z^a)\big)+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\big(-\alpha_{zx}(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_z^a(a_{z,i}^s+b_z^a)\big)(a_{z,i}^s+b_z^a) \\
+%
+% b_x
+%
+\frac{\partial e_i}{\partial b_x^a} &= -\frac{\partial}{\partial b_x^a}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_x^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_x^a}\big(s_x^a(a_{x,i}^s+b_x^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)s_x^a \\
+%
+% b_y^a
+%
+\frac{\partial e_i}{\partial b_y^a} &= -\frac{\partial}{\partial b_y^a}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-
+\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -\frac{\partial}{\partial b_y^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+-\frac{\partial}{\partial b_y^a}\big(s_y^a(a_{y,i}^s+b_y^a)-
+\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_y^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_y^a(a_{y,i}^s+b_y^a)-
+\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_y^a}\big(s_y^a(a_{y,i}^s+b_y^a)-
+\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_y^a}\big(-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a))\big)-2\big(s_y^a(a_{y,i}^s+b_y^a)-
+\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_y^a}\big(s_y^a(a_{y,i}^s+b_y^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)(-\alpha_{yz}s_y^a)-2\big(s_y^a(a_{y,i}^s+b_y^a)-
+\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)s_y^a \\
+%
+% b_z
+%
+\frac{\partial e_i}{\partial b_z^a} &= -\frac{\partial}{\partial b_z^a}\bigg(\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2+\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2\bigg) \\
+&= -\frac{\partial}{\partial b_z^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+&\phantom{{}=1}+-\frac{\partial}{\partial b_z^a}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+&\phantom{{}=1}+-\frac{\partial}{\partial b_z^a}\big(s_z^a(a_{z,i}^s+b_z^a)\big)^2 \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_z^a}\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_z^a}\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_z^a}\big(s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_z^a}\big(\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_z^a}\big(-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&\phantom{{}=1}+-2\big(s_z^a(a_{z,i}^s+b_z^a)\big)\frac{\partial}{\partial b_z^a}\big(s_z^a(a_{z,i}^s+b_z^a)\big) \\
+&= -2\big(s_x^a(a_{x,i}^s+b_x^a)+-\alpha_{yz}s_y^a(a_{y,i}^s+b_y^a)+\alpha_{zy}s_z^a(a_{z,i}^s+b_z^a)\big)(\alpha_{zy}s_z^a)+-2\big(s_y^a(a_{y,i}^s+b_y^a)-\alpha_{zx}s_z^a(a_{z,i}^s+b_z^a)\big)(-\alpha_{zx}s_z^a)+-2\big(s_z^a(a_{z,i}^s+b_z^a)\big)s_z^a \\
 \end{align}$$
 </div>
 </div>
@@ -12034,19 +12106,6 @@ $$\begin{align}
 </div>
 </div>
 
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-</div>
 </div>
 </div>
 
