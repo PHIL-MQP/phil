@@ -17,7 +17,7 @@ if (NOT ${RIO})
             opencv_core
             opencv_imgproc
             opencv_highgui)
-    target_include_directories(cscore PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
+    target_include_directories(cscore PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 endif ()
 
 if (${RIO})
