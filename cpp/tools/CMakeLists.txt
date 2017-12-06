@@ -15,6 +15,8 @@ if (NOT ${RIO})
     target_link_libraries(ntcore_main ntcore)
 
     add_executable(algorithm algorithm.cpp csvReader.cpp)
+    target_include_directories(algorithm PRIVATE ${phil_include_dir}/eigen3)
+
     add_executable(test_csv_reader test_csv_reader.cpp csvReader.cpp)
 endif ()
 
