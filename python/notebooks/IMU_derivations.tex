@@ -1,0 +1,18 @@
+\documentclass{article}
+
+\title{Derivations of IMU Calibration Equations}
+\author{}
+\date{}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\begin{document}
+\maketitle
+
+\large{Setting up the Jacobians}
+
+In order to run the LM minimization, you need to define the jacobian of the error you want to minimize with respect to the parameters.
+For the first LM run, our error tern is $e={\lVert g\rVert}^2-{\lVert T^aK^a(a^S+b^a)\rVert}^2$. The parameters here are $[\alpha_{yz}, \alpha_{zy}, \alpha_{zx}, s^a_x, s^a_y, s^a_z, b^a_x, b^a_y, b^a_z]$, which means the jacobian will look like this:
+
+\end{document}
