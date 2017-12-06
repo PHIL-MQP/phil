@@ -1,4 +1,6 @@
 #include <iostream>
+#define M_PI 3.1415926535
+
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>

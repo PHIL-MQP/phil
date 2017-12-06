@@ -25,6 +25,7 @@ if (NOT ${RIO})
 
     add_executable(fisheye unwarp_fisheye.cpp)
     target_link_libraries(fisheye ${phil_opencv_libs})
+    target_include_directories(fisheye PRIVATE ${OpenCV_INCLUDE_DIRS})
 
     add_executable(mocap_record mocap_record.cpp ${phil_common_src})
     target_link_libraries(mocap_record aruco cscore ${phil_opencv_libs})
