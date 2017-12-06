@@ -1,14 +1,16 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
 
-# In[2]:
+# # Read MoCap data and RoboRIO data form files
+
+# In[3]:
 
 data_dir = "../../recorded_sensor_data/mocap_11_17_18-00-00/"
 imu_file = data_dir + "mocap_imu_encoder_data.csv"
@@ -39,7 +41,7 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[3]:
+# In[4]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -50,13 +52,17 @@ def yawdiff(y1, y2):
     return diff;
 
 
-# In[4]:
+# ### Check the amount of data between the two matches?
+
+# In[5]:
 
 print("Seconds of IMU data recorded: ", imu_data[-1][-1] - imu_data[0][-1])
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 
-# In[5]:
+# # Plot Mocap Data by Axis
+
+# In[10]:
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -71,7 +77,9 @@ plt.legend()
 plt.show()
 
 
-# In[6]:
+# # Plot X/Y position from MoCap
+
+# In[7]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 9))
 mocap_state = np.zeros(9)
@@ -91,20 +99,20 @@ for mocap_idx in range(1, len(mocap_data)):
     mocap_states[mocap_idx] = mocap_state
 
 
-# In[7]:
+# In[9]:
 
 plt.figure(figsize=(10,10))
-plt.plot(mocap_states[:,2], label='theta')
-plt.legend()
-plt.title("Unwrapped Angle")
+plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r')
+plt.axis("square")
 plt.show()
 
 
 # In[8]:
 
 plt.figure(figsize=(10,10))
-plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r')
-plt.axis("square")
+plt.plot(mocap_states[:,2], label='theta')
+plt.legend()
+plt.title("Unwrapped Angle")
 plt.show()
 
 
