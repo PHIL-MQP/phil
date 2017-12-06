@@ -15,6 +15,7 @@ RemoteSystemsTempFiles
 workspace.xml
 tasks.xml
 python.iml
+modules.xml
 
 # CMake
 cmake-build-debug/

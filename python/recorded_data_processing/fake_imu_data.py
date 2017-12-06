@@ -11,37 +11,43 @@ def main():
     parser.add_argument("outfile", help="output file (csv)")
     parser.add_argument('--seconds', type=int, default=8, help='length of interval at 100 samples per second')
     parser.add_argument('--intervals', type=int, default=18, help='number of intervals')
-    parser.add_argument('--noise', type=float, default=1e-5, help='variance of the gaussian noise added')
+    parser.add_argument('--noise', type=float, default=1e-3, help='variance of the gaussian noise added')
     parser.add_argument('--seed', type=int, default=1, help='seed numpy random generator')
     parser.add_argument('--plot', action="store_true", help='show a plot of the generated data')
     args = parser.parse_args()
+
+    np.set_printoptions(suppress=True)  # no scientific notation
 
     writer = csv.writer(open(args.outfile, 'w'))
 
     np.random.seed(args.seed)  # for reproducibility
     acc_params = [0.1, .01, -.01, 1, 0.95, 1.08, -0.01, 0.03, 0.05]
+    # acc_params = [0., 0, 0, 1, 1, 1, 0, 0, 0]
     gyro_params = [0.1, .01, -.01, 1, 0.95, 1.08, -0.01, 0.03, 0.05]
 
     # generate fake sample of sitting flat on table
-    true_a = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]]*6, dtype=np.float64)
-    true_g = np.array([[0, 0, 0]]*args.intervals, dtype=np.float64)
-
-    noise = np.random.normal(0, args.noise, 3)
-
     num_samples = args.seconds * 100
     data = []
     fake_mean_accs = np.ndarray((args.intervals, 3))
     for interval in range(args.intervals):
+        random_attitude = np.random.randn(3)
+        norm = np.linalg.norm(random_attitude)
+        true_a = random_attitude / norm
+        true_g = np.array([0, 0, 0], dtype=np.float64)
+
         for i in range(num_samples):
+
+            noise = np.random.normal(0, args.noise, 3)
+
             # skew this data such that our above params would correctly transform it
             Ta = np.array([[1, -acc_params[0], acc_params[1]], [0, 1, -acc_params[2]], [0, 0, 1]])
             Ka = np.array([[acc_params[3], 0, 0], [0, acc_params[4], 0], [0, 0, acc_params[5]]])
             ba = np.array([[acc_params[6]], [acc_params[7]], [acc_params[8]]])
-            skewed_a = np.linalg.inv(Ka) @ np.linalg.inv(Ta) @ true_a[interval] - ba.T + noise
+            skewed_a = np.linalg.inv(Ka) @ np.linalg.inv(Ta) @ true_a - ba.T + noise
             Tg = np.array([[1, -gyro_params[0], gyro_params[1]], [0, 1, -gyro_params[2]], [0, 0, 1]])
             Kg = np.array([[gyro_params[3], 0, 0], [0, gyro_params[4], 0], [0, 0, gyro_params[5]]])
             bg = np.array([[gyro_params[6]], [gyro_params[7]], [gyro_params[8]]])
-            skewed_g = np.linalg.inv(Kg) @ np.linalg.inv(Tg) @ true_g[interval] - bg.T + noise
+            skewed_g = np.linalg.inv(Kg) @ np.linalg.inv(Tg) @ true_g - bg.T + noise
 
             row = [skewed_a[0][0], skewed_a[0][1], skewed_a[0][2], skewed_g[0][0], skewed_g[0][1], skewed_g[0][2], 0]
             data.append(row)
