@@ -52,7 +52,7 @@ print("sample variance:", sample_variance)
 
 # ## Evaluating the accuacy of numerical derivatives
 
-# In[3]:
+# In[27]:
 
 def func(theta_acc):
     T = np.array([[1, -theta_acc[0], theta_acc[1]],[0, 1, -theta_acc[2]],[0,0,1]])
@@ -95,33 +95,43 @@ data = np.array(data)
 
 # ## iterate over the Tinit period to compute the gyro biases
 
-# In[5]:
+# In[13]:
 
 Tinit = 4
 samples_per_second = 100
-Tinit_idx = 4 * samples_per_second
+Tinit_idx = int(Tinit * samples_per_second)
 init_data = data[:Tinit_idx]
 remaining_data = data[Tinit_idx:]
 gyro_biases = np.mean(init_data, axis=0)[3:6]
-print("gyro_biases:", gyro_biases)
-sample_variance = np.var(init_data)
+data -= np.array([0, 0, 0, gyro_biases[0], gyro_biases[1], gyro_biases[2], 0])
 
 
-# In[75]:
+# In[29]:
+
+plt.figure(figsize=(10,4))
+plt.title("Static Classifier")
+plt.plot(init_data[:,0], label='accel x',c='m')
+plt.plot(init_data[:,1], label='accel y', c='b')
+plt.plot(init_data[:,2], label='accel z', c='y')
+plt.legend(bbox_to_anchor=(1.1,1))
+plt.show()
+
+
+# In[15]:
 
 def get_static_intervals(threshold, data, t_wait, sample_per_second):
     window_size = int(sample_per_second * t_wait)
     if window_size % 2 == 0:
         window_size -= 1
     data_array_size = len(data)
-    classifications = np.zeros(data_array_size) + 2
+    classifications = np.zeros(data_array_size)
     static_indicators = []
     temp_pair = [-1, -1]
     previously_static = False
     for i in range(data_array_size - window_size):
         window_data = data[i:i+window_size]
-        center = i + window_size //2
-        variance = np.linalg.norm(np.var(window_data[:, :3], axis = 0))**2
+        center = i + window_size // 2
+        variance = np.sum(np.var(window_data[:, :3], axis = 0)**2)
         
         #end of a static interval
         static = variance < threshold
@@ -134,7 +144,7 @@ def get_static_intervals(threshold, data, t_wait, sample_per_second):
             temp_pair[0] = center
         
         previously_static = static
-        classifications[center] = 3 if static else 2
+        classifications[center] = 1 if static else 0
         
     if previously_static:
         print("static at the end")
@@ -156,15 +166,15 @@ def get_static_points(threshold, data, t_wait, sample_per_second):
     
 
 
-# In[76]:
+# In[16]:
 
 sigma_init = np.linalg.norm(np.var(init_data[:, :3], axis=0))
 print("sigma_init:", sigma_init)
 
 
-# In[93]:
+# In[19]:
 
-intervals, classifications = get_static_intervals(1e8*sigma_init**2, remaining_data, 2, samples_per_second)
+intervals, classifications = get_static_intervals(sigma_init, remaining_data, 2.5, samples_per_second)
 plt.figure(figsize=(15,10))
 plt.title("Static Classifier")
 plt.plot(classifications, c='k', label="static")
@@ -176,15 +186,16 @@ plt.show()
 print(intervals)
 
 
-# In[60]:
+# In[18]:
 
 total_intervals = 20
 s_intervals_opt = []
 params_acc = []
 threshold_opt = []
+t_wait = 2
 for i in range(1, total_intervals + 1):
     threshold = i * sigma_init**2
-    intervals, classifications = get_static_intervals(threshold, remaining_data, 3.5, samples_per_second)
+    intervals, classifications = get_static_intervals(threshold, remaining_data, t_wait, samples_per_second)
 
 
 # ### References
