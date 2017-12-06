@@ -39,3 +39,7 @@ cmake-build-debug/
 
 # IntelliJ
 out/
+
+# Latex
+*.log
+*.aux
