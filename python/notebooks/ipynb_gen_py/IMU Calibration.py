@@ -7,8 +7,7 @@
 
 # In[1]:
 
-import matplotlib.pyplot as plot
-from scipy import misc
+import matplotlib.pyplot as plt
 import numpy as np
 import csv
 import sys
@@ -53,7 +52,7 @@ print("sample variance:", sample_variance)
 
 # ## Evaluating the accuacy of numerical derivatives
 
-# In[41]:
+# In[3]:
 
 def func(theta_acc):
     T = np.array([[1, -theta_acc[0], theta_acc[1]],[0, 1, -theta_acc[2]],[0,0,1]])
@@ -82,16 +81,6 @@ print("five-point approximations")
 print(five_point_approximation(func, theta_acc, h))
 
 
-# hs = np.array([-2*h, -h, h, 2*h])
-# nodes = np.repeat(theta_acc, 4, axis=0)
-# nodes[:,0] += hsReferences:
-# 
-#  - https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf
-#  - http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395
-#  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7
-#  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0
-#  - https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp
-
 # In[4]:
 
 data_filename = "recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv"
@@ -112,7 +101,96 @@ Tinit = 4
 samples_per_second = 100
 Tinit_idx = 4 * samples_per_second
 init_data = data[:Tinit_idx]
+remaining_data = data[Tinit_idx:]
 gyro_biases = np.mean(init_data, axis=0)[3:6]
 print("gyro_biases:", gyro_biases)
 sample_variance = np.var(init_data)
 
+
+# In[75]:
+
+def get_static_intervals(threshold, data, t_wait, sample_per_second):
+    window_size = int(sample_per_second * t_wait)
+    if window_size % 2 == 0:
+        window_size -= 1
+    data_array_size = len(data)
+    classifications = np.zeros(data_array_size) + 2
+    static_indicators = []
+    temp_pair = [-1, -1]
+    previously_static = False
+    for i in range(data_array_size - window_size):
+        window_data = data[i:i+window_size]
+        center = i + window_size //2
+        variance = np.linalg.norm(np.var(window_data[:, :3], axis = 0))**2
+        
+        #end of a static interval
+        static = variance < threshold
+        if not static and previously_static:
+            temp_pair[1] = center
+            static_indicators.append(temp_pair)
+            temp_pair = [-1, -1]
+        #start of a static intervals
+        elif static and not previously_static:
+            temp_pair[0] = center
+        
+        previously_static = static
+        classifications[center] = 3 if static else 2
+        
+    if previously_static:
+        print("static at the end")
+        temp_pair[1] = data_array_size - window_size // 2 - 1
+        static_indicators.append(temp_pair)
+    
+    return static_indicators, classifications
+
+def get_static_points(threshold, data, t_wait, sample_per_second):
+    window_size = sample_per_second * t_wait
+    if window_size % 2 == 0:
+        window_size -= 1
+    data_array_size = len(data)
+    static_indicators = []
+    temp_pair = [-1, -1]
+    previous_static_indicator = 1
+    for i in range(data_array_size - window_size):
+        window_data = data[i:i+window_size]
+    
+
+
+# In[76]:
+
+sigma_init = np.linalg.norm(np.var(init_data[:, :3], axis=0))
+print("sigma_init:", sigma_init)
+
+
+# In[93]:
+
+intervals, classifications = get_static_intervals(1e8*sigma_init**2, remaining_data, 2, samples_per_second)
+plt.figure(figsize=(15,10))
+plt.title("Static Classifier")
+plt.plot(classifications, c='k', label="static")
+plt.plot(remaining_data[:,0], label='accel x', alpha=0.4, c='m')
+plt.plot(remaining_data[:,1], label='accel y', alpha=0.4, c='b')
+plt.plot(remaining_data[:,2], label='accel z', alpha=0.4, c='y')
+plt.legend(bbox_to_anchor=(1.1,1))
+plt.show()
+print(intervals)
+
+
+# In[60]:
+
+total_intervals = 20
+s_intervals_opt = []
+params_acc = []
+threshold_opt = []
+for i in range(1, total_intervals + 1):
+    threshold = i * sigma_init**2
+    intervals, classifications = get_static_intervals(threshold, remaining_data, 3.5, samples_per_second)
+
+
+# ### References
+# 
+# - https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf
+#  - http://eigen.tuxfamily.org/bz_attachmentbase/attachment.cgi?id=395
+#  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7
+#  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0
+#  - https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp
