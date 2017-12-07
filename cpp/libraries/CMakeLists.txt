@@ -18,12 +18,15 @@ if (NOT ${RIO})
             opencv_imgproc
             opencv_highgui)
     target_include_directories(cscore PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+
+    file(GLOB LINUX_NAVX_DRIVER_SRC linux_navx_driver/*.cpp)
+    add_library(linux_navx_driver ${LINUX_NAVX_DRIVER_SRC})
+    target_include_directories(linux_navx_driver PRIVATE linux_navx_driver)
 endif ()
 
 if (${RIO})
     file(GLOB_RECURSE navx_src navxmxp/roborio/c++/navx_frc_cpp/*.cpp)
     add_library(navx_frc_cpp ${navx_src})
-    message(${NTCORE_INCLUDE_DIR})
     target_include_directories(navx_frc_cpp PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${HAL_INCLUDE_DIR} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
     install(TARGETS navx_frc_cpp DESTINATION ${WPILIB_DIR}/user/cpp/lib)
 endif ()

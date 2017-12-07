@@ -18,10 +18,7 @@ if (NOT ${RIO})
     target_include_directories(algorithm PRIVATE ${phil_include_dir}/eigen3)
 
     add_executable(test_csv_reader test_csv_reader.cpp csvReader.cpp)
-endif ()
 
-# main or desktop programs
-if (NOT ${RIO})
     add_executable(detect_markers detect_markers.cpp)
     target_link_libraries(detect_markers aruco ${phil_opencv_libs})
     target_include_directories(detect_markers PRIVATE ${OpenCV_INCLUDE_DIRS})
@@ -37,5 +34,8 @@ if (NOT ${RIO})
     add_executable(auto_diff_test auto_diff_test.cpp)
     target_include_directories(auto_diff_test PRIVATE ${phil_include_dir}/eigen3)
 
+    add_executable(record_imu_calibration_data record_imu_calibration_data.cpp)
+    target_include_directories(record_imu_calibration_data PRIVATE ${LINUX_NAVX_DRIVER_INCLUDE_DIR})
+    target_link_libraries(record_imu_calibration_data linux_navx_driver)
 endif ()
 

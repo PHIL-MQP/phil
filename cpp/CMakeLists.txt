@@ -3,17 +3,6 @@ cmake_minimum_required(VERSION 2.8.0)
 
 option(RIO "cross-compile for RoboRIO" OFF)
 option(TK1 "cross-compile for TK1" OFF)
-if (${RIO})
-    set(CMAKE_CXX_COMPILER "arm-frc-linux-gnueabi-g++")
-    set(CMAKE_AR "arm-frc-linux-gnueabi-ar" CACHE FILEPATH "Archiver" FORCE)
-    set(CMAKE_RANLIB "arm-frc-linux-gnueabi-ranlib" CACHE FILEPATH "Ranlib" FORCE)
-
-    if (${CMAKE_HOST_WIN32})
-        include_directories("C:/frc/usr/include")
-    endif ()
-elseif (${TK1})
-    set(CMAKE_CXX_COMPILER "arm-linux-gnueabihf-g++")
-endif ()
 
 #############################################################################
 ## Dependencies
@@ -40,7 +29,7 @@ endif ()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -std=c++11")
 
-if (${CMAKE_HOST_WIN32})
+if (CMAKE_HOST_WIN32)
     set(HOME $ENV{HOMEPATH})
     STRING(REGEX REPLACE "\\\\" "/" HOME ${HOME})
 else ()
@@ -55,7 +44,12 @@ set(NTCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/ntcore/src/main/native/incl
 set(CSCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/cscore/src/main/native/include)
 set(NAVX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/include
         ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
-set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include)
+set(LINUX_NAVX_DRIVER_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/linux_navx_driver)
+if (CMAKE_HOST_WIN32)
+    set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include "C:/frc/usr/include")
+else ()
+    set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include)
+endif ()
 
 
 # Allows us to build TestRobotProgram
