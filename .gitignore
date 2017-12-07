@@ -14,6 +14,7 @@ RemoteSystemsTempFiles
 # User-specific stuff:
 workspace.xml
 tasks.xml
+misc.xml
 python.iml
 modules.xml
 

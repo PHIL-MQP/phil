@@ -3,6 +3,9 @@ venv
 build
 tk1_build
 rio_build
+.build
+.tk1_build
+.rio_build
 
 *.swp
 
