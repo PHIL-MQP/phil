@@ -34,8 +34,10 @@ if (NOT ${RIO})
     add_executable(auto_diff_test auto_diff_test.cpp)
     target_include_directories(auto_diff_test PRIVATE ${phil_include_dir}/eigen3)
 
-    add_executable(record_imu_calibration_data record_imu_calibration_data.cpp)
-    target_include_directories(record_imu_calibration_data PRIVATE ${LINUX_NAVX_DRIVER_INCLUDE_DIR})
-    target_link_libraries(record_imu_calibration_data linux_navx_driver)
+    if (NOT CMAKE_HOST_WIN32)
+        add_executable(record_imu_calibration_data record_imu_calibration_data.cpp)
+        target_include_directories(record_imu_calibration_data PRIVATE ${LINUX_NAVX_DRIVER_INCLUDE_DIR})
+        target_link_libraries(record_imu_calibration_data linux_navx_driver)
+    endif ()
 endif ()
 

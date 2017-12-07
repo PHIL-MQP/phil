@@ -19,9 +19,12 @@ if (NOT ${RIO})
             opencv_highgui)
     target_include_directories(cscore PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
-    file(GLOB LINUX_NAVX_DRIVER_SRC linux_navx_driver/*.cpp)
-    add_library(linux_navx_driver ${LINUX_NAVX_DRIVER_SRC})
-    target_include_directories(linux_navx_driver PRIVATE linux_navx_driver)
+
+    if (NOT CMAKE_HOST_WIN32)
+        file(GLOB LINUX_NAVX_DRIVER_SRC linux_navx_driver/*.cpp)
+        add_library(linux_navx_driver ${LINUX_NAVX_DRIVER_SRC})
+        target_include_directories(linux_navx_driver PRIVATE linux_navx_driver)
+    endif ()
 endif ()
 
 if (${RIO})
