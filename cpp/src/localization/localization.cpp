@@ -1,4 +1,5 @@
 #include <phil/common/common.h>
+#include <phil/localization/localization.h>
 
 namespace phil {
 

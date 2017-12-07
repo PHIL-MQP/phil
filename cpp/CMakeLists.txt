@@ -77,7 +77,7 @@ add_subdirectory(tools)
 
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
-    add_library(phil_rio ${phil_rio_src} ${phil_common_src})
+    add_library(phil_rio ${phil_rio_src} ${phil_common_src} ${localization_src})
     target_include_directories(phil_rio PRIVATE ${phil_include_dir} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
 
     # Test program
@@ -91,7 +91,7 @@ if (${RIO})
 endif ()
 
 if (NOT ${RIO})
-    add_executable(phil_main ${main_src} ${phil_common_src})
+    add_executable(phil_main ${main_src} ${phil_common_src} ${localization_src})
     target_include_directories(phil_main PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
     target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs})
 

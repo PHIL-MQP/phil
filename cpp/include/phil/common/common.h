@@ -1,7 +1,6 @@
 #pragma once
 
 #include <llvm/StringRef.h>
-#include <opencv2/core/mat.hpp>
 #include "udp.h"
 
 namespace phil {

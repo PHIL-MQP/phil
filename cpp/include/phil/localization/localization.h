@@ -1,6 +1,7 @@
 #pragma once
 
 #include <phil/common/common.h>
+#include <opencv2/core.hpp>
 
 namespace phil {
 
