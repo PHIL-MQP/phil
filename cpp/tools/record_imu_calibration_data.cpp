@@ -12,17 +12,15 @@ void show_help() {
 }
 
 int main(int argc, char *argv[]) {
-  std::cout << "Program Executing\n";
-
   if (argc != 3) {
     show_help();
     return 1;
   }
 
-  AHRS navx = AHRS(argv[1]);
+  AHRS navx = AHRS(argv[1], AHRS::SerialDataType::kRawData, 60);
   double num_seconds = std::stof(argv[2]);
   unsigned int ms_per_sample = 10;
-  unsigned int total_samples = unsigned int((num_seconds * ms_per_sample) / 1000);
+  auto total_samples = static_cast<unsigned int>(num_seconds * (1000.0 / ms_per_sample));
 
   std::ofstream log;
   log.open("imu_calibration_data.csv");
