@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,28 +10,36 @@ import csv
 
 # # Read MoCap data and RoboRIO data form files
 
-# In[3]:
+# In[2]:
 
-data_dir = "../../recorded_sensor_data/mocap_11_17_18-00-00/"
-imu_file = data_dir + "mocap_imu_encoder_data.csv"
-mocap_file = data_dir + "MQP_FRC_Trial 4.csv"
-imu_reader = csv.reader(open(imu_file, 'r'))
+data_dir = "../../recorded_sensor_data/mocap_12_06_04-00-00/"
+sensor_file = data_dir + "sensor_data.csv"
+mocap_file = data_dir + "mocap_data.csv"
+sensor_reader = csv.reader(open(sensor_file, 'r'))
 mocap_reader = csv.reader(open(mocap_file, 'r'))
 
+# read offset to center of robot
+next(mocap_reader)
+row = next(mocap_reader)
+marker = np.array([float(d) for d in row[:3]])
+row = next(mocap_reader)
+centroid = np.array([float(d) for d in row[:3]])
+robot_center_offset = marker - centroid
+
 # skip headers
-next(imu_reader)
+next(sensor_reader)
 next(mocap_reader)
 next(mocap_reader)
 next(mocap_reader)
 next(mocap_reader)
 next(mocap_reader)
 
-imu_data = []
-for imu_row in imu_reader:
-    data = [float(d) for d in imu_row]
+sensor_data = []
+for sensor_row in sensor_reader:
+    data = [float(d) for d in sensor_row]
     if len(data) > 0 and data[-1] > 1800: # hack to skip first round of data
-        imu_data.append(data)
-imu_data = np.array(imu_data)
+        sensor_data.append(data)
+sensor_data = np.array(sensor_data)
 
 mocap_data = []
 for mocap_row in mocap_reader:
@@ -41,7 +49,7 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[4]:
+# In[3]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -54,15 +62,15 @@ def yawdiff(y1, y2):
 
 # ### Check the amount of data between the two matches?
 
-# In[5]:
+# In[ ]:
 
-print("Seconds of IMU data recorded: ", imu_data[-1][-1] - imu_data[0][-1])
+print("Seconds of IMU data recorded: ", sensor_data[-1][-1] - sensor_data[0][-1])
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 
 # # Plot Mocap Data by Axis
 
-# In[10]:
+# In[4]:
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -79,7 +87,7 @@ plt.show()
 
 # # Plot X/Y position from MoCap
 
-# In[7]:
+# In[5]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 9))
 mocap_state = np.zeros(9)
@@ -89,67 +97,59 @@ for mocap_idx in range(1, len(mocap_data)):
     rx = data[2]
     ry = data[3]
     rz = data[4]
-    tx = data[5]
-    ty = data[6]
-    tz = data[7]
+    tx = data[5] + robot_center_offset[0]
+    ty = data[6] + robot_center_offset[1]
+    tz = data[7] + robot_center_offset[2]
     mocap_state[0] = tx
     mocap_state[1] = ty
     drz = yawdiff(rz, last_data[4]) # handles wrap-around
     mocap_state[2] += drz
-    mocap_states[mocap_idx] = mocap_state
+    mocap_states[mocap_idx-1] = mocap_state
 
 
-# In[9]:
+# In[6]:
 
 plt.figure(figsize=(10,10))
+plt.scatter(mocap_states[0,0], mocap_states[0,1], marker='.', s=100, color='b')
 plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r')
 plt.axis("square")
 plt.show()
 
 
-# In[8]:
+# In[ ]:
 
-plt.figure(figsize=(10,10))
-plt.plot(mocap_states[:,2], label='theta')
-plt.legend()
-plt.title("Unwrapped Angle")
-plt.show()
-
-
-# In[9]:
-
-plt.plot(imu_data[:,0], label="IMU x")
-plt.plot(imu_data[:,1], label="IMU y")
-plt.plot(imu_data[:,2], label="IMU z")
+plt.plot(sensor_data[:,0], label="IMU x")
+plt.plot(sensor_data[:,1], label="IMU y")
+plt.plot(sensor_data[:,2], label="IMU z")
 plt.title("IMU Data")
 plt.legend()
 plt.show()
 
 
-# In[10]:
+# In[ ]:
 
-plt.plot(imu_data[:,3], label="Gyro x")
-plt.plot(imu_data[:,4], label="Gyro y")
-plt.plot(imu_data[:,5], label="Gyro z")
+plt.plot(sensor_data[:,3], label="Gyro x")
+plt.plot(sensor_data[:,4], label="Gyro y")
+plt.plot(sensor_data[:,5], label="Gyro z")
 plt.title("Gyro Data")
 plt.legend()
 plt.show()
 
 
-# In[11]:
+# In[ ]:
 
-means = np.mean(imu_data,axis=0)
+means = np.mean(sensor_data,axis=0)
 print("Average Accel X value:", means[0])
 print("Average Accel Y value:", means[1])
 print("Average Accel Z value:", means[2])
 
 
-# In[12]:
+# In[ ]:
 
 yaws = []
 yaw = 0
-last_t = imu_data[0][-1]
-for data in imu_data:
+last_t = sensor_data[0][-1]
+for data in sensor_data:
     gyro_z = data[5]
     dt_s = data[-1] - last_t
     yaw += dt_s * gyro_z
@@ -157,7 +157,7 @@ for data in imu_data:
     last_t = data[-1]
 
 
-# In[13]:
+# In[ ]:
 
 plt.plot(yaws, label="integrated gyro")
 plt.show()
@@ -165,7 +165,7 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[25]:
+# In[ ]:
 
 def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_scale):
     x = 0
@@ -198,10 +198,10 @@ def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[26]:
+# In[ ]:
 
-no_bias = DoubleIntegrateAccelerometer(imu_data, x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
-calib = DoubleIntegrateAccelerometer(imu_data, x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
+no_bias = DoubleIntegrateAccelerometer(sensor_data, x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
+calib = DoubleIntegrateAccelerometer(sensor_data, x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
 plt.plot(calib[2], label="calibrated vxs")
@@ -211,7 +211,7 @@ plt.legend()
 plt.show()
 
 
-# In[27]:
+# In[ ]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
@@ -224,7 +224,7 @@ plt.show()
 
 # ## Testing on Turtlebot accelerometer data
 
-# In[29]:
+# In[ ]:
 
 turtlebot_dir = "../../recorded_sensor_data/data_capture_11_02_01-09-00/"
 data_file = turtlebot_dir + "interpolated_data.csv"
@@ -299,12 +299,12 @@ plt.show()
 
 # # Camera Stuff
 
-# In[18]:
+# In[ ]:
 
 import cv2
 
 
-# In[19]:
+# In[ ]:
 
 img_dir = "../../recorded_sensor_data/practice_image_processing/"
 vid_file = img_dir + "out.avi"
@@ -331,7 +331,7 @@ for timestamp in img_timestamp_reader:
         break
 
 
-# In[20]:
+# In[ ]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')
