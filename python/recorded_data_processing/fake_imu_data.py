@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import sys
-from imu_calibration import optimize, compute_residual
+from imu_calibration import acc_optimize, compute_residual
 import matplotlib.pyplot as plt
 import csv
 
@@ -9,8 +9,8 @@ import csv
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("outfile", help="output file (csv)")
-    parser.add_argument('--seconds', type=int, default=8, help='length of interval at 100 samples per second')
-    parser.add_argument('--intervals', type=int, default=18, help='number of intervals')
+    parser.add_argument('--twait', type=int, default=4, help='the length of each interval')
+    parser.add_argument('--intervals', type=int, default=9, help='number of intervals')
     parser.add_argument('--noise', type=float, default=1e-3, help='variance of the gaussian noise added')
     parser.add_argument('--seed', type=int, default=1, help='seed numpy random generator')
     parser.add_argument('--plot', action="store_true", help='show a plot of the generated data')
@@ -26,11 +26,12 @@ def main():
     gyro_params = [0.1, .01, -.01, 1, 0.95, 1.08, -0.01, 0.03, 0.05]
 
     # generate fake sample of sitting flat on table
-    num_samples = args.seconds * 100
+    num_samples = args.twait * 100
     data = []
     fake_mean_accs = np.ndarray((args.intervals, 3))
     for interval in range(args.intervals):
         random_attitude = np.random.randn(3)
+        random_attitude[2] += 10
         norm = np.linalg.norm(random_attitude)
         true_a = random_attitude / norm
         true_g = np.array([0, 0, 0], dtype=np.float64)
@@ -54,7 +55,7 @@ def main():
             writer.writerow(row)
         fake_mean_accs[interval] = np.mean(data[interval*num_samples:(interval+1)*num_samples], axis=0)[0:3]
 
-    estimated_acc_params, residual = optimize(args.intervals, fake_mean_accs)
+    estimated_acc_params, residual = acc_optimize(args.intervals, fake_mean_accs)
     print("true parameters:\n", acc_params)
     print("residual of those params: ", compute_residual(args.intervals, fake_mean_accs, acc_params))
     print("paramaters found:\n", estimated_acc_params)
@@ -64,20 +65,12 @@ def main():
 
     if args.plot:
         data = np.array(data)
-        fig, ax = plt.subplots(1, 2)
-        ax[0].set_title("fake accelerometer data")
-        ax[0].plot(data[:, 0], label='accel x')
-        ax[0].plot(data[:, 1], label='accel y')
-        ax[0].plot(data[:, 2], label='accel z')
-        ax[0].set_ylabel("acceleration (gs)")
-        ax[0].set_xlabel("sample over time")
-
-        ax[1].set_title("fake gyro data")
-        ax[1].plot(data[:, 3], label='gyro x')
-        ax[1].plot(data[:, 4], label='gyro y')
-        ax[1].plot(data[:, 5], label='gyro z')
-        ax[1].set_ylabel("rate (degrees/s)")
-        ax[1].set_xlabel("sample over time")
+        plt.title("fake accelerometer data")
+        plt.plot(data[:, 0], label='accel x')
+        plt.plot(data[:, 1], label='accel y')
+        plt.plot(data[:, 2], label='accel z')
+        plt.ylabel("acceleration (gs)")
+        plt.xlabel("sample over time")
         plt.show()
 
     return 0

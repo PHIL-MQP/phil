@@ -34,7 +34,6 @@ def static_intervals(threshold, data, t_wait, sample_per_second):
         classifications[center] = 1 if static else 0
 
     if previously_static:
-        print("static at the end")
         temp_pair[1] = data_array_size - window_size // 2 - 1
         static_indicators.append(temp_pair)
 
@@ -113,14 +112,17 @@ def gyro_optimize(num_intervals, static_mean_accs, all_raw_gyro_readings, interv
         return f, df
 
     sol = root(gyro_error_and_jacobian, theta_gyro, jac=True, method='lm')
-    acc_params = sol.x
+    gyro_params = sol.x
 
     if not sol.success:
-        print("Optimizer Failed: ", sol.message, acc_params)
+        print("Optimizer Failed: ", sol.message, gyro_params)
+    # else:
+    #     print(gyro_params)
 
-    residual = compute_residual(num_intervals, static_mean_accs, acc_params)
+    residual = compute_residual(num_intervals, static_mean_accs, gyro_params)
 
-    return acc_params, residual
+    return gyro_params, residual
+
 
 def acc_optimize(intervals, static_mean_accs):
     theta_acc = np.array([0, 0, 0, 1, 1, 1, 0, 0, 0], dtype=np.float64)
@@ -141,6 +143,8 @@ def acc_optimize(intervals, static_mean_accs):
 
     if not sol.success:
         print("Optimizer Failed: ", sol.message, acc_params)
+    else:
+        print("LM Converged!")
 
     residual = compute_residual(intervals, static_mean_accs, acc_params)
 
@@ -159,8 +163,8 @@ def compute_residual(intervals, static_mean_accs, acc_params):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file', help='csv file of recorded IMU data')
-    parser.add_argument('--t-init', type=int, default=4, help='length of init period in seconds')
-    parser.add_argument('--t-wait', type=int, default=2, help='length of static intervals in seconds')
+    parser.add_argument('--t-init', type=float, default=4, help='length of init period in seconds')
+    parser.add_argument('--t-wait', type=float, default=2, help='length of static intervals in seconds')
     parser.add_argument('--intervals', type=int, default=19,
                         help='number of static intervals (not including init period)')
     parser.add_argument('--plot', action="store_true", help='show a plot of the generated data')
@@ -189,16 +193,15 @@ def main():
     total_intervals = args.intervals
     residual_opt = float("inf")
     for k in range(1, total_intervals + 1):  # line 5
-        threshold = k * sigma_init  # line 6 -- should be squared according to paper
+        threshold = k * sigma_init**2  # line 6 -- should be squared according to paper
         intervals, classifications = static_intervals(threshold, remaining_data, t_wait, samples_per_second)  # line 7
 
         if len(intervals) != total_intervals:
-            print("Skipping threshold {:0.16f}. Only found {:d}/{:d} static intervals".format(threshold, len(intervals),
-                                                                                              total_intervals))
+            print("Skipping threshold {:0.16f}. Found {:d}/{:d} static intervals".format(threshold, len(intervals),
+                                                                                         total_intervals))
             continue
 
         if args.plot:
-            plt.figure(figsize=(15, 10))
             plt.title("Static Classifier for threshold %0.16f" % threshold)
             plt.plot(classifications, c='k', label="static")
             plt.plot(remaining_data[:, 0], label='accel x', alpha=0.4, c='m')
@@ -222,12 +225,12 @@ def main():
             intervals_opt = intervals
             static_mean_accs_opt = static_mean_accs
 
-    gyro_params, residual = gyro_optimize(total_intervals, static_mean_accs_opt, remaining_data[:,3:6], intervals_opt)
+    # gyro_params, residual = gyro_optimize(total_intervals, static_mean_accs_opt, remaining_data[:,3:6], intervals_opt)
 
     print("Ideal accelerometer calibration parameters:")
     print(acc_params_opt)
-    print("Ideal gyro calibration parameters:")
-    print(gyro_params)
+    # print("Ideal gyro calibration parameters:")
+    # print(gyro_params)
 
 
 if __name__ == '__main__':
