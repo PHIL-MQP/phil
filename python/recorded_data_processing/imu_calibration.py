@@ -214,8 +214,8 @@ def main():
     # Accelerometer calibration
     total_intervals = args.intervals
     residual_opt = float("inf")
-    # for k in range(1, total_intervals + 1):  # line 5
-    for k in range(1, 2):  # line 5
+    for k in range(1, total_intervals + 1):  # line 5
+    # for k in range(1, 2):  # line 5
         threshold = k * sigma_init**2  # line 6 -- should be squared according to paper
         intervals, classifications = static_intervals(threshold, remaining_data, t_wait, samples_per_second)  # line 7
 
@@ -252,6 +252,7 @@ def main():
 
     print("Ideal accelerometer calibration parameters:")
     print(acc_params_opt)
+    print(residual_opt)
     # print("Ideal gyro calibration parameters:")
     # print(gyro_params)
 
