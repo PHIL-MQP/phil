@@ -8,7 +8,7 @@
 #include <HAL/HAL.h>
 
 #include <IMU_Calibration.h>
-#include "csvReader.h"
+
 /**
  * This programs logs navX MXP values to a file for use in IMU Calibration
  *
@@ -23,13 +23,14 @@ int main(int argc, char **argv) {
     return err_code;
   }
 
-  std::cout << "starting capture" << std::endl;
+  std::cout << "starting capture ~" << std::endl;
 
   AHRS *ahrs;
 
   try {
-    ahrs = new AHRS(SPI::Port::kMXP);
-    err_code = collectSamples(7500, ahrs);
+    ahrs = new AHRS(I2C::Port::kMXP);
+    err_code = collectSamples(40000, ahrs);
+//    err_code = collectSamples(700, ahrs);
     if (err_code) {
       return err_code;
     }
@@ -62,7 +63,7 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
 
   // open file for logging
   std::ofstream log;
-  log.open("imu_calibration_data.csv");
+  log.open("imu_calibration_data.csv", std::ofstream::trunc);
   if (!log.good()) {
     return -1;
   }
@@ -71,12 +72,11 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
   log << "accelx,accely,accelz,gyrox,gyroy,gyroz,time" << std::endl;
   while (c < number_of_samples) {
     // This buffer shouldn't be too big or you'll segfault everything!
-    const size_t buff_size = 2000;
+    const size_t buff_size = 10;
     INS buffer[buff_size];
     for (size_t i = 0; i < buff_size && c < number_of_samples; ) {
       gettimeofday(&t1, &tz);
       elapsed = (t1.tv_sec - t0.tv_sec) * 1e6 + t1.tv_usec - t0.tv_usec;
-
 
       //100 samples per second (Hz)
       if (elapsed > microsec_per_sample) {
@@ -93,6 +93,7 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
         c++;
         i++;
       }
+
     }
 
     std::cout << "saving some samples to file" << std::endl;
