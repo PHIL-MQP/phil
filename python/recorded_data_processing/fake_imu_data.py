@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import sys
-from imu_calibration import acc_optimize, compute_residual
+from imu_calibration import acc_optimize, compute_residual, double_integrate_acc
 import matplotlib.pyplot as plt
 import csv
 
@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("outfile", help="output file (csv)")
     parser.add_argument('--twait', type=int, default=4, help='the length of each interval')
-    parser.add_argument('--intervals', type=int, default=9, help='number of intervals')
+    parser.add_argument('--intervals', type=int, default=20, help='number of intervals')
     parser.add_argument('--noise', type=float, default=1e-3, help='variance of the gaussian noise added')
     parser.add_argument('--seed', type=int, default=1, help='seed numpy random generator')
     parser.add_argument('--plot', action="store_true", help='show a plot of the generated data')
@@ -22,7 +22,6 @@ def main():
 
     np.random.seed(args.seed)  # for reproducibility
     acc_params = [0.1, .01, -.01, 1, 0.95, 1.08, -0.01, 0.03, 0.05]
-    # acc_params = [0., 0, 0, 1, 1, 1, 0, 0, 0]
     gyro_params = [0.1, .01, -.01, 1, 0.95, 1.08, -0.01, 0.03, 0.05]
 
     # generate fake sample of sitting flat on table
@@ -31,7 +30,7 @@ def main():
     fake_mean_accs = np.ndarray((args.intervals, 3))
     for interval in range(args.intervals):
         random_attitude = np.random.randn(3)
-        random_attitude[2] += 10
+        random_attitude[2] += 6
         norm = np.linalg.norm(random_attitude)
         true_a = random_attitude / norm
         true_g = np.array([0, 0, 0], dtype=np.float64)
@@ -71,6 +70,23 @@ def main():
         plt.plot(data[:, 2], label='accel z')
         plt.ylabel("acceleration (gs)")
         plt.xlabel("sample over time")
+
+        xs, ys = double_integrate_acc(data[:, 0:3], 0.01, np.eye(3), np.eye(3), np.array([[0, 0, 0]]))
+        plt.figure()
+        plt.scatter(xs, ys, s=1, label='raw')
+        est_T = np.array([[1, -estimated_acc_params[0], estimated_acc_params[1]], [0, 1, -estimated_acc_params[2]], [0, 0, 1]])
+        est_K = np.array([[estimated_acc_params[3], 0, 0], [0, estimated_acc_params[4], 0], [0, 0, estimated_acc_params[5]]])
+        est_b = np.array([[estimated_acc_params[6], estimated_acc_params[7], estimated_acc_params[8]]])
+        est_xs, est_ys = double_integrate_acc(data[:, 0:3], 0.01, est_K, est_T, est_b)
+        plt.scatter(est_xs, est_ys, s=50, label='estimated')
+        true_T = np.array([[1, -acc_params[0], acc_params[1]], [0, 1, -acc_params[2]], [0, 0, 1]])
+        true_K = np.array([[acc_params[3], 0, 0], [0, acc_params[4], 0], [0, 0, acc_params[5]]])
+        true_b = np.array([[acc_params[6], acc_params[7], acc_params[8]]])
+        true_xs, true_ys = double_integrate_acc(data[:, 0:3], 0.01, true_K, true_T, true_b)
+        plt.scatter(true_xs, true_ys, s=1, label='true')
+        plt.legend()
+        plt.axis("square")
+
         plt.show()
 
     return 0

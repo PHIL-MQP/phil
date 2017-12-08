@@ -160,6 +160,28 @@ def compute_residual(intervals, static_mean_accs, acc_params):
     return residual
 
 
+def double_integrate_acc(acc_data, dt_s, K, T, b):
+    x = 0
+    y = 0
+    vx = 0
+    vy = 0
+    xs = []
+    ys = []
+    for a_s in acc_data:
+        a_o = T @ K @ (a_s + b).T
+        ax = a_o[0][0]
+        ay = a_o[1][0]
+
+        vx += ax * dt_s
+        vy += ay * dt_s
+        x += vx * dt_s + 0.5 * ax * dt_s ** 2
+        y += vy * dt_s + 0.5 * ay * dt_s ** 2
+        xs.append(x)
+        ys.append(y)
+
+    return xs, ys
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file', help='csv file of recorded IMU data')
@@ -192,7 +214,8 @@ def main():
     # Accelerometer calibration
     total_intervals = args.intervals
     residual_opt = float("inf")
-    for k in range(1, total_intervals + 1):  # line 5
+    # for k in range(1, total_intervals + 1):  # line 5
+    for k in range(1, 2):  # line 5
         threshold = k * sigma_init**2  # line 6 -- should be squared according to paper
         intervals, classifications = static_intervals(threshold, remaining_data, t_wait, samples_per_second)  # line 7
 

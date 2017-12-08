@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,9 +10,9 @@ import csv
 
 # # Read MoCap data and RoboRIO data form files
 
-# In[2]:
+# In[6]:
 
-data_dir = "../../recorded_sensor_data/mocap_12_06_04-00-00/"
+data_dir = "../../recorded_sensor_data/mocap_11_17_18-00-00/"
 sensor_file = data_dir + "sensor_data.csv"
 mocap_file = data_dir + "mocap_data.csv"
 sensor_reader = csv.reader(open(sensor_file, 'r'))
@@ -49,7 +49,7 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[3]:
+# In[7]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -62,7 +62,7 @@ def yawdiff(y1, y2):
 
 # ### Check the amount of data between the two matches?
 
-# In[ ]:
+# In[8]:
 
 print("Seconds of IMU data recorded: ", sensor_data[-1][-1] - sensor_data[0][-1])
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
@@ -70,7 +70,7 @@ print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 # # Plot Mocap Data by Axis
 
-# In[4]:
+# In[9]:
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -87,7 +87,7 @@ plt.show()
 
 # # Plot X/Y position from MoCap
 
-# In[5]:
+# In[10]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 9))
 mocap_state = np.zeros(9)
@@ -107,7 +107,7 @@ for mocap_idx in range(1, len(mocap_data)):
     mocap_states[mocap_idx-1] = mocap_state
 
 
-# In[6]:
+# In[11]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[0,0], mocap_states[0,1], marker='.', s=100, color='b')
@@ -116,7 +116,7 @@ plt.axis("square")
 plt.show()
 
 
-# In[ ]:
+# In[12]:
 
 plt.plot(sensor_data[:,0], label="IMU x")
 plt.plot(sensor_data[:,1], label="IMU y")
@@ -126,7 +126,7 @@ plt.legend()
 plt.show()
 
 
-# In[ ]:
+# In[13]:
 
 plt.plot(sensor_data[:,3], label="Gyro x")
 plt.plot(sensor_data[:,4], label="Gyro y")
@@ -136,7 +136,7 @@ plt.legend()
 plt.show()
 
 
-# In[ ]:
+# In[14]:
 
 means = np.mean(sensor_data,axis=0)
 print("Average Accel X value:", means[0])
@@ -144,7 +144,7 @@ print("Average Accel Y value:", means[1])
 print("Average Accel Z value:", means[2])
 
 
-# In[ ]:
+# In[15]:
 
 yaws = []
 yaw = 0
@@ -157,7 +157,7 @@ for data in sensor_data:
     last_t = data[-1]
 
 
-# In[ ]:
+# In[16]:
 
 plt.plot(yaws, label="integrated gyro")
 plt.show()
@@ -165,29 +165,32 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[ ]:
+# In[99]:
 
-def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_scale):
+def DoubleIntegrateAccelerometer(accelerometer_data, K, T, b):
     x = 0
     y = 0
     vx = 0
     vy = 0
-    last_t = accelerometer_data[0][-1]
+    dt_s = .02
     xs = []
     ys = []
     vxs = []
     vys = []
     axs = []
     ays = []
+    
     for data in accelerometer_data:
-        ax = (data[0] - x_bias) * x_scale
-        ay = (data[1] - y_bias) * y_scale
-        dt_s = data[-1] - last_t
+        a_s = data[3:6]
+        a_o = T@K@(a_s+b).T
+        ax = a_o[0][0]
+        ay = a_o[1][0]
+        
+#         print(a_o, a_s, dt_s)
         vx += ax * dt_s
         vy += ay * dt_s
         x += vx * dt_s + 0.5 * ax * dt_s ** 2
         y += vy * dt_s + 0.5 * ay * dt_s ** 2
-        last_t = data[-1]
         axs.append(ax)
         ays.append(ay)
         vxs.append(vx)
@@ -198,10 +201,13 @@ def DoubleIntegrateAccelerometer(accelerometer_data, x_bias, y_bias, x_scale, y_
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[ ]:
+# In[136]:
 
-no_bias = DoubleIntegrateAccelerometer(sensor_data, x_bias=0, y_bias=0, x_scale=1000, y_scale=1000)
-calib = DoubleIntegrateAccelerometer(sensor_data, x_bias=.0385, y_bias=.041, x_scale=1000, y_scale=1000)
+K = np.array([[1,0,0],[0,1,0],[0,0,1]])*100
+T = np.array([[1,0,0.01],[0,1,0],[0,0,1]])
+b = np.array([[0.0385,0.041,0]])
+no_bias = DoubleIntegrateAccelerometer(sensor_data, np.eye(3), np.eye(3), np.array([[0,0,0]]))
+calib = DoubleIntegrateAccelerometer(sensor_data, K, T, b)
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
 plt.plot(calib[2], label="calibrated vxs")
@@ -211,12 +217,13 @@ plt.legend()
 plt.show()
 
 
-# In[ ]:
+# In[137]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
 plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
 plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
+plt.axis("square")
 plt.title("Accelerometer versus MoCap")
 plt.legend()
 plt.show()
@@ -224,9 +231,9 @@ plt.show()
 
 # ## Testing on Turtlebot accelerometer data
 
-# In[ ]:
+# In[20]:
 
-turtlebot_dir = "../../recorded_sensor_data/data_capture_11_02_01-09-00/"
+turtlebot_dir = "../../recorded_sensor_data/turtlebot_original/"
 data_file = turtlebot_dir + "interpolated_data.csv"
 reader = csv.reader(open(data_file, 'r'))
 

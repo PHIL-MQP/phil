@@ -22,7 +22,7 @@ data = np.array(data)
 accelerometer_data = data[:,4:7]
 
 
-# In[87]:
+# In[3]:
 
 # plt.figure(figsize=(15,15))
 # plt.plot(data[:,0], label='left encoder ticks')
@@ -51,7 +51,7 @@ plt.legend()
 plt.show()
 
 
-# In[88]:
+# In[12]:
 
 def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b):
     x = 0
@@ -67,7 +67,6 @@ def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b):
     ays = []
     for a_s in accelerometer_data:
         a_o = T@K@(a_s + b).T
-#         print(a_o)
         ax = a_o[0][0]
         ay = a_o[1][0]
         az = a_o[2][0]
@@ -86,16 +85,16 @@ def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[89]:
+# In[14]:
 
 no_bias = DoubleIntegrateAccelerometer(accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)))
+b = np.array([])
 calib = DoubleIntegrateAccelerometer(accelerometer_data, T, K, b)
 
 plt.figure(figsize=(15,15))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=10, color='g', label='Accelerometer, no bias')
-
-plt.figure(figsize=(15,15))
 plt.scatter(calib[0], calib[1], marker='.', s=10, color='k', label='Accelerometer, with bias')
+plt.legend()
 plt.show()
 
 
