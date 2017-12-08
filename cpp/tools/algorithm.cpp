@@ -23,6 +23,8 @@ Eigen::Vector3f integrate_angular_velocity(std::string filename, int start, int 
 
 Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, float dt);
 
+Eigen::Vector3f calculate_expect_acc_gradually(std::string filename, int start, int end, float dt);
+
 Eigen::Vector3f get_acc_eigen_vector(std::vector<float> input);
 
 Eigen::Vector3f get_gyro_eigen_vector(std::vector<float> input);
@@ -47,12 +49,17 @@ int main(int argc, char **argv) {
   // Process the initial Tinit data
 
 
-
-  Eigen::Vector3f expected_acc = calculate_expect_acc(std::string(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), 0.001);
+  Eigen::Vector3f inital_acc = get_acc_eigen_vector(getData(std::string(argv[1]), std::stoi(argv[2])));
+  Eigen::Vector3f expected_acc = calculate_expect_acc(std::string(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), 0.00399);
   Eigen::Vector3f real_acc = get_acc_eigen_vector(getData(std::string(argv[1]), std::stoi(argv[3]) + 1));
+  Eigen::Vector3f expected_acc_gradually = calculate_expect_acc_gradually(std::string(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), 0.00399);
 
+  std::cout << std::endl << "inital acc:" << std::endl ;
+  std::cout << inital_acc.normalized() << std::endl;
   std::cout << std::endl << "expected acc:" << std::endl ;
   std::cout << expected_acc.normalized() << std::endl;
+  std::cout << std::endl << "expected acc gradually:" << std::endl ;
+  std::cout << expected_acc_gradually.normalized() << std::endl;
   std::cout << std::endl << "real acc:" << std::endl;
   std::cout << real_acc.normalized() << std::endl;
 }
@@ -152,8 +159,6 @@ Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, f
   Eigen::Vector3f angles = integrate_angular_velocity(filename, start, end, dt);
 
 
-  std::cout << "angles:"<< std::endl << angles << std::endl;
-
   Eigen::Matrix3f rotation_matrix;
   rotation_matrix = Eigen::AngleAxisf(angles(0), Eigen::Vector3f::UnitX())
       * Eigen::AngleAxisf(angles(1), Eigen::Vector3f::UnitY())
@@ -165,6 +170,26 @@ Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, f
 
   return (rotation_matrix * inital_acc.normalized());
 }
+
+Eigen::Vector3f calculate_expect_acc_gradually(std::string filename, int start, int end, float dt) {
+  std::vector<std::vector<float> > data = getData(filename, start, end);
+  Eigen::Vector3f inital_acc = get_acc_eigen_vector(getData(filename, start));
+
+
+  Eigen::Matrix3f rotation_matrix;
+
+  for (int i = 0; i < data.size(); i++) {
+    rotation_matrix = Eigen::AngleAxisf(degree_to_radian(data[i][3] * dt), Eigen::Vector3f::UnitX())
+      * Eigen::AngleAxisf(degree_to_radian(data[i][4] * dt), Eigen::Vector3f::UnitY())
+      * Eigen::AngleAxisf(degree_to_radian(data[i][5] * dt), Eigen::Vector3f::UnitZ());
+
+    inital_acc = rotation_matrix * inital_acc;
+  }
+
+  return inital_acc;
+}
+
+
 
 Eigen::Matrix3f make_rotation_matrix(float theta_x, float theta_y, float theta_z) {
 	Eigen::Matrix3f rotation_matix_x, rotation_matix_y, rotation_matix_z;
@@ -188,6 +213,9 @@ Eigen::Vector3f get_acc_eigen_vector(std::vector<float> input) {
 Eigen::Vector3f get_gyro_eigen_vector(std::vector<float> input) {
 	return Eigen::Vector3f(input[3], input[4], input[5]);
 }
+
+
+
 
 /**
 	@int start - the start index of the csv file row number
