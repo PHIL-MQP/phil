@@ -2,6 +2,7 @@
 #include <aruco/aruco.h>
 #include <algorithm>
 #include <cmath>
+
 void localize(cv::VideoCapture cap, aruco::CameraParameters camParam);
 // void localize(cv::VideoCapture cap, cv::Mat intrinsics, cv::Mat distortion);
 
@@ -13,12 +14,19 @@ struct myMarker {
 	cv::Mat r;
 };
 
-void show_help();
+void show_help() {
+  std::cout << "USAGE: ./localize capture_name  params_file"
+    << std::endl
+    << std::endl
+    << "EXAMPLE: ./localize /dev/video0 params.yml"
+    << "         ./localize test.avi params.yml"
+    << std::endl;
+}
 
 int main(int argc, char *argv[])
 {
 	if(argc != 3) {
-		// show_help();
+		show_help();
 		return EXIT_FAILURE;
 	}
 
@@ -117,7 +125,7 @@ void localize(cv::VideoCapture capture, aruco::CameraParameters CamParam)
   cv::namedWindow("in", 1);
 
   if (!capture.isOpened()) {
-  	cout << "Can not load video";
+    std::cout << "Can not load video";
   } else {
   	capture >> frame;
 
