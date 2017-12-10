@@ -8,6 +8,7 @@
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 #include <vector>
+#include <fstream>
 #include <eigen3/unsupported/Eigen/NonLinearOptimization>
 
 #include "csvReader.h"
@@ -21,9 +22,9 @@ Eigen::Matrix4f angular_velocity_2_quaternion(float w_x, float w_y, float w_z);
 
 Eigen::Vector3f integrate_angular_velocity(std::string filename, int start, int end, float dt);
 
-Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, float dt);
+Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, float dt, Eigen::Vector3f initial_acc);
 
-Eigen::Vector3f calculate_expect_acc_gradually(std::string filename, int start, int end, float dt);
+Eigen::Vector3f calculate_expect_acc_gradually(std::string filename, int start, int end, float dt, Eigen::Vector3f initial_acc);
 
 Eigen::Vector3f get_acc_eigen_vector(std::vector<float> input);
 
@@ -32,6 +33,8 @@ Eigen::Vector3f get_gyro_eigen_vector(std::vector<float> input);
 Eigen::Matrix3f make_rotation_matrix(float theta_x, float theta_y, float theta_z);
 
 float degree_to_radian(float degree);
+
+void log_gyroscope_data(std::string filename);
 
 std::vector<double> a_xt;
 std::vector<double> a_yt;
@@ -48,21 +51,64 @@ double params_acc = 0;
 int main(int argc, char **argv) {
   // Process the initial Tinit data
 
+  log_gyroscope_data(argv[1]);
 
-  Eigen::Vector3f inital_acc = get_acc_eigen_vector(getData(std::string(argv[1]), std::stoi(argv[2])));
-  Eigen::Vector3f expected_acc = calculate_expect_acc(std::string(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), 0.00399);
-  Eigen::Vector3f real_acc = get_acc_eigen_vector(getData(std::string(argv[1]), std::stoi(argv[3]) + 1));
-  Eigen::Vector3f expected_acc_gradually = calculate_expect_acc_gradually(std::string(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), 0.00399);
-
-  std::cout << std::endl << "inital acc:" << std::endl ;
-  std::cout << inital_acc.normalized() << std::endl;
-  std::cout << std::endl << "expected acc:" << std::endl ;
-  std::cout << expected_acc.normalized() << std::endl;
-  std::cout << std::endl << "expected acc gradually:" << std::endl ;
-  std::cout << expected_acc_gradually.normalized() << std::endl;
-  std::cout << std::endl << "real acc:" << std::endl;
-  std::cout << real_acc.normalized() << std::endl;
+  return 0;
 }
+
+void log_gyroscope_data(std::string filename) {
+
+  int static_intevals_midpoints[33] = {4727, 5275, 5883, 6521, 7017, 7393, 8626, 9590, 10309, 10924, 11616, 12368, 13240, 13994, 14726, 15442, 16277, 16880, 17551, 18237, 19448, 20487, 21177, 22077, 22631, 23244, 23997, 24569, 25174, 25783, 26394, 26967, 27578};
+  
+  std::ofstream log;
+  log.open("../../recorded_sensor_data/gyroscope_data/gyroscope_data2.csv", std::ofstream::trunc);
+  if (!log.good()) {
+    std::cout << "not good" << std::endl;
+    return;
+  }
+
+  log << "initial_acc_x,initial_acc_y,initial_acc_z,expected_acc_x,expected_acc_y, expected_acc_z,"
+   << "expected_acc_gradually_x, expected_acc_gradually_y, expected_acc_gradually_z, final_acc_x, final_acc_y, final_acc_z" << std::endl;
+
+  int window_size = 101;
+
+  Eigen::Vector3f initial_acc;
+  Eigen::Vector3f expected_acc;
+  Eigen::Vector3f real_acc; 
+  Eigen::Vector3f expected_acc_gradually;
+
+  for(int i = 1; i < 33; i++) {
+    int start = static_intevals_midpoints[i - 1];
+    int end = static_intevals_midpoints[i];
+
+    real_acc = get_acc_eigen_vector(getData(filename, end)) / window_size;
+    initial_acc = get_acc_eigen_vector(getData(filename, start)) / window_size;
+    for (int j = 1; j <= (window_size / 2); j++) {
+      real_acc += (get_acc_eigen_vector(getData(filename, end - j)) / window_size);
+      real_acc += (get_acc_eigen_vector(getData(filename, end + j)) / window_size);
+      initial_acc += (get_acc_eigen_vector(getData(filename, start - j)) / window_size);
+      initial_acc += (get_acc_eigen_vector(getData(filename, start + j)) / window_size);
+    }
+    expected_acc = calculate_expect_acc(filename, start, end, 0.00399, initial_acc);
+    expected_acc_gradually = calculate_expect_acc_gradually(filename, start, end, 0.00399, initial_acc);
+    
+
+    std::string comma = ",";
+
+    std::cout << start << std::endl;
+
+    log << initial_acc(0) << comma << initial_acc(1) << comma << initial_acc(2) << comma;
+    log << expected_acc(0) << comma << expected_acc(1) << comma << expected_acc(2) << comma;
+    log << expected_acc_gradually(0) << comma << expected_acc_gradually(1) << comma << expected_acc_gradually(2) << comma;
+    log << real_acc(0) << comma << real_acc(1) << comma << real_acc(2) << comma << std::endl;
+    
+  }
+
+  log.close();
+
+}
+
+
 
 double mean(std::vector<double> data) {
   double sum = 0.0;
@@ -153,8 +199,7 @@ Eigen::Matrix4f get_angular_velocity(int t) {
   return angular_velocity_2_quaternion(w_x, w_y, w_z);
 }
 
-Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, float dt) {
-  Eigen::Vector3f inital_acc = get_acc_eigen_vector(getData(filename, start));
+Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, float dt, Eigen::Vector3f initial_acc) {
 
   Eigen::Vector3f angles = integrate_angular_velocity(filename, start, end, dt);
 
@@ -168,12 +213,11 @@ Eigen::Vector3f calculate_expect_acc(std::string filename, int start, int end, f
   // std::cout << make_rotation_matrix(angles(0), angles(1), angles(2)) << std::endl;
   // std::cout << rotation_matrix << std:: endl;
 
-  return (rotation_matrix * inital_acc.normalized());
+  return (rotation_matrix * initial_acc.normalized());
 }
 
-Eigen::Vector3f calculate_expect_acc_gradually(std::string filename, int start, int end, float dt) {
+Eigen::Vector3f calculate_expect_acc_gradually(std::string filename, int start, int end, float dt, Eigen::Vector3f initial_acc) {
   std::vector<std::vector<float> > data = getData(filename, start, end);
-  Eigen::Vector3f inital_acc = get_acc_eigen_vector(getData(filename, start));
 
 
   Eigen::Matrix3f rotation_matrix;
@@ -183,10 +227,10 @@ Eigen::Vector3f calculate_expect_acc_gradually(std::string filename, int start, 
       * Eigen::AngleAxisf(degree_to_radian(data[i][4] * dt), Eigen::Vector3f::UnitY())
       * Eigen::AngleAxisf(degree_to_radian(data[i][5] * dt), Eigen::Vector3f::UnitZ());
 
-    inital_acc = rotation_matrix * inital_acc;
+    initial_acc = rotation_matrix * initial_acc;
   }
 
-  return inital_acc;
+  return initial_acc;
 }
 
 
