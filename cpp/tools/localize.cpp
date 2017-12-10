@@ -91,8 +91,6 @@ int main(int argc, char *argv[]) {
 
     ++frame_idx;
   }
-
-  return 0;
 }
 
 void show_help() {

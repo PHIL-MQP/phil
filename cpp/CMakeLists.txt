@@ -61,7 +61,7 @@ add_subdirectory(libraries)
 #############################################################################
 
 set(phil_include_dir ${CMAKE_SOURCE_DIR}/include)
-file(GLOB phil_common_src src/phil_common/*.cpp)
+file(GLOB common_src src/common/*.cpp)
 file(GLOB localization_src src/localization/*.cpp)
 file(GLOB phil_rio_src src/phil_rio/*.cpp)
 file(GLOB main_src src/main/*.cpp)
@@ -71,7 +71,7 @@ add_subdirectory(tools)
 
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
-    add_library(phil_rio ${phil_rio_src} ${phil_common_src} ${localization_src})
+    add_library(phil_rio ${phil_rio_src} ${common_src} ${localization_src})
     target_include_directories(phil_rio PRIVATE ${phil_include_dir} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
 
     # Test program
@@ -85,7 +85,7 @@ if (${RIO})
 endif ()
 
 if (NOT ${RIO})
-    add_executable(phil_main ${main_src} ${phil_common_src} ${localization_src})
+    add_executable(phil_main ${main_src} ${common_src} ${localization_src})
     target_include_directories(phil_main PRIVATE ${phil_include_dir} ${OpenCV_INCLUDE_DIRS} ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
     target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs})
 

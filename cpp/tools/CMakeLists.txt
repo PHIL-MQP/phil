@@ -1,11 +1,11 @@
 if (NOT WIN32)
-    add_executable(udp_server udp_server.cpp ${phil_common_src})
+    add_executable(udp_server udp_server.cpp ${common_src})
     target_include_directories(udp_server PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 
-    add_executable(udp_client udp_client.cpp ${phil_common_src})
+    add_executable(udp_client udp_client.cpp ${common_src})
     target_include_directories(udp_client PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 
-    add_executable(test_udp_trigger test_udp_trigger_tk1.cpp ${phil_common_src})
+    add_executable(test_udp_trigger test_udp_trigger_tk1.cpp ${common_src})
     target_include_directories(test_udp_trigger PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 endif ()
 
@@ -27,7 +27,7 @@ if (NOT ${RIO})
     target_link_libraries(fisheye ${phil_opencv_libs})
     target_include_directories(fisheye PRIVATE ${OpenCV_INCLUDE_DIRS})
 
-    add_executable(mocap_record mocap_record.cpp ${phil_common_src})
+    add_executable(mocap_record mocap_record.cpp ${common_src})
     target_link_libraries(mocap_record aruco cscore ${phil_opencv_libs})
     target_include_directories(mocap_record PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
@@ -37,7 +37,7 @@ if (NOT ${RIO})
         target_link_libraries(record_imu_calibration_data linux_navx_driver)
     endif ()
 
-    add_executable(localize localize.cpp ${phil_common_src})
+    add_executable(localize localize.cpp ${common_src})
     target_link_libraries(localize ${phil_opencv_libs} aruco cscore)
     target_include_directories(localize PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
