@@ -11,7 +11,7 @@ import json
 
 # # Read MoCap data and RoboRIO data form files
 
-# In[5]:
+# In[21]:
 
 data_dir = "../../recorded_sensor_data/mocap_12_10-03-30-00/"
 sensor_file = data_dir + "sensor_data.csv"
@@ -21,9 +21,12 @@ sensor_reader = csv.reader(open(sensor_file, 'r'))
 extra_points = json.load(open(extra_points_file, 'r'))
 mocap_reader = csv.reader(open(mocap_file, 'r'))
 
+MISSING_DATA = -123456789
+
 # read offset to center of robot
-marker = extra_points['marker']
-robot_center_offset = marker - centroid
+template_centroid = np.array(extra_points['template_centroid'])
+robot_center = np.array(extra_points['template_centroid'])
+robot_center_offset = robot_center - template_centroid 
 
 # skip headers
 next(sensor_reader)
@@ -36,19 +39,22 @@ next(mocap_reader)
 sensor_data = []
 for sensor_row in sensor_reader:
     data = [float(d) for d in sensor_row]
-    if len(data) > 0 and data[-1] > 1800: # hack to skip first round of data
-        sensor_data.append(data)
+    sensor_data.append(data)
 sensor_data = np.array(sensor_data)
 
 mocap_data = []
 for mocap_row in mocap_reader:
-    data = [float(d) for d in mocap_row]
-    if len(data) > 0:
-        mocap_data.append(data)
+    data = []
+    for d in mocap_row:
+        try:
+            data.append(float(d))
+        except ValueError:
+            data.append(MISSING_DATA)
+    mocap_data.append(data)
 mocap_data = np.array(mocap_data)
 
 
-# In[7]:
+# In[22]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -61,15 +67,15 @@ def yawdiff(y1, y2):
 
 # ### Check the amount of data between the two matches?
 
-# In[8]:
+# In[24]:
 
-print("Seconds of IMU data recorded: ", sensor_data[-1][-1] - sensor_data[0][-1])
+print("Seconds of IMU data recorded: ", (sensor_data[-1][-1] - sensor_data[0][-1])/1000.0)
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 
 # # Plot Mocap Data by Axis
 
-# In[9]:
+# In[25]:
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -86,7 +92,7 @@ plt.show()
 
 # # Plot X/Y position from MoCap
 
-# In[10]:
+# In[26]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 9))
 mocap_state = np.zeros(9)
@@ -106,7 +112,7 @@ for mocap_idx in range(1, len(mocap_data)):
     mocap_states[mocap_idx-1] = mocap_state
 
 
-# In[11]:
+# In[27]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[0,0], mocap_states[0,1], marker='.', s=100, color='b')
@@ -115,17 +121,17 @@ plt.axis("square")
 plt.show()
 
 
-# In[12]:
+# In[65]:
 
-plt.plot(sensor_data[:,0], label="IMU x")
-plt.plot(sensor_data[:,1], label="IMU y")
-plt.plot(sensor_data[:,2], label="IMU z")
-plt.title("IMU Data")
-plt.legend()
+plt.plot(sensor_data[:,0], label="acc x")
+plt.plot(sensor_data[:,1], label="acc y")
+plt.plot(sensor_data[:,2], label="acc z")
+plt.title("acc Data")
+plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[13]:
+# In[66]:
 
 plt.plot(sensor_data[:,3], label="Gyro x")
 plt.plot(sensor_data[:,4], label="Gyro y")
@@ -135,7 +141,7 @@ plt.legend()
 plt.show()
 
 
-# In[14]:
+# In[67]:
 
 means = np.mean(sensor_data,axis=0)
 print("Average Accel X value:", means[0])
@@ -143,7 +149,7 @@ print("Average Accel Y value:", means[1])
 print("Average Accel Z value:", means[2])
 
 
-# In[15]:
+# In[68]:
 
 yaws = []
 yaw = 0
@@ -156,7 +162,7 @@ for data in sensor_data:
     last_t = data[-1]
 
 
-# In[16]:
+# In[69]:
 
 plt.plot(yaws, label="integrated gyro")
 plt.show()
@@ -164,7 +170,7 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[99]:
+# In[70]:
 
 def DoubleIntegrateAccelerometer(accelerometer_data, K, T, b):
     x = 0
@@ -185,7 +191,6 @@ def DoubleIntegrateAccelerometer(accelerometer_data, K, T, b):
         ax = a_o[0][0]
         ay = a_o[1][0]
         
-#         print(a_o, a_s, dt_s)
         vx += ax * dt_s
         vy += ay * dt_s
         x += vx * dt_s + 0.5 * ax * dt_s ** 2
@@ -200,11 +205,11 @@ def DoubleIntegrateAccelerometer(accelerometer_data, K, T, b):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[136]:
+# In[71]:
 
-K = np.array([[1,0,0],[0,1,0],[0,0,1]])*100
+K = np.array([[1,0,0],[0,1,0],[0,0,1]])*10
 T = np.array([[1,0,0.01],[0,1,0],[0,0,1]])
-b = np.array([[0.0385,0.041,0]])
+b = np.array([[means[0], means[1], 0]])
 no_bias = DoubleIntegrateAccelerometer(sensor_data, np.eye(3), np.eye(3), np.array([[0,0,0]]))
 calib = DoubleIntegrateAccelerometer(sensor_data, K, T, b)
 plt.plot(no_bias[2], label="no bias vxs")
@@ -216,14 +221,45 @@ plt.legend()
 plt.show()
 
 
-# In[137]:
+# In[101]:
+
+# encoder kinematics
+print(mocap_data[0])
+encoder_x = mocap_data[0][5]
+encoder_y = mocap_data[0][6]
+encoder_theta = 0
+encoder_xs = []
+encoder_ys = []
+alpha = 1.0
+wheel_radius_m = 0.072
+track_width_m = 0.9
+dt_s = 0.02
+
+for data in sensor_data:
+    # TODO figure out distance per pulse
+    wl = float(data[9]) * 112
+    wr = float(data[10]) * 112
+    
+    B = alpha * track_width_m
+    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
+    dydt, dpdt = T @ np.array([wl, wr])
+    encoder_x = encoder_x + np.cos(encoder_theta) * dydt * dt_s
+    encoder_y = encoder_y + np.sin(encoder_theta) * dydt * dt_s
+    encoder_theta += dpdt * dt_s
+    
+    encoder_xs.append(encoder_x)
+    encoder_ys.append(encoder_y)
+
+
+# In[102]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
 plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
+plt.plot(encoder_xs, encoder_ys, color='k', label='encoders')
 plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
 plt.axis("square")
-plt.title("Accelerometer versus MoCap")
+plt.title("Sensor Data versus MoCap")
 plt.legend()
 plt.show()
 
