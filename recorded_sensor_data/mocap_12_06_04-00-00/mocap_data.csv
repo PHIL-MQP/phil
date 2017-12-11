@@ -3,7 +3,7 @@ x,y,z
 -1128.2,-878.16,293.64,,,,
 Objects,,,,,,,
 100,,,,,,,
-,,Global Angle MQP_OBJ_01:MQP_OBJ_01,,,,,
+,,Global Angle PHIL_ROBOT_01:PHIL_ROBOT_01,,,,,
 Frame,Sub Frame,RX,RY,RZ,TX,TY,TZ
 ,,rad,rad,rad,mm,mm,mm
 1,0,-0.000296496,0.000416286,0.000368976,-186.758,516.87,267.321

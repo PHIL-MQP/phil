@@ -1,11 +1,5 @@
 Objects,,,,,,,,,,,,,,,,,,,,,,,,,
 100,,,,,,,,,,,,,,,,,,,,,,,,,
-448.1,-362.8,117.7,,,,,,,,,,,,,,,,,,,,,,,
-565.6,-199.5,287.1,,,,,,,,,,,,,,,,,,,,,,,
-1431.5,489.468,409.452,,,,,,,,,,,,,,,,,,,,,,,
-1442.2,124.04,194.53,,,,,,,,,,,,,,,,,,,,,,,
-1446.49,-233.25,416.57,,,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,Global Angle PHIL_ROBOT_01:PHIL_ROBOT_01,,,,,,Global Angle TAG_07:TAG_07,,,,,,Global Angle TAG_11:TAG_11,,,,,,Global Angle TAG_12:TAG_12,,,,,
 Frame,Sub Frame,RX,RY,RZ,TX,TY,TZ,RX,RY,RZ,TX,TY,TZ,RX,RY,RZ,TX,TY,TZ,RX,RY,RZ,TX,TY,TZ
 ,,rad,rad,rad,mm,mm,mm,rad,rad,rad,mm,mm,mm,rad,rad,rad,mm,mm,mm,rad,rad,rad,mm,mm,mm
