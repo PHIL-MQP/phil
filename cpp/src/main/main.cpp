@@ -6,10 +6,15 @@
 #include "phil/common/udp.h"
 #include "phil/localization/localization.h"
 
+
+/**
+ * The main program that runs on the TK1. Receives sensor data from the camera and the RoboRIO and performs localization
+ */
 int main(int argc, char **argv) {
   std::cout << "main main program..." << std::endl;
 
   // camera server
+  // TODO: abstract away video versus live camera data
   cs::UsbCamera camera{"usbcam", 0};
   camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, 30);
   cs::MjpegServer mjpegServer{"httpserver", 8081};
