@@ -11787,6 +11787,7 @@ div#notebook {
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">json</span>
 </pre></div>
 
 </div>
@@ -11805,21 +11806,19 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data_dir</span> <span class="o">=</span> <span class="s2">&quot;../../recorded_sensor_data/mocap_11_17_18-00-00/&quot;</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data_dir</span> <span class="o">=</span> <span class="s2">&quot;../../recorded_sensor_data/mocap_12_10-03-30-00/&quot;</span>
 <span class="n">sensor_file</span> <span class="o">=</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s2">&quot;sensor_data.csv&quot;</span>
 <span class="n">mocap_file</span> <span class="o">=</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s2">&quot;mocap_data.csv&quot;</span>
+<span class="n">extra_points_file</span> <span class="o">=</span> <span class="n">data_dir</span> <span class="o">+</span> <span class="s2">&quot;extra_points.json&quot;</span>
 <span class="n">sensor_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">sensor_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">))</span>
+<span class="n">extra_points</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">extra_points_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">))</span>
 <span class="n">mocap_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">mocap_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">))</span>
 
 <span class="c1"># read offset to center of robot</span>
-<span class="nb">next</span><span class="p">(</span><span class="n">mocap_reader</span><span class="p">)</span>
-<span class="n">row</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">mocap_reader</span><span class="p">)</span>
-<span class="n">marker</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[:</span><span class="mi">3</span><span class="p">]])</span>
-<span class="n">row</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">mocap_reader</span><span class="p">)</span>
-<span class="n">centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[:</span><span class="mi">3</span><span class="p">]])</span>
+<span class="n">marker</span> <span class="o">=</span> <span class="n">extra_points</span><span class="p">[</span><span class="s1">&#39;marker&#39;</span><span class="p">]</span>
 <span class="n">robot_center_offset</span> <span class="o">=</span> <span class="n">marker</span> <span class="o">-</span> <span class="n">centroid</span>
 
 <span class="c1"># skip headers</span>
@@ -11846,6 +11845,40 @@ div#notebook {
 </pre></div>
 
 </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[{&#39;name&#39;: &#39;a&#39;, &#39;y&#39;: -362.8, &#39;x&#39;: 448.1, &#39;z&#39;: 117.7}, {&#39;name&#39;: &#39;b&#39;, &#39;y&#39;: -199.5, &#39;x&#39;: 565.6, &#39;z&#39;: 287.1}, {&#39;name&#39;: &#39;c&#39;, &#39;y&#39;: 489.468, &#39;x&#39;: 1431.5, &#39;z&#39;: 409.452}, {&#39;name&#39;: &#39;d&#39;, &#39;y&#39;: 124.04, &#39;x&#39;: 1442.2, &#39;z&#39;: 194.53}, {&#39;name&#39;: &#39;e&#39;, &#39;y&#39;: -233.25, &#39;x&#39;: 1446.49, &#39;z&#39;: 416.57}]
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-fg">&lt;ipython-input-5-8903de2f770d&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
+<span class="ansi-green-intense-fg ansi-bold">      9</span> <span class="ansi-red-fg"># read offset to center of robot</span>
+<span class="ansi-green-intense-fg ansi-bold">     10</span> print<span class="ansi-blue-fg">(</span>extra_points<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-fg">---&gt; 11</span><span class="ansi-red-fg"> </span>robot_center_offset <span class="ansi-blue-fg">=</span> marker <span class="ansi-blue-fg">-</span> centroid
+<span class="ansi-green-intense-fg ansi-bold">     12</span> 
+<span class="ansi-green-intense-fg ansi-bold">     13</span> <span class="ansi-red-fg"># skip headers</span>
+
+<span class="ansi-red-fg">NameError</span>: name &#39;marker&#39; is not defined</pre>
+</div>
+</div>
+
 </div>
 </div>
 

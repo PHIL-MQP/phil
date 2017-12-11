@@ -6,24 +6,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
+import json
 
 
 # # Read MoCap data and RoboRIO data form files
 
-# In[6]:
+# In[5]:
 
-data_dir = "../../recorded_sensor_data/mocap_11_17_18-00-00/"
+data_dir = "../../recorded_sensor_data/mocap_12_10-03-30-00/"
 sensor_file = data_dir + "sensor_data.csv"
 mocap_file = data_dir + "mocap_data.csv"
+extra_points_file = data_dir + "extra_points.json"
 sensor_reader = csv.reader(open(sensor_file, 'r'))
+extra_points = json.load(open(extra_points_file, 'r'))
 mocap_reader = csv.reader(open(mocap_file, 'r'))
 
 # read offset to center of robot
-next(mocap_reader)
-row = next(mocap_reader)
-marker = np.array([float(d) for d in row[:3]])
-row = next(mocap_reader)
-centroid = np.array([float(d) for d in row[:3]])
+marker = extra_points['marker']
 robot_center_offset = marker - centroid
 
 # skip headers
