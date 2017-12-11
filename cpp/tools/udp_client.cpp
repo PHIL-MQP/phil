@@ -95,6 +95,6 @@ void show_help() {
   std::cout << "USAGE: ./udp_client hostname"
             << std::endl
             << std::endl
-            << "Example: ./udp_client phil-main.local"
+            << "Example: ./udp_client phil-tk1.local"
             << std::endl;
 }

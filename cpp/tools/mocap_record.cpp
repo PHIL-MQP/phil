@@ -52,7 +52,7 @@ int main(int argc, const char **argv) {
     return EXIT_FAILURE;
   }
 
-  std::string hostname = "phil-main.local";
+  std::string hostname = "phil-tk1.local";
   if (server_hostname_flag) {
     hostname = args::get(server_hostname_flag);
   }

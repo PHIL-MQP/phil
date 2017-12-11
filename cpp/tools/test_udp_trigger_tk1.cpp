@@ -21,7 +21,7 @@ int main(int argc, const char **argv) {
     std::cout << parser;
     return 0;
   }
-  std::string hostname = "phil-main.local";
+  std::string hostname = "phil-tk1.local";
   if (server_hostname_flag) {
     hostname = args::get(server_hostname_flag);
   }
