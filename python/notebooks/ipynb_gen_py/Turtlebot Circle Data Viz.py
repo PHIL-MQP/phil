@@ -118,7 +118,7 @@ plt.legend()
 plt.show()
 
 
-# In[13]:
+# In[1]:
 
 initial_guess = np.array([0, 0, 0])  # alpha, beta, gamma
 acc = 
@@ -137,7 +137,7 @@ def body_to_imu_tf(angles):
     
     R = np.array([[c2*c3, -c2*s3, s2],[c1*s3+c3*s1*s2, c1*c3-s1*s2*s3, -c2*s1],[s1*s3-c1*c3*s2, c3*s1+c1*s2*s3, c1*c2]])
         
-    df = np.array([[0, -s2*c3*x+s2*s3*y+c2*z, -c2*s3*x+-c2*c3*y],[],[]])
+    df = np.array([[0, -s2*c3*x+s2*s3*y+c2*z, -c2*s3*x+-c2*c3*y],[-x*s3*s1+x*c3*s2*c1-y*s1*c3-c1*s2*s3*y-c2*c1*z, c3*s1*c2*x-s1*c2*s3*y+s2*s1*z, c1*c3*x-s3*s1*s2*x-c1*s3*y-s1*s2*c3*y],[c1*s3*x+s1*c3*c2*x+c3*c1*y-s1*s2*s3*y+s1*c2*z, -c1*c3*c2*x+c1*c2*s3*y-c*s2*z, s1*c3*x+c1*s3*s2*x-s3*s1*s2*x-s3*s1*y+c1*s2*c3*y]])
     
     return np.array([0,0,1]) - R@acc, df
 

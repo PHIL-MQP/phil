@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ import json
 
 # # Read MoCap data and RoboRIO data form files
 
-# In[21]:
+# In[2]:
 
 data_dir = "../../recorded_sensor_data/mocap_12_10-03-30-00/"
 sensor_file = data_dir + "sensor_data.csv"
@@ -54,7 +54,7 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[22]:
+# In[3]:
 
 def yawdiff(y1, y2):
     diff = y2 - y1
@@ -67,7 +67,7 @@ def yawdiff(y1, y2):
 
 # ### Check the amount of data between the two matches?
 
-# In[24]:
+# In[4]:
 
 print("Seconds of IMU data recorded: ", (sensor_data[-1][-1] - sensor_data[0][-1])/1000.0)
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
@@ -75,7 +75,7 @@ print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 # # Plot Mocap Data by Axis
 
-# In[25]:
+# In[5]:
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -92,7 +92,7 @@ plt.show()
 
 # # Plot X/Y position from MoCap
 
-# In[26]:
+# In[6]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 9))
 mocap_state = np.zeros(9)
@@ -102,9 +102,9 @@ for mocap_idx in range(1, len(mocap_data)):
     rx = data[2]
     ry = data[3]
     rz = data[4]
-    tx = data[5] + robot_center_offset[0]
-    ty = data[6] + robot_center_offset[1]
-    tz = data[7] + robot_center_offset[2]
+    tx = (data[5] + robot_center_offset[0]) / 1000
+    ty = (data[6] + robot_center_offset[1]) / 1000
+    tz = (data[7] + robot_center_offset[2]) / 1000
     mocap_state[0] = tx
     mocap_state[1] = ty
     drz = yawdiff(rz, last_data[4]) # handles wrap-around
@@ -112,7 +112,7 @@ for mocap_idx in range(1, len(mocap_data)):
     mocap_states[mocap_idx-1] = mocap_state
 
 
-# In[27]:
+# In[7]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[0,0], mocap_states[0,1], marker='.', s=100, color='b')
@@ -121,7 +121,7 @@ plt.axis("square")
 plt.show()
 
 
-# In[65]:
+# In[8]:
 
 plt.plot(sensor_data[:,0], label="acc x")
 plt.plot(sensor_data[:,1], label="acc y")
@@ -131,7 +131,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[66]:
+# In[9]:
 
 plt.plot(sensor_data[:,3], label="Gyro x")
 plt.plot(sensor_data[:,4], label="Gyro y")
@@ -141,15 +141,7 @@ plt.legend()
 plt.show()
 
 
-# In[67]:
-
-means = np.mean(sensor_data,axis=0)
-print("Average Accel X value:", means[0])
-print("Average Accel Y value:", means[1])
-print("Average Accel Z value:", means[2])
-
-
-# In[68]:
+# In[10]:
 
 yaws = []
 yaw = 0
@@ -162,22 +154,66 @@ for data in sensor_data:
     last_t = data[-1]
 
 
-# In[69]:
+# In[11]:
 
 plt.plot(yaws, label="integrated gyro")
 plt.show()
 
 
+# # Encoder
+
+# In[28]:
+
+# encoder kinematics
+encoder_x = mocap_states[0][0]
+encoder_y = mocap_states[0][1]
+encoder_theta = mocap_states[0][2]
+encoder_xs = []
+encoder_ys = []
+alpha = 1.0
+wheel_radius_m = 0.072
+track_width_m = 0.9
+dt_s = 0.02
+
+pulse_per_revolution = 128
+distance_per_pulse =(wheel_radius_m * 2 * np.pi) /  pulse_per_revolution
+print(distance_per_pulse)
+
+for data in sensor_data:
+    wl = float(data[9]) * distance_per_pulse
+    wr = float(data[10]) * distance_per_pulse
+    
+    B = alpha * track_width_m
+    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
+    dydt, dpdt = T @ np.array([wl, wr])
+    encoder_x = encoder_x + np.cos(encoder_theta) * dydt * dt_s
+    encoder_y = encoder_y + np.sin(encoder_theta) * dydt * dt_s
+    encoder_theta += dpdt * dt_s
+    
+    encoder_xs.append(encoder_x)
+    encoder_ys.append(encoder_y)
+
+
+# In[29]:
+
+plt.figure(figsize=(20,10))
+#640,700 is a constant-speed interval
+plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate')
+plt.plot(sensor_data[:,10]*distance_per_pulse, label='right encoder rate')
+plt.title("encoder on MoCap robot")
+plt.legend()
+plt.show()
+
+
 # ## Double Integrating Accelerometer
 
-# In[70]:
+# In[30]:
 
-def DoubleIntegrateAccelerometer(accelerometer_data, K, T, b):
-    x = 0
-    y = 0
+def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
+    x = x0
+    y = y0
     vx = 0
     vy = 0
-    dt_s = .02
     xs = []
     ys = []
     vxs = []
@@ -185,8 +221,7 @@ def DoubleIntegrateAccelerometer(accelerometer_data, K, T, b):
     axs = []
     ays = []
     
-    for data in accelerometer_data:
-        a_s = data[3:6]
+    for a_s in accelerometer_data:
         a_o = T@K@(a_s+b).T
         ax = a_o[0][0]
         ay = a_o[1][0]
@@ -205,13 +240,19 @@ def DoubleIntegrateAccelerometer(accelerometer_data, K, T, b):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[71]:
+# In[31]:
 
-K = np.array([[1,0,0],[0,1,0],[0,0,1]])*10
+means = np.mean(sensor_data[:100],axis=0)
+print("Average Accel X value:", means[0])
+print("Average Accel Y value:", means[1])
+print("Average Accel Z value:", means[2])
+
+K = np.array([[1,0,0],[0,1,0],[0,0,1]])*0.01
 T = np.array([[1,0,0.01],[0,1,0],[0,0,1]])
-b = np.array([[means[0], means[1], 0]])
-no_bias = DoubleIntegrateAccelerometer(sensor_data, np.eye(3), np.eye(3), np.array([[0,0,0]]))
-calib = DoubleIntegrateAccelerometer(sensor_data, K, T, b)
+b = np.array([[-means[0], -means[1], 0]])
+no_bias = DoubleIntegrate(sensor_data[:,3:6], K, np.eye(3), np.array([[0,0,0]]), x0=mocap_states[0][0], y0=mocap_states[0][1])
+calib = DoubleIntegrate(sensor_data[:,3:6], K, T, b, x0=mocap_states[0][0], y0=mocap_states[0][1])
+
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
 plt.plot(calib[2], label="calibrated vxs")
@@ -221,37 +262,7 @@ plt.legend()
 plt.show()
 
 
-# In[101]:
-
-# encoder kinematics
-print(mocap_data[0])
-encoder_x = mocap_data[0][5]
-encoder_y = mocap_data[0][6]
-encoder_theta = 0
-encoder_xs = []
-encoder_ys = []
-alpha = 1.0
-wheel_radius_m = 0.072
-track_width_m = 0.9
-dt_s = 0.02
-
-for data in sensor_data:
-    # TODO figure out distance per pulse
-    wl = float(data[9]) * 112
-    wr = float(data[10]) * 112
-    
-    B = alpha * track_width_m
-    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
-    dydt, dpdt = T @ np.array([wl, wr])
-    encoder_x = encoder_x + np.cos(encoder_theta) * dydt * dt_s
-    encoder_y = encoder_y + np.sin(encoder_theta) * dydt * dt_s
-    encoder_theta += dpdt * dt_s
-    
-    encoder_xs.append(encoder_x)
-    encoder_ys.append(encoder_y)
-
-
-# In[102]:
+# In[32]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
@@ -264,9 +275,27 @@ plt.legend()
 plt.show()
 
 
+# In[17]:
+
+dts_fpgas = []
+dts_navxs = []
+for i in range(1000):
+    dt_s_fpga = (sensor_data[i+1][-1] - sensor_data[i][-1]) / 1000
+    dt_s_navx = (sensor_data[i+1][-2] - sensor_data[i][-2])
+    dts_fpgas.append(dt_s_fpga)
+    dts_navxs.append(dt_s_navx)
+    
+plt.plot(dts_fpgas, label='fpga')
+plt.plot(dts_navxs, label='navx')
+plt.ylabel("delt t (seconds)")
+plt.legend()
+plt.title("Sensor reading timestamps")
+plt.show()
+
+
 # ## Testing on Turtlebot accelerometer data
 
-# In[20]:
+# In[18]:
 
 turtlebot_dir = "../../recorded_sensor_data/turtlebot_original/"
 data_file = turtlebot_dir + "interpolated_data.csv"
@@ -275,7 +304,7 @@ reader = csv.reader(open(data_file, 'r'))
 accelerometer_data = []
 encoder_x = 0
 encoder_y = 0
-encoder_theta = 0
+encoder_theta = 0.5
 encoder_xs = []
 encoder_ys = []
 alpha = 1.0
@@ -301,16 +330,36 @@ for data in reader:
     
     encoder_xs.append(encoder_x)
     encoder_ys.append(encoder_y)
+    
+init_means = np.mean(accelerometer_data[:40], axis=0)
+full_means = np.mean(accelerometer_data, axis=0)
+print("Average Init Accel X value:", init_means[0])
+print("Average Init Accel Y value:", init_means[1])
+print("Average Accel X value:", full_means[0])
+print("Average Accel Y value:", full_means[1])
 
-means = np.mean(accelerometer_data,axis=0)
-print("Average Accel X value:", means[0])
-print("Average Accel Y value:", means[1])
+no_bias = DoubleIntegrate(accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)), dt_s=0.1)
+K = np.eye(3)*50
+T = np.eye(3)
+b = np.array([[-init_means[0], -init_means[1], 0]])
+init_calib = DoubleIntegrate(accelerometer_data, K, T, b)
+b = np.array([[-full_means[0], -full_means[1], 0]])
+full_calib = DoubleIntegrate(accelerometer_data, K, T, b)
+b = np.array([[0.0096, -0.0052, 0]])
+guess_calib = DoubleIntegrate(accelerometer_data, K, T, b)
 
-no_bias = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=0, y_bias=0, x_scale=1, y_scale=1)
-calib = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=-0.0094, y_bias=0.004, x_scale=2, y_scale=2)
-calib2 = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=means[0], y_bias=means[1], x_scale=2, y_scale=2)
-calib3 = DoubleIntegrateAccelerometer(accelerometer_data, x_bias=-0.0094, y_bias=0.0047, x_scale=2, y_scale=2)
+plt.figure(figsize=(10,10))
+plt.scatter(encoder_xs, encoder_ys, marker='.', s=2, color='r', label='Encoder Data')
+plt.scatter(no_bias[0], no_bias[1], marker='o', s=1, color='y', label='Accelerometer, no bias')
+plt.scatter(init_calib[0], init_calib[1], marker='o', s=1, color='g', label='Accelerometer, init means')
+plt.scatter(full_calib[0], full_calib[1], marker='o', s=1, color='k', label='Accelerometer, full means')
+plt.scatter(guess_calib[0], guess_calib[1], marker='o', s=1, color='b', label='Accelerometer, guessed bias')
+plt.title("Accelerometer versus Encoder (Turtlebot)")
+plt.axis("square")
+plt.legend(prop={'size': 10})
+plt.show()
 
+plt.figure(figsize=(10,10))
 plt.plot(no_bias[4], label="no bias axs")
 plt.plot(no_bias[5], label="no bias ays")
 plt.plot(calib[4], label="calibrated axs")
@@ -319,6 +368,7 @@ plt.title("Accelerations")
 plt.legend()
 plt.show()
 
+plt.figure(figsize=(10,10))
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
 plt.plot(calib[2], label="calibrated vxs")
@@ -327,26 +377,15 @@ plt.title("velocities from integrating accelerometer")
 plt.legend()
 plt.show()
 
-plt.figure(figsize=(10,10))
-plt.scatter(encoder_xs, encoder_ys, marker='.', s=2, color='r', label='Encoder Data')
-# plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
-plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
-plt.scatter(calib2[0], calib2[1], marker='.', s=1, color='k', label='Accelerometer, with different bias')
-plt.scatter(calib3[0], calib3[1], marker='.', s=1, color='b', label='Accelerometer, with different bias')
-plt.title("Accelerometer versus Encoder (Turtlebot)")
-plt.axis("square")
-plt.legend()
-plt.show()
-
 
 # # Camera Stuff
 
-# In[ ]:
+# In[19]:
 
 import cv2
 
 
-# In[ ]:
+# In[20]:
 
 img_dir = "../../recorded_sensor_data/practice_image_processing/"
 vid_file = img_dir + "out.avi"
@@ -373,7 +412,7 @@ for timestamp in img_timestamp_reader:
         break
 
 
-# In[ ]:
+# In[21]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')
