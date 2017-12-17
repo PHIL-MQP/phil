@@ -19,42 +19,15 @@ next(reader)  # skip header
 for idx, row in enumerate(reader):
     row = [float(d) for d in row]
     data.append(row)
-#     if idx > 0 and data[idx-1][0] > 65536 and row[0] < 65536
+    
 data = np.array(data)
 accelerometer_data = data[:,4:7]
 
 
-# In[3]:
+# In[11]:
 
-# compute bias (from components of gravity) from the initial static interval
-t_init = 20
-init_data = accelerometer_data[:20]
-acc = np.mean(init_data, axis=0)
-print(acc)
-
-
-# In[4]:
-
-# plt.figure(figsize=(15,15))
-# plt.plot(data[:,0], label='left encoder ticks')
-# plt.plot(data[:,1], label='right encoder ticks')
-# plt.legend()
-theta_acc = [-2.71075764e-03, 4.55981725e-03, -7.38354478e-04, 9.97279234e-01, 9.96661774e-01, 9.89959950e-01, -6.37606144e-03, -8.99928659e-03, -1.99175409e-02]  # from the latest data
-# theta_acc = [-0.05175933, 0.00348791, 0.00268508, 0.99769397, 0.99724823, 0.99706769, -0.00595171, -0.01183456, -0.01726781] # from nicolette 2
-
-T = np.array([[1, -theta_acc[0], theta_acc[1]], [0, 1, -theta_acc[2]], [0, 0, 1]])
-K = np.array([[theta_acc[3], 0, 0], [0, theta_acc[4], 0], [0, 0, theta_acc[5]]])
-b = np.array([[theta_acc[6], theta_acc[7], theta_acc[8]]])
-fixed_accelerometer_data = np.ndarray(accelerometer_data.shape)
-
-for i, a_s in enumerate(accelerometer_data):
-    a_o = T@K@(a_s+b).T
-    fixed_accelerometer_data[i] = a_o[0]
-
-
-plt.plot(fixed_accelerometer_data[:,0], label='fixed acc x')
-plt.plot(fixed_accelerometer_data[:,1], label='fixed acc y')
-plt.plot(fixed_accelerometer_data[:,2], label='fixed acc z')
+plt.figure(figsize=(10,10))
+plt.title("Measured Acceleration")
 plt.plot(accelerometer_data[:,0], label='acc x')
 plt.plot(accelerometer_data[:,1], label='acc y')
 plt.plot(accelerometer_data[:,2], label='acc z')
@@ -63,9 +36,57 @@ plt.legend()
 plt.show()
 
 
-# In[5]:
+# ## Body to Accelerometer Frame Calibration
 
-def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b, gravity_bias=np.array([ 0.08737485, -0.0150847])):
+# The offset between the coordinate frame of the robot and the accelerometer can be described as a rotation in roll, pitch, and yaw. This rotation can be represented as a matrix multiplication, and we can use the measured acceleration in $x$, $y$, and $z$ to compute these angles. To do this, we assume that when the robot is stationary that the acceleration should be $0$ in $x$ and $y$, and $1$ in $z$. The observed accelerations will differ from these values if there is any misalignment between the IMU and the base frame.
+# 
+# https://math.stackexchange.com/a/476311
+
+# In[34]:
+
+t_init = 25 # ~25 is static
+stationary_accelerometer_data = accelerometer_data[:t_init]
+stationary_mean_acc_raw = np.mean(stationary_accelerometer_data, axis=0)
+stationary_mean_acc = stationary_mean_acc_raw / np.linalg.norm(stationary_mean_acc_raw)
+print(np.linalg.norm(stationary_mean_acc_raw))
+
+a = stationary_mean_acc
+b = np.array([0, 0, 1])
+v = np.cross(a, b)
+s = np.linalg.norm(v)
+c = np.dot(a, b)
+v_x = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+R = np.eye(3) + v_x + (v_x**2)*(1/(1+c))
+
+print(stationary_mean_acc_raw)
+print("raw", stationary_mean_acc)
+print("adjusted", R@stationary_mean_acc)
+print(R)
+
+
+# In[35]:
+
+rotated_data = np.ndarray(accelerometer_data.shape)
+for i, d in enumerate(accelerometer_data):
+    rotated_data[i] = R@d
+    
+plt.figure(figsize=(15,15))
+plt.title("Rotated Acceleration")
+plt.plot(accelerometer_data[:,0], label='acc x')
+plt.plot(accelerometer_data[:,1], label='acc y')
+plt.plot(accelerometer_data[:,2], label='acc z')
+plt.plot(rotated_data[:,0], label='rot acc x')
+plt.plot(rotated_data[:,1], label='rot acc y')
+plt.plot(rotated_data[:,2], label='rot acc z')
+
+plt.legend()
+
+plt.show()
+
+
+# In[36]:
+
+def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b):
     x = 0
     y = 0
     vx = 0
@@ -78,9 +99,9 @@ def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b, gravity_bias=np.ar
     axs = []
     ays = []
     for a_s in accelerometer_data:
-        a_o = (T@K@(a_s + b).T)
-        ax = a_o[0][0] - gravity_bias[0]
-        ay = a_o[1][0] - gravity_bias[0]
+        a_o = T@K@(a_s + b).T
+        ax = a_o[0][0]
+        ay = a_o[1][0]
         az = a_o[2][0]
         
         vx += ax * dt_s
@@ -97,51 +118,34 @@ def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b, gravity_bias=np.ar
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[6]:
+# In[50]:
 
-nothing = DoubleIntegrateAccelerometer(accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)), np.zeros(3))
-no_calib = DoubleIntegrateAccelerometer(accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)))
-calib = DoubleIntegrateAccelerometer(accelerometer_data, T, K, b)
+raw = DoubleIntegrateAccelerometer(accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)))
+calib = DoubleIntegrateAccelerometer(accelerometer_data, R, np.eye(3), np.array([[-0.0055, -0.033, 0]]))
+means = np.mean(accelerometer_data[:t_init], axis=0)
+calib2 = DoubleIntegrateAccelerometer(accelerometer_data, np.eye(3), np.eye(3), np.array([[means[0], means[1], 0]]))
 
-plt.figure(figsize=(15,15))
-plt.plot(nothing[2], label='raw vx')
-plt.plot(nothing[3], label='raw vy')
-plt.plot(no_calib[2], label='calib vx')
-plt.plot(no_calib[3], label='calib vy')
+
+plt.figure(figsize=(5,5))
+plt.plot(raw[4], label='raw ax')
+plt.plot(raw[5], label='raw ay')
+plt.plot(calib[4], label='calib ax')
+plt.plot(calib[5], label='calib ay')
+plt.legend()
+
+plt.figure(figsize=(5,5))
+plt.plot(raw[2], label='raw vx')
+plt.plot(raw[3], label='raw vy')
+plt.plot(calib[2], label='calib vx')
+plt.plot(calib[3], label='calib vy')
 plt.legend()
 
 plt.figure(figsize=(15,15))
-plt.scatter(nothing[0], nothing[1], marker='.', s=10, color='m', label='raw data')
-plt.scatter(no_calib[0], no_calib[1], marker='.', s=10, color='g', label='corrected acc, no bias')
-plt.scatter(calib[0], calib[1], marker='.', s=10, color='k', label='corrected acc, with bias')
+# plt.scatter(raw[0], raw[1], marker='.', s=10, color='m', label='raw data')
+plt.scatter(calib[0], calib[1], marker='.', s=10, color='g', label='rotated acc')
+# plt.scatter(calib2[0], calib2[1], marker='.', s=10, color='k', label='bias acc')
 plt.legend()
 plt.show()
-
-
-# In[1]:
-
-initial_guess = np.array([0, 0, 0])  # alpha, beta, gamma
-acc = 
-
-def body_to_imu_tf(angles):
-    c1 = cos(angle[0])
-    c2 = cos(angle[1])
-    c3 = cos(angle[2])
-    s1 = sin(angle[0])
-    s2 = sin(angle[1])
-    s3 = sin(angle[2])
-    
-    x = acc[0]
-    y = acc[1]
-    z = acc[2]
-    
-    R = np.array([[c2*c3, -c2*s3, s2],[c1*s3+c3*s1*s2, c1*c3-s1*s2*s3, -c2*s1],[s1*s3-c1*c3*s2, c3*s1+c1*s2*s3, c1*c2]])
-        
-    df = np.array([[0, -s2*c3*x+s2*s3*y+c2*z, -c2*s3*x+-c2*c3*y],[-x*s3*s1+x*c3*s2*c1-y*s1*c3-c1*s2*s3*y-c2*c1*z, c3*s1*c2*x-s1*c2*s3*y+s2*s1*z, c1*c3*x-s3*s1*s2*x-c1*s3*y-s1*s2*c3*y],[c1*s3*x+s1*c3*c2*x+c3*c1*y-s1*s2*s3*y+s1*c2*z, -c1*c3*c2*x+c1*c2*s3*y-c*s2*z, s1*c3*x+c1*s3*s2*x-s3*s1*s2*x-s3*s1*y+c1*s2*c3*y]])
-    
-    return np.array([0,0,1]) - R@acc, df
-
-root(body_to_imu_tf, initial_guess, jac=True, method='lm')
 
 
 # In[ ]:
