@@ -18,12 +18,17 @@ int main(int argc, char *argv[]) {
   }
 
   AHRS navx = AHRS(argv[1], AHRS::SerialDataType::kRawData, 60);
-  double num_seconds = 45 + 10 * std::stof(argv[2]);
+  double num_seconds = std::stof(argv[2]);
+//  double num_seconds = 45 + 10 * std::stof(argv[2]);
   unsigned int ms_per_sample = 10;
   auto total_samples = static_cast<unsigned int>(num_seconds * (1000.0 / ms_per_sample));
 
+  time_t now = time(0);
+  tm *ltm = localtime(&now);
+  char filename[50];
+  strftime(filename, 50, "imu_data_%m_%d_%H-%M-%S.csv", ltm);
   std::ofstream log;
-  log.open("imu_calibration_data.csv");
+  log.open(filename);
 
   if (!log.good()) {
     std::cout << "could not open file." << std::endl;
