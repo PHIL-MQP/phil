@@ -84,7 +84,7 @@ print(five_point_approximation(func, theta_acc, h))
 
 # In[4]:
 
-data_filename = "recorded_sensor_data/imu_calibration_11_14_20-00-00/imu_calibration_data_11_14.csv"
+data_filename = "recorded_sensor_data/imu_calibration/imu_12_07_nicolette2.csv"
 reader = csv.reader(open(data_filename, 'r'))
 
 next(reader) # skip header
@@ -96,9 +96,9 @@ data = np.array(data)
 
 # ## iterate over the Tinit period to compute the gyro biases
 
-# In[ ]:
+# In[5]:
 
-Tinit = 4
+Tinit = 44
 samples_per_second = 100
 Tinit_idx = int(Tinit * samples_per_second)
 init_data = data[:Tinit_idx]
@@ -107,18 +107,7 @@ gyro_biases = np.mean(init_data, axis=0)[3:6]
 data -= np.array([0, 0, 0, gyro_biases[0], gyro_biases[1], gyro_biases[2], 0])
 
 
-# In[ ]:
-
-plt.figure(figsize=(10,4))
-plt.title("Static Classifier")
-plt.plot(init_data[:,0], label='accel x',c='m')
-plt.plot(init_data[:,1], label='accel y', c='b')
-plt.plot(init_data[:,2], label='accel z', c='y')
-plt.legend(bbox_to_anchor=(1.1,1))
-plt.show()
-
-
-# In[ ]:
+# In[6]:
 
 def get_static_intervals(threshold, data, t_wait, sample_per_second):
     window_size = int(sample_per_second * t_wait)
@@ -155,203 +144,28 @@ def get_static_intervals(threshold, data, t_wait, sample_per_second):
     return static_indicators, classifications    
 
 
-# In[ ]:
-
-def get_corrected_gyro_data(raw_data, theta_gyro):
-    gamma_yz = theta_gyro[0]
-    gamma_zy = theta_gyro[1]
-    gamma_xz = theta_gyro[2]
-    gamma_zx = theta_gyro[3]
-    gamma_xy = theta_gyro[4]
-    gamma_yx = theta_gyro[5]
-    s_x = theta_gyro[6]
-    s_y = theta_gyro[7]
-    s_z = theta_gyro[8]
-    T = np.array([[1, -gamma_yz, gamma_zy], [gamma_xz, 1, -gamma_zx], [-gamma_xy, gamma_yx, 1]])
-    K = np.array([[s_x, 0, 0], [0, s_y, 0], [0, 0, s_z]])
-    
-    #corrected frame
-    corrected_data = np.ndarray(raw_data.shape)
-    for idx, w_s in enumerate(raw_data):
-        corrected_data[idx] = (T@K@w_s)
-        
-    return corrected_data
-
-def omega(gyro_frame):
-    w_x = gyro_frame[0]
-    w_y = gyro_frame[1]
-    w_z = gyro_frame[2]
-    return np.array([[0, -w_x, -w_y, -w_z], [w_x, 0, w_z, -w_y], [w_y, -w_z, 0, w_x], [w_z, w_y, -w_x, 0]])
-
-def euler_to_quaternion(acc_frame):
-    i = acc_frame[0]
-    j = acc_frame[1]
-    k = acc_frame[2]
-    return np.array([[1, i, j, k],[i, -1, k, -j],[j, -k, -1, i],[k, j, -i, -1]])
-
-def euler_to_quaternion2(acc_frame):
-    roll = acc_frame[0]
-    yaw = acc_frame[1]
-    pitch = acc_frame[2]
-    c1 = math.cos(roll);
-    s1 = math.sin(roll);
-    c2 = math.cos(yaw);
-    s2 = math.sin(yaw);
-    c3 = math.cos(pitch);
-    s3 = math.sin(pitch);
-    W = math.sqrt(1.0 + c1 * c2 + c1*c3 - s1 * s2 * s3 + c2*c3) / 2.0;
-    W4 = (4.0 * W);
-    X = (c2 * s3 + c1 * s3 + s1 * s2 * c3) / W4 ;
-    Y = (s1 * c2 + s1 * c3 + c1 * s2 * s3) / W4 ;
-    Z = (-s1 * s3 + c1 * s2 * c3 +s2) / W4 ;
-    
-    return np.array([[1.0 - 2.0*Y*Y - 2.0*Z*Z, 2.0*X*Y - 2.0*Z*W, 2.0*X*Z + 2.0*Y*W, 0.0],
-        [2.0*X*Y + 2.0*Z*W, 1.0 - 2.0*X*X - 2.0*Z*Z, 2.0*Y*Z - 2.0*X*W, 0.0],
-        [2.0*X*Z - 2.0*Y*W, 2.0*Y*Z + 2.0*X*W, 1.0 - 2.0*X*X - 2.0*Y*Y, 0.0],
-        [0.0, 0.0, 0.0, 1.0]])
-#     return np.array([[W, Z, -Y, X]
-#                      ,[-Z, W, X, Y]
-#                      ,[Y, -X, W, Z]
-#                      ,[-X, -Y, -Z, W]]) @ \
-#            np.array([[W, Z, -Y, -X]
-#                      ,[-Z, W, X, -Y]
-#                      ,[Y, -X, W, -Z]
-#                      ,[X, Y, Z, W]])
-
-#     xx      = X * X
-#     xy      = X * Y
-#     xz      = X * Z
-#     xw      = X * W
-
-#     yy      = Y * Y
-#     yz      = Y * Z
-#     yw      = Y * W
-
-#     zz      = Z * Z
-#     zw      = Z * W
-
-#     mat = np.arange(1, 17)
-#     mat[0]  = 1 - 2 * ( yy + zz )
-#     mat[1]  =     2 * ( xy - zw )
-#     mat[2]  =     2 * ( xz + yw )
-
-#     mat[4]  =     2 * ( xy + zw )
-#     mat[5]  = 1 - 2 * ( xx + zz )
-#     mat[6]  =     2 * ( yz - xw )
-
-#     mat[8]  =     2 * ( xz - yw )
-#     mat[9]  =     2 * ( yz + xw )
-#     mat[10] = 1 - 2 * ( xx + yy )
-
-#     mat[3] = mat[7] = mat[11] = mat[12] = mat[13] = mat[14] = 0
-#     mat[15] = 1
-    
-#     return mat.reshape(4,4)
-
-
-def quaternion_to_euler_angle(w, x, y, z):
-    ysqr = y * y
-
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + ysqr)
-    X = math.degrees(math.atan2(t0, t1))
-
-    t2 = +2.0 * (w * y - z * x)
-    t2 = +1.0 if t2 > +1.0 else t2
-    t2 = -1.0 if t2 < -1.0 else t2
-    Y = math.degrees(math.asin(t2))
-    
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (ysqr + z * z)
-    Z = math.degrees(math.atan2(t3, t4))
-    
-    return X, Y, Z
-
-
-def thi(w_s_i, u_ak, theta_gyro, dt):
-    # w_s is gyro scope data without bias
-    # theta_gyro is [gamma_yz, gamma_zy, gamma_xz, gamma_zx, gamma_xy, gamma_yx, s_x, s_y, s_z]
-    w_o = get_corrected_gyro_data(w_s_i, theta_gyro)
-    
-    u_gk = u_ak
-    
-    for corrected_gyro_frame in w_o:
-        u_gk = u_gk / np.linalg.norm(u_gk)
-        u_gk += 0.5 * (omega(corrected_gyro_frame) @ u_gk) * dt
-    
-    u_gk = u_gk / np.linalg.norm(u_gk)
-    
-    return u_gk
- 
-# print(get_corrected_gyro_data([np.array([[1],[1],[1]])], [1,1,1,1,1,1,2,3,2]))
-
-wwww = np.array([[[3.14],[0],[0]], [[3.14],[0],[0]]])
-uakk = np.array([0, -9.8, 0])
-thet = [0,0,0,0,0,0,1,1,1]
-dttt = .001
-
-
-intial = 300
-final = 500
-
-acc_data = remaining_data[intial:final, :3]
-gyro_data = remaining_data[intial:final, 3:6] / 180 * np.pi
-
-
-u_ak = euler_to_quaternion(acc_data[0])
-u_ak = u_ak / np.linalg.norm(u_ak)
-
-u_gk = euler_to_quaternion(acc_data[-1])
-u_gk = u_gk / np.linalg.norm(u_gk)
-
-expected_u_gk = thi(gyro_data, u_ak, thet, dttt)
-
-
-
-
-print("inital acc:\n", u_ak, "\n")
-
-print("inital acc euler: \n", acc_data[0], "\n")
-
-print("expected final acc\n", expected_u_gk, "\n")
-
-print("final acc\n", u_gk, "\n")
-
-print("final acc euler: \n", acc_data[-1], "\n")
-
-print("error\n", expected_u_gk - u_gk)
-plt.title("gyro & acc data")
-plt.plot(gyro_data[:,0], label='gyro x',c='m')
-plt.plot(gyro_data[:,1], label='gyro y', c='b')
-plt.plot(gyro_data[:,2], label='gyro z', c='y')
-# plt.plot(acc_data[:,0] * 9.8, label='acc x',c='r')
-# plt.plot(acc_data[:,1] * 9.8, label='acc y', c='g')
-# plt.plot(acc_data[:,2] * 9.8, label='acc z', c='k')
-plt.legend(bbox_to_anchor=(1.2,1))
-plt.show()
-
-
-# In[ ]:
+# In[7]:
 
 sigma_init = np.linalg.norm(np.var(init_data[:, :3], axis=0))
 print("sigma_init:", sigma_init)
 
 
-# In[ ]:
+# In[14]:
 
-intervals, classifications = get_static_intervals(sigma_init, remaining_data, 2.5, samples_per_second)
+intervals, classifications = get_static_intervals(sigma_init*0.1, remaining_data, 2, samples_per_second)
 plt.figure(figsize=(15,10))
 plt.title("Static Classifier")
 plt.plot(classifications, c='k', label="static")
 plt.plot(remaining_data[:,0], label='accel x', alpha=0.4, c='m')
 plt.plot(remaining_data[:,1], label='accel y', alpha=0.4, c='b')
 plt.plot(remaining_data[:,2], label='accel z', alpha=0.4, c='y')
+plt.xlabel("time (# of samples)")
+plt.ylabel("acceleration (g)")
 plt.legend(bbox_to_anchor=(1.1,1))
 plt.show()
-print(intervals)
 
 
-# In[ ]:
+# In[9]:
 
 total_intervals = 20
 s_intervals_opt = []
@@ -370,23 +184,3 @@ for i in range(1, total_intervals + 1):
 #  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-1-981f5777b1d7
 #  - https://medium.com/@sarvagya.vaish/levenberg-marquardt-optimization-part-2-5a71f7db27a0
 #  - https://github.com/SarvagyaVaish/Eigen-Levenberg-Marquardt-Optimization/blob/master/main.cpp
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
