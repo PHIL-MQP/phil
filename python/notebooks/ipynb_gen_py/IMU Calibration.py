@@ -150,7 +150,7 @@ sigma_init = np.linalg.norm(np.var(init_data[:, :3], axis=0))
 print("sigma_init:", sigma_init)
 
 
-# In[14]:
+# In[8]:
 
 intervals, classifications = get_static_intervals(sigma_init*0.1, remaining_data, 2, samples_per_second)
 plt.figure(figsize=(15,10))

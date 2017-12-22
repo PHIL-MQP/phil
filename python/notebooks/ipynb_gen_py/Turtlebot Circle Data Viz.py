@@ -24,7 +24,12 @@ data = np.array(data)
 accelerometer_data = data[:,4:7]
 
 
-# In[11]:
+# In[10]:
+
+print(data[-1][-1] - data[0][-1])
+
+
+# In[3]:
 
 plt.figure(figsize=(10,10))
 plt.title("Measured Acceleration")
@@ -42,7 +47,7 @@ plt.show()
 # 
 # https://math.stackexchange.com/a/476311
 
-# In[34]:
+# In[4]:
 
 t_init = 25 # ~25 is static
 stationary_accelerometer_data = accelerometer_data[:t_init]
@@ -64,7 +69,7 @@ print("adjusted", R@stationary_mean_acc)
 print(R)
 
 
-# In[35]:
+# In[5]:
 
 rotated_data = np.ndarray(accelerometer_data.shape)
 for i, d in enumerate(accelerometer_data):
@@ -84,7 +89,7 @@ plt.legend()
 plt.show()
 
 
-# In[36]:
+# In[6]:
 
 def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b):
     x = 0
@@ -118,10 +123,10 @@ def DoubleIntegrateAccelerometer(accelerometer_data, T, K, b):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[50]:
+# In[30]:
 
 raw = DoubleIntegrateAccelerometer(accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)))
-calib = DoubleIntegrateAccelerometer(accelerometer_data, R, np.eye(3), np.array([[-0.0055, -0.033, 0]]))
+calib = DoubleIntegrateAccelerometer(accelerometer_data, R, np.eye(3), np.array([[-0.003, -0.033, 0]]))
 means = np.mean(accelerometer_data[:t_init], axis=0)
 calib2 = DoubleIntegrateAccelerometer(accelerometer_data, np.eye(3), np.eye(3), np.array([[means[0], means[1], 0]]))
 
@@ -143,8 +148,8 @@ plt.legend()
 plt.figure(figsize=(15,15))
 # plt.scatter(raw[0], raw[1], marker='.', s=10, color='m', label='raw data')
 plt.scatter(calib[0], calib[1], marker='.', s=10, color='g', label='rotated acc')
-# plt.scatter(calib2[0], calib2[1], marker='.', s=10, color='k', label='bias acc')
 plt.legend()
+plt.axis('square')
 plt.show()
 
 

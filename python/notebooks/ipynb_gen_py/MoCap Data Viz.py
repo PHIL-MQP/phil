@@ -162,7 +162,7 @@ plt.show()
 
 # # Encoder
 
-# In[28]:
+# In[12]:
 
 # encoder kinematics
 encoder_x = mocap_states[0][0]
@@ -194,7 +194,7 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[29]:
+# In[13]:
 
 plt.figure(figsize=(20,10))
 #640,700 is a constant-speed interval
@@ -207,7 +207,7 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[30]:
+# In[14]:
 
 def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
     x = x0
@@ -240,7 +240,7 @@ def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[31]:
+# In[15]:
 
 means = np.mean(sensor_data[:100],axis=0)
 print("Average Accel X value:", means[0])
@@ -262,7 +262,7 @@ plt.legend()
 plt.show()
 
 
-# In[32]:
+# In[16]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
