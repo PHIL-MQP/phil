@@ -47,9 +47,7 @@ int main(int argc, char *argv[]) {
 
   // Create the detector
   aruco::MarkerDetector MDetector;
-  MDetector.setThresholdParams(7, 7);
-  MDetector.setThresholdParamRange(2, 0);
-  map<int, aruco::MarkerPoseTracker> trackers;// use a map so that for each id, we use a different pose tracker
+  std::map<int, aruco::MarkerPoseTracker> trackers; // use a map so that for each id, we use a different pose tracker
 
   sink.GrabFrame(frame);
   config.camera_params.resize(frame.size());
@@ -66,7 +64,7 @@ int main(int argc, char *argv[]) {
 
     frame.copyTo(annotated_frame);
 
-    vector<aruco::Marker> markers = MDetector.detect(frame);
+    std::vector<aruco::Marker> markers = MDetector.detect(frame);
     if (!markers.empty()) {
 
       // set the origin to be the first seen tag
@@ -183,7 +181,7 @@ cv::Mat use_transforms(std::vector<aruco::Marker> markers, trackers_map_t tracke
           t.r = (marker.Rvec - other_markers.Rvec);
           globalTrans.push_back(t);
 
-          std::cout << "added transforms" << endl;
+          std::cout << "added transforms" << std::endl;
           std::cout << t.toId << '\t' << t.fromId << std::endl;
         }
       }
