@@ -4,7 +4,12 @@
 #include <thread>
 
 void show_help() {
-  std::cout << "USAGE: ./tools/record_imu_calibration_data device number_of_intervals"
+  std::cout << "USAGE: ./tools/record_imu_calibration_data device number_of_seconds"
+            << std::endl
+            << std::endl
+            << "\tdevice - the file path of the IMU (/dev/ttyUSB0)"
+            << std::endl
+            << "\tnumber_of_seconds - number of seconds to log for"
             << std::endl
             << std::endl
             << "EXAMPLE: ./tools/record_imu_calibration_data /dev/ttyACM0 10"
@@ -19,7 +24,6 @@ int main(int argc, char *argv[]) {
 
   AHRS navx = AHRS(argv[1], AHRS::SerialDataType::kRawData, 60);
   double num_seconds = std::stof(argv[2]);
-//  double num_seconds = 45 + 10 * std::stof(argv[2]);
   unsigned int ms_per_sample = 10;
   auto total_samples = static_cast<unsigned int>(num_seconds * (1000.0 / ms_per_sample));
 
