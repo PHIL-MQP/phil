@@ -83,7 +83,7 @@ def base_rotation(mean_acc_while_stationary):
     return R
 
 
-# In[30]:
+# In[37]:
 
 means = np.mean(data, axis=0)
 normalized_data = data / np.mean(np.linalg.norm(data, axis=1))
@@ -92,7 +92,7 @@ means_normalized = means / np.linalg.norm(means)
 print("raw means", means)
 print("means normalized (use this from now on)", means_normalized)
 # print("average norm", np.mean(np.linalg.norm(normalized_data, axis=1)))
-# print("stdev norm", np.std(np.linalg.norm(normalized_data, axis=1)))
+print("stdev norm", np.std(data, axis=0))
 # print("sum of square errors of norm", np.sum((1 - np.linalg.norm(normalized_data, axis=1))**2))
 
 R = base_rotation(means_normalized)

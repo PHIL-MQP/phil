@@ -13251,7 +13251,7 @@ OyoAAAAASUVORK5CYII=
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[30]:</div>
+<div class="prompt input_prompt">In&nbsp;[37]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -13261,7 +13261,7 @@ OyoAAAAASUVORK5CYII=
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;raw means&quot;</span><span class="p">,</span> <span class="n">means</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;means normalized (use this from now on)&quot;</span><span class="p">,</span> <span class="n">means_normalized</span><span class="p">)</span>
 <span class="c1"># print(&quot;average norm&quot;, np.mean(np.linalg.norm(normalized_data, axis=1)))</span>
-<span class="c1"># print(&quot;stdev norm&quot;, np.std(np.linalg.norm(normalized_data, axis=1)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;stdev norm&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
 <span class="c1"># print(&quot;sum of square errors of norm&quot;, np.sum((1 - np.linalg.norm(normalized_data, axis=1))**2))</span>
 
 <span class="n">R</span> <span class="o">=</span> <span class="n">base_rotation</span><span class="p">(</span><span class="n">means_normalized</span><span class="p">)</span>
@@ -13285,6 +13285,7 @@ OyoAAAAASUVORK5CYII=
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>raw means [-0.9809439  -0.01685391  0.1903045 ]
 means normalized (use this from now on) [-0.98155718 -0.01686445  0.19042347]
+stdev norm [ 0.00186395  0.00163785  0.00347646]
 Rotation matrix
 [[ 0.19066239 -0.01390549  0.98155718]
  [-0.01390549  0.99976109  0.01686445]
