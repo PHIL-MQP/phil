@@ -5,7 +5,7 @@
 # 
 # Find out the orientation of the IMU while static using the accelerometer.
 
-# In[20]:
+# In[23]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,9 +16,9 @@ import os
 np.set_printoptions(suppress=True)
 
 
-# In[21]:
+# In[24]:
 
-data_file = csv.reader(open("./recorded_sensor_data/imu_calibration/stationary_logs/imu_data_12_15_13-34-09.csv"))
+data_file = csv.reader(open("./recorded_sensor_data/imu_calibration/stationary_logs/imu_data_12_15_13-34-33.csv"))
 next(data_file)
 next(data_file)
 
@@ -30,7 +30,7 @@ data = np.array(data)
 
 # ## Plot the raw data
 
-# In[22]:
+# In[25]:
 
 plt.figure(figsize=(10,10))
 plt.plot(data[:,0], label='x')
@@ -41,7 +41,7 @@ plt.title("Accelerometer data")
 plt.show()
 
 
-# In[23]:
+# In[26]:
 
 calib_T = np.array([[1, 2.71075764e-03, 4.55981725e-03],[0, 1, 7.38354478e-04],[0,0,1]])
 calib_K = np.array([[9.97279234e-01, 0, 0],[0, 9.96661774e-01, 0],[0, 0, 9.89959950e-01]])
@@ -51,7 +51,7 @@ print(data.shape)
 calibrated_data = calib_T@calib_K@(data+calib_b).T
 
 
-# In[24]:
+# In[27]:
 
 plt.figure(figsize=(10,10))
 plt.plot(data[:,0], label='x')
@@ -65,45 +65,51 @@ plt.title("Accelerometer data")
 plt.show()
 
 
-# In[25]:
+# In[28]:
 
 data = calibrated_data.T
 
 
-# In[52]:
+# In[29]:
+
+def base_rotation(mean_acc_while_stationary):
+    """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
+    a = mean_acc_while_stationary
+    b = np.array([0, 0, 1])
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    v_x = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    R = np.eye(3) + v_x + (v_x@v_x)*(1/(1+c))
+    return R
+
+
+# In[30]:
 
 means = np.mean(data, axis=0)
 normalized_data = data / np.mean(np.linalg.norm(data, axis=1))
 means_normalized = means / np.linalg.norm(means)
 
 print("raw means", means)
-print("means normalized", means_normalized)
-# print("average norm", np.mean(np.linalg.norm(data, axis=1)))
-# print("stdev norm", np.std(np.linalg.norm(data, axis=1)))
-# print("sum of square errors of norm", np.sum((1 - np.linalg.norm(data, axis=1))**2))
+print("means normalized (use this from now on)", means_normalized)
+# print("average norm", np.mean(np.linalg.norm(normalized_data, axis=1)))
+# print("stdev norm", np.std(np.linalg.norm(normalized_data, axis=1)))
+# print("sum of square errors of norm", np.sum((1 - np.linalg.norm(normalized_data, axis=1))**2))
 
-a = means_normalized
-b = np.array([0, 0, 1])
-v = np.cross(a, b)
-c = np.dot(a, b)
-
-v_x = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-R = np.eye(3) + v_x + (v_x@v_x)*(1/(1+c))
+R = base_rotation(means_normalized)
 print("Rotation matrix")
 print(R)
 
-print("means rotated", R@means)
-print("normalized means rotated", R@means_normalized)
+print("means rotated", R@means_normalized)
 
 
-# In[55]:
+# In[31]:
 
 # rotate the data using R to see if that makes it (0,0,1)
 new_data = (R@normalized_data.T).T
 print(new_data.shape)
 
 
-# In[56]:
+# In[32]:
 
 plt.figure(figsize=(10,10))
 plt.plot(data[:,0], label='x')

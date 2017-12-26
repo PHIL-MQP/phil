@@ -24,13 +24,13 @@ data = np.array(data)
 accelerometer_data = data[:,4:7]
 
 
-# In[4]:
+# In[3]:
 
 print(data[-1][-1] - data[0][-1])
 print(data.shape)
 
 
-# In[3]:
+# In[4]:
 
 plt.figure(figsize=(10,10))
 plt.title("Measured Acceleration")
@@ -46,7 +46,7 @@ plt.show()
 # 
 # compensate for bias, scale, and misalignment
 
-# In[63]:
+# In[5]:
 
 calib_T = np.array([[1, 2.71075764e-03, 4.55981725e-03],[0, 1, 7.38354478e-04],[0,0,1]])
 calib_K = np.array([[9.97279234e-01, 0, 0],[0, 9.96661774e-01, 0],[0, 0, 9.89959950e-01]])
@@ -74,7 +74,20 @@ calibrated_accelerometer_data = calibrated_accelerometer_data.T
 # 
 # https://math.stackexchange.com/a/476311
 
-# In[69]:
+# In[6]:
+
+def base_rotation(mean_acc_while_stationary):
+    """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
+    a = mean_acc_while_stationary
+    b = np.array([0, 0, 1])
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    v_x = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    R = np.eye(3) + v_x + (v_x@v_x)*(1/(1+c))
+    return R
+
+
+# In[7]:
 
 t_init = 25 # ~25 is static
 stationary_accelerometer_data = calibrated_accelerometer_data[:t_init]
@@ -82,13 +95,8 @@ stationary_mean_acc_raw = np.mean(stationary_accelerometer_data, axis=0)
 stationary_mean_acc = stationary_mean_acc_raw / np.linalg.norm(stationary_mean_acc_raw)
 print(np.linalg.norm(stationary_mean_acc_raw))
 
-a = stationary_mean_acc
-b = np.array([0, 0, 1])
-v = np.cross(a, b)
-s = np.linalg.norm(v)
-c = np.dot(a, b)
-v_x = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-R = np.eye(3) + v_x + (v_x**2)*(1/(1+c))
+
+R = base_rotation(stationary_mean_acc)
 
 print("raw", stationary_mean_acc_raw)
 print("normalized", stationary_mean_acc)
@@ -96,7 +104,7 @@ print("adjusted", R@stationary_mean_acc)
 print(R)
 
 
-# In[70]:
+# In[8]:
 
 rotated_data = np.ndarray(calibrated_accelerometer_data.shape)
 for i, d in enumerate(calibrated_accelerometer_data):
@@ -116,9 +124,9 @@ plt.legend()
 plt.show()
 
 
-# In[71]:
+# In[9]:
 
-def DoubleIntegrateAccelerometer(acc_data, T, K, b):
+def DoubleIntegrateAccelerometer(acc_data, T, K, b, drift=np.zeros((3,1))):
     x = 0
     y = 0
     vx = 0
@@ -130,8 +138,8 @@ def DoubleIntegrateAccelerometer(acc_data, T, K, b):
     vys = []
     axs = []
     ays = []
-    for a_s in acc_data:
-        a_o = T@K@(a_s + b).T
+    for idx, a_s in enumerate(acc_data):
+        a_o = T@K@((a_s + b).T + idx * drift)
         ax = a_o[0][0]
         ay = a_o[1][0]
         az = a_o[2][0]
@@ -150,20 +158,22 @@ def DoubleIntegrateAccelerometer(acc_data, T, K, b):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[72]:
+# In[64]:
 
 raw = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)))
-calib = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, R, np.eye(3), np.array([[-0.003, -0.033, 0]]))
 means = np.mean(calibrated_accelerometer_data[:t_init], axis=0)
-calib2 = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, np.eye(3), np.eye(3), np.array([[means[0], means[1], 0]]))
+bias = np.array([[means[0], means[1], 0]])
+drift = np.array([[0], [-0.00020], [0]])
+print(bias)
+manual_calib = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, R, np.eye(3), np.array([[-0.0025, -0.02339312, 0]]), drift)
+calib = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, R, np.eye(3), bias, drift)
 
-
-plt.figure(figsize=(5,5))
-plt.plot(raw[4], label='raw ax')
-plt.plot(raw[5], label='raw ay')
-plt.plot(calib[4], label='calib ax')
-plt.plot(calib[5], label='calib ay')
-plt.legend()
+# plt.figure(figsize=(5,5))
+# plt.plot(raw[4], label='raw ax')
+# plt.plot(raw[5], label='raw ay')
+# plt.plot(calib[4], label='calib ax')
+# plt.plot(calib[5], label='calib ay')
+# plt.legend()
 
 plt.figure(figsize=(5,5))
 plt.plot(raw[2], label='raw vx')
@@ -174,7 +184,7 @@ plt.legend()
 
 plt.figure(figsize=(15,15))
 # plt.scatter(raw[0], raw[1], marker='.', s=10, color='m', label='raw data')
-plt.scatter(calib[0], calib[1], marker='.', s=10, color='g', label='rotated acc')
+plt.scatter(manual_calib[0], manual_calib[1], marker='.', s=10, color='g', label='rotated acc')
 plt.legend()
 plt.axis('square')
 plt.show()
