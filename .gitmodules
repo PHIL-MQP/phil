@@ -9,4 +9,4 @@
 	url = https://github.com/wpilibsuite/wpiutil.git
 [submodule "cpp/libraries/navxmxp"]
 	path = cpp/libraries/navxmxp
-	url = https://github.com/kauailabs/navxmxp.git
+	url = https://github.com/PHIL-MQP/navxmxp.git
