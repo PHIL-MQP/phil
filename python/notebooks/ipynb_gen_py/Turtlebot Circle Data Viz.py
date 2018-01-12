@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[9]:
 
 import numpy as np
 import csv
@@ -10,7 +10,7 @@ from scipy.optimize import root
 from math import cos, sin
 
 
-# In[2]:
+# In[110]:
 
 reader = csv.reader(open("recorded_sensor_data/turtlebot_12_07_18-44-00/turtlebot_data.csv", 'r'))
 
@@ -22,21 +22,29 @@ for idx, row in enumerate(reader):
     
 data = np.array(data)
 accelerometer_data = data[:,4:7]
+gyro_data = data[:,7:10] * np.pi / 180  # convert degrees to radians
 
 
-# In[3]:
+# In[111]:
 
 print(data[-1][-1] - data[0][-1])
 print(data.shape)
 
 
-# In[4]:
+# In[112]:
 
 plt.figure(figsize=(10,10))
 plt.title("Measured Acceleration")
 plt.plot(accelerometer_data[:,0], label='acc x')
 plt.plot(accelerometer_data[:,1], label='acc y')
 plt.plot(accelerometer_data[:,2], label='acc z')
+plt.legend()
+
+plt.figure(figsize=(10,10))
+plt.title("Measured Angular Rate")
+plt.plot(gyro_data[:,0], label='gyro x/roll')
+plt.plot(gyro_data[:,1], label='gyro y/pitch')
+plt.plot(gyro_data[:,2], label='gyro z/yaw')
 plt.legend()
 
 plt.show()
@@ -46,7 +54,7 @@ plt.show()
 # 
 # compensate for bias, scale, and misalignment
 
-# In[5]:
+# In[113]:
 
 calib_T = np.array([[1, 2.71075764e-03, 4.55981725e-03],[0, 1, 7.38354478e-04],[0,0,1]])
 calib_K = np.array([[9.97279234e-01, 0, 0],[0, 9.96661774e-01, 0],[0, 0, 9.89959950e-01]])
@@ -74,7 +82,7 @@ calibrated_accelerometer_data = calibrated_accelerometer_data.T
 # 
 # https://math.stackexchange.com/a/476311
 
-# In[6]:
+# In[114]:
 
 def base_rotation(mean_acc_while_stationary):
     """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
@@ -87,7 +95,7 @@ def base_rotation(mean_acc_while_stationary):
     return R
 
 
-# In[7]:
+# In[115]:
 
 t_init = 25 # ~25 is static
 stationary_accelerometer_data = calibrated_accelerometer_data[:t_init]
@@ -104,29 +112,57 @@ print("adjusted", R@stationary_mean_acc)
 print(R)
 
 
-# In[8]:
+# In[129]:
 
-rotated_data = np.ndarray(calibrated_accelerometer_data.shape)
+rotated_acc_data = np.ndarray(calibrated_accelerometer_data.shape)
+rotated_gyro_data = np.ndarray(gyro_data.shape)
 for i, d in enumerate(calibrated_accelerometer_data):
-    rotated_data[i] = R@d
+    rotated_acc_data[i] = R@d
+for i, d in enumerate(gyro_data):
+    rotated_gyro_data[i] = R@d
     
 plt.figure(figsize=(15,15))
 plt.title("Rotated Acceleration")
 plt.plot(calibrated_accelerometer_data[:,0], label='acc x')
 plt.plot(calibrated_accelerometer_data[:,1], label='acc y')
 plt.plot(calibrated_accelerometer_data[:,2], label='acc z')
-plt.plot(rotated_data[:,0], label='rot acc x')
-plt.plot(rotated_data[:,1], label='rot acc y')
-plt.plot(rotated_data[:,2], label='rot acc z')
+plt.plot(rotated_acc_data[:,0], label='rot acc x')
+plt.plot(rotated_acc_data[:,1], label='rot acc y')
+plt.plot(rotated_acc_data[:,2], label='rot acc z')
+plt.ylabel("m/s^2")
+plt.legend()
 
+plt.figure(figsize=(15,15))
+plt.title("Rotated Gyro")
+plt.plot(gyro_data[:,0], label='gyro x')
+plt.plot(gyro_data[:,1], label='gyro y')
+plt.plot(gyro_data[:,2], label='gyro z')
+plt.plot(rotated_gyro_data[:,0], label='rot gyro x')
+plt.plot(rotated_gyro_data[:,1], label='rot gyro y')
+plt.plot(rotated_gyro_data[:,2], label='rot gyro z')
+plt.ylabel("radians per second")
 plt.legend()
 
 plt.show()
 
 
-# In[9]:
+# In[123]:
 
-def DoubleIntegrateAccelerometer(acc_data, T, K, b, drift=np.zeros((3,1))):
+plt.figure(figsize=(5,5))
+_yaw = []
+yy = 0
+for g in rotated_gyro_data:
+    yy += g[2] * 0.01
+    _yaw.append(yy)
+    
+plt.plot(_yaw)
+plt.ylabel("radians")
+plt.show()
+
+
+# In[130]:
+
+def DoubleIntegrateAccelerometer(acc_data, gyro_data, T, K, b, drift=np.zeros((3,1))):
     x = 0
     y = 0
     vx = 0
@@ -138,8 +174,14 @@ def DoubleIntegrateAccelerometer(acc_data, T, K, b, drift=np.zeros((3,1))):
     vys = []
     axs = []
     ays = []
-    for idx, a_s in enumerate(acc_data):
-        a_o = T@K@((a_s + b).T + idx * drift)
+    yaw = 0
+    for idx, (a_s, g_s) in enumerate(zip(acc_data, gyro_data)):
+        g_s_rot = R @ (g_s)
+        yaw += g_s_rot[2] * dt_s
+        YawR = np.array([[np.cos(yaw), -np.sin(yaw), 0], [np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])
+        a_s_rot = YawR @ a_s
+        a_o = T@K@((a_s_rot + b).T + idx * drift)
+#         a_o = T@K@((a_s + b).T + idx * drift)
         ax = a_o[0][0]
         ay = a_o[1][0]
         az = a_o[2][0]
@@ -148,6 +190,7 @@ def DoubleIntegrateAccelerometer(acc_data, T, K, b, drift=np.zeros((3,1))):
         vy += ay * dt_s
         x += vx * dt_s + 0.5 * ax * dt_s ** 2
         y += vy * dt_s + 0.5 * ay * dt_s ** 2
+        
         axs.append(ax)
         ays.append(ay)
         vxs.append(vx)
@@ -158,36 +201,48 @@ def DoubleIntegrateAccelerometer(acc_data, T, K, b, drift=np.zeros((3,1))):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[64]:
+# In[145]:
 
-raw = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)))
-means = np.mean(calibrated_accelerometer_data[:t_init], axis=0)
+raw = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, gyro_data, np.eye(3), np.eye(3), np.zeros((1,3)))
+means = R@(np.mean(calibrated_accelerometer_data[:t_init], axis=0))
 bias = np.array([[means[0], means[1], 0]])
-drift = np.array([[0], [-0.00020], [0]])
-print(bias)
-manual_calib = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, R, np.eye(3), np.array([[-0.0025, -0.02339312, 0]]), drift)
-calib = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, R, np.eye(3), bias, drift)
+# drift = np.array([[.0005], [-0.0007], [0]])
+drift = np.array([[0.], [0], [0]])
+print("bias from t_init: ", bias)
+print(R@(np.mean(calibrated_accelerometer_data[-t_init:], axis=0)))
+manual_calib = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, gyro_data, R, np.eye(3), np.array([[-0.0025, -0.02339312, 0]]), drift)
+calib = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, gyro_data, R, np.eye(3), bias, drift)
 
-# plt.figure(figsize=(5,5))
-# plt.plot(raw[4], label='raw ax')
-# plt.plot(raw[5], label='raw ay')
-# plt.plot(calib[4], label='calib ax')
-# plt.plot(calib[5], label='calib ay')
-# plt.legend()
+plt.figure(figsize=(15,5))
+plt.plot(raw[4], label='raw ax')
+plt.plot(raw[5], label='raw ay')
+plt.plot(calib[4], label='calib ax')
+plt.plot(calib[5], label='calib ay')
+# plt.plot(manual_calib[4], label='manual_calib ax')
+# plt.plot(manual_calib[5], label='manual_calib ay')
+plt.legend()
 
 plt.figure(figsize=(5,5))
 plt.plot(raw[2], label='raw vx')
 plt.plot(raw[3], label='raw vy')
 plt.plot(calib[2], label='calib vx')
 plt.plot(calib[3], label='calib vy')
+# plt.plot(manual_calib[2], label='manual_calib vx')
+# plt.plot(manual_calib[3], label='manual_calib vy')
 plt.legend()
 
 plt.figure(figsize=(15,15))
-# plt.scatter(raw[0], raw[1], marker='.', s=10, color='m', label='raw data')
+plt.scatter(raw[0], raw[1], marker='.', s=10, color='m', label='raw data')
+plt.scatter(calib[0], calib[1], marker='.', s=10, color='k', label='calib')
 plt.scatter(manual_calib[0], manual_calib[1], marker='.', s=10, color='g', label='rotated acc')
 plt.legend()
 plt.axis('square')
 plt.show()
+
+
+# In[ ]:
+
+
 
 
 # In[ ]:
