@@ -41,38 +41,43 @@ def angles(args):
     means = np.mean(data, axis=0)
 
     # reverse solve for the original angles
+    # The R can be used to transform a measurement in the IMU frame into a measurement in the base frame
+    # EX: [0, 0, 1] = R @ [x0, y0, z0]
     R = base_rotation(means)
-    print(means)
-    print(R@means)
-    roll = np.arctan2(R[1, 0], R[0, 0])
-    pitch = np.arctan2(-R[2, 0], np.sqrt(R[2, 1] ** 2 + R[2, 2] ** 2))
-    yaw = np.arctan2(R[2, 1], R[2, 2])
-    print("inputs (degrees)")
-    print("Roll:", args.roll)
-    print("Pitch:", args.pitch)
-    print("Yaw:", args.yaw)
-    print("angles we solved for (degrees)")
-    print("Roll:", roll * 180 / np.pi)
-    print("Pitch:", pitch * 180 / np.pi)
-    print("Yaw:", yaw * 180 / np.pi)
+    R_inv = np.linalg.inv(R)
+
+    # generate fake data that looks like a figure-eight
+    N = 200
+    ground_truth = np.ndarray((N, 9))
+    for i in range(N):
+        t = i / N * np.pi * 2
+        x = np.cos(t)
+        y = np.sin(t) * np.cos(t)
+        ground_truth[i] = np.array([x, y, 0, 0, 0, 0, 0, 0, 0])
 
     if not args.no_plot:
         fig = plt.figure()
-        ax_3d = fig.add_subplot(1, 2, 1, projection=Axes3D.name)
-        ax = fig.add_subplot(1, 2, 2)
-        ax.plot(data[:, 0], label="x")
-        ax.plot(data[:, 1], label="y")
-        ax.plot(data[:, 2], label="z")
-        ax.set_title("Synthetic Accelerometer Readings")
-        ax.set_xlabel("Time (sample #)")
-        ax.set_ylabel("Acceleration (g's)")
-        ax.legend()
+        ax_3d = fig.add_subplot(2, 2, 1, projection=Axes3D.name)
+        acc_ax = fig.add_subplot(2, 2, 2)
+        acc_ax.plot(data[:, 0], label="x")
+        acc_ax.plot(data[:, 1], label="y")
+        acc_ax.plot(data[:, 2], label="z")
+        acc_ax.set_title("Synthetic Accelerometer Readings")
+        acc_ax.set_xlabel("Time (sample #)")
+        acc_ax.set_ylabel("Acceleration (g's)")
+        acc_ax.legend()
 
         ax_3d.quiver([0, 0], [0, 0], [0, 0], [0, means[0]], [0, means[1]], [1, means[2]], length=0.05)
         ax_3d.set_xlabel("X")
         ax_3d.set_ylabel("Y")
         ax_3d.set_zlabel("Z")
         ax_3d.set_title("3d orientation vector")
+        ax_3d.axis("square")
+
+        xy_ax = fig.add_subplot(2, 2, 3)
+        xy_ax.scatter(ground_truth[:, 0], ground_truth[:, 1], s=2)
+        xy_ax.set_title("Synthetic Path of Travel")
+        xy_ax.axis("square")
         plt.show()
 
 
