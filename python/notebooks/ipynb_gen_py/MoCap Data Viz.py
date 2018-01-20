@@ -160,9 +160,18 @@ plt.plot(yaws, label="integrated gyro")
 plt.show()
 
 
-# # Encoder
+# # X/Y from NavX
 
 # In[12]:
+
+# adjust the NavX data to start with the correct X/Y
+navx_x = sensor_data[:,6] - sensor_data[0,6] + mocap_states[0][0]
+navx_y = sensor_data[:,7] - sensor_data[0,7] + mocap_states[0][1]
+
+
+# # Encoder
+
+# In[13]:
 
 # encoder kinematics
 encoder_x = mocap_states[0][0]
@@ -194,7 +203,7 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[13]:
+# In[14]:
 
 plt.figure(figsize=(20,10))
 #640,700 is a constant-speed interval
@@ -207,7 +216,7 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[14]:
+# In[15]:
 
 def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
     x = x0
@@ -240,7 +249,7 @@ def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[15]:
+# In[16]:
 
 means = np.mean(sensor_data[:100],axis=0)
 print("Average Accel X value:", means[0])
@@ -262,20 +271,30 @@ plt.legend()
 plt.show()
 
 
-# In[16]:
+# In[40]:
 
 plt.figure(figsize=(10,10))
-plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
-plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
-plt.plot(encoder_xs, encoder_ys, color='k', label='encoders')
-plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
-plt.axis("square")
 plt.title("Sensor Data versus MoCap")
+# all this acc stuff is wrong!
+# plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
+# plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
+# plt.plot(encoder_xs, encoder_ys, color='k', label='encoders')
+plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
+plt.scatter(navx_x, navx_y, marker='.', s=1, color='m', label="navx API")
+tt = -1.85
+xx = -.3
+yy = 1.2
+RR = np.array([[np.cos(tt), -np.sin(tt), 0, xx], [np.sin(tt), np.cos(tt), 0, yy], [0, 0, 1, 0], [0, 0, 0, 1]])
+dd = RR @ np.array([navx_x, navx_y, np.zeros(navx_x.shape[0]), np.ones(navx_x.shape[0])])
+plt.scatter(navx_x, navx_y, marker='.', s=1, color='c', label="API navx")
+plt.scatter(dd[0,:], dd[1,:], marker='.', s=1, color='y', label="navx API rot")
+plt.axis("square")
+
 plt.legend()
 plt.show()
 
 
-# In[17]:
+# In[20]:
 
 dts_fpgas = []
 dts_navxs = []
@@ -295,7 +314,7 @@ plt.show()
 
 # ## Testing on Turtlebot accelerometer data
 
-# In[18]:
+# In[21]:
 
 turtlebot_dir = "../../recorded_sensor_data/turtlebot_original/"
 data_file = turtlebot_dir + "interpolated_data.csv"
@@ -380,12 +399,12 @@ plt.show()
 
 # # Camera Stuff
 
-# In[19]:
+# In[22]:
 
 import cv2
 
 
-# In[20]:
+# In[23]:
 
 img_dir = "../../recorded_sensor_data/practice_image_processing/"
 vid_file = img_dir + "out.avi"
@@ -412,7 +431,7 @@ for timestamp in img_timestamp_reader:
         break
 
 
-# In[21]:
+# In[24]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')

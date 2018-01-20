@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[9]:
+# In[1]:
 
 import numpy as np
 import csv
@@ -10,7 +10,7 @@ from scipy.optimize import root
 from math import cos, sin
 
 
-# In[110]:
+# In[2]:
 
 reader = csv.reader(open("recorded_sensor_data/turtlebot_12_07_18-44-00/turtlebot_data.csv", 'r'))
 
@@ -25,13 +25,13 @@ accelerometer_data = data[:,4:7]
 gyro_data = data[:,7:10] * np.pi / 180  # convert degrees to radians
 
 
-# In[111]:
+# In[3]:
 
 print(data[-1][-1] - data[0][-1])
 print(data.shape)
 
 
-# In[112]:
+# In[4]:
 
 plt.figure(figsize=(10,10))
 plt.title("Measured Acceleration")
@@ -54,7 +54,7 @@ plt.show()
 # 
 # compensate for bias, scale, and misalignment
 
-# In[113]:
+# In[5]:
 
 calib_T = np.array([[1, 2.71075764e-03, 4.55981725e-03],[0, 1, 7.38354478e-04],[0,0,1]])
 calib_K = np.array([[9.97279234e-01, 0, 0],[0, 9.96661774e-01, 0],[0, 0, 9.89959950e-01]])
@@ -82,7 +82,7 @@ calibrated_accelerometer_data = calibrated_accelerometer_data.T
 # 
 # https://math.stackexchange.com/a/476311
 
-# In[114]:
+# In[6]:
 
 def base_rotation(mean_acc_while_stationary):
     """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
@@ -95,7 +95,7 @@ def base_rotation(mean_acc_while_stationary):
     return R
 
 
-# In[115]:
+# In[7]:
 
 t_init = 25 # ~25 is static
 stationary_accelerometer_data = calibrated_accelerometer_data[:t_init]
@@ -112,7 +112,7 @@ print("adjusted", R@stationary_mean_acc)
 print(R)
 
 
-# In[129]:
+# In[8]:
 
 rotated_acc_data = np.ndarray(calibrated_accelerometer_data.shape)
 rotated_gyro_data = np.ndarray(gyro_data.shape)
@@ -146,13 +146,13 @@ plt.legend()
 plt.show()
 
 
-# In[123]:
+# In[13]:
 
 plt.figure(figsize=(5,5))
 _yaw = []
 yy = 0
 for g in rotated_gyro_data:
-    yy += g[2] * 0.01
+    yy += g[2] * 0.01 * 8
     _yaw.append(yy)
     
 plt.plot(_yaw)
@@ -160,7 +160,7 @@ plt.ylabel("radians")
 plt.show()
 
 
-# In[130]:
+# In[14]:
 
 def DoubleIntegrateAccelerometer(acc_data, gyro_data, T, K, b, drift=np.zeros((3,1))):
     x = 0
@@ -176,7 +176,7 @@ def DoubleIntegrateAccelerometer(acc_data, gyro_data, T, K, b, drift=np.zeros((3
     ays = []
     yaw = 0
     for idx, (a_s, g_s) in enumerate(zip(acc_data, gyro_data)):
-        g_s_rot = R @ (g_s)
+        g_s_rot = R @ (g_s * 8)
         yaw += g_s_rot[2] * dt_s
         YawR = np.array([[np.cos(yaw), -np.sin(yaw), 0], [np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])
         a_s_rot = YawR @ a_s
@@ -201,7 +201,7 @@ def DoubleIntegrateAccelerometer(acc_data, gyro_data, T, K, b, drift=np.zeros((3
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[145]:
+# In[15]:
 
 raw = DoubleIntegrateAccelerometer(calibrated_accelerometer_data, gyro_data, np.eye(3), np.eye(3), np.zeros((1,3)))
 means = R@(np.mean(calibrated_accelerometer_data[:t_init], axis=0))
@@ -238,14 +238,4 @@ plt.scatter(manual_calib[0], manual_calib[1], marker='.', s=10, color='g', label
 plt.legend()
 plt.axis('square')
 plt.show()
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
 
