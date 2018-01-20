@@ -4,7 +4,7 @@ from scipy.optimize import root
 import matplotlib.pyplot as plt
 import sys
 import argparse
-
+import math
 
 def static_intervals(threshold, data, t_wait, sample_per_second):
     window_size = int(sample_per_second * t_wait)
@@ -48,8 +48,58 @@ def gyro_loss(accel_frame, previous_accel_frame, raw_gyro_readings, theta_gyro):
     :param theta_gyro: parameters for the gyro calibration
     :return:
     """
-    pass
+    def get_corrected_gyro_data(raw_data, theta_gyro):
+        gamma_yz = theta_gyro[0]
+        gamma_zy = theta_gyro[1]
+        gamma_xz = theta_gyro[2]
+        gamma_zx = theta_gyro[3]
+        gamma_xy = theta_gyro[4]
+        gamma_yx = theta_gyro[5]
+        s_x = theta_gyro[6]
+        s_y = theta_gyro[7]
+        s_z = theta_gyro[8]
+        T = np.array([[1, -gamma_yz, gamma_zy], [gamma_xz, 1, -gamma_zx], [-gamma_xy, gamma_yx, 1]])
+        K = np.array([[s_x, 0, 0], [0, s_y, 0], [0, 0, s_z]])
 
+        # corrected frame
+        corrected_data = np.ndarray(raw_data.shape)
+        for idx, w_s in enumerate(raw_data):
+            corrected_data[idx] = (T @ K @ w_s)
+
+        return corrected_data
+
+    def rotation_matrix(gyro_matrix):
+        theta_x, theta_y, theta_z = gyro_matrix[0], gyro_matrix[1], gyro_matrix[2]
+
+        rotation_matrix_x = np.array([[1, 0, 0]
+                                         , [0, math.cos(theta_x), -math.sin(theta_x)]
+                                         , [0, math.sin(theta_x), math.cos(theta_x)]])
+
+        rotation_matrix_y = np.array([[math.cos(theta_y), 0, math.sin(theta_y)]
+                                         , [0, 1, 0]
+                                         , [-math.sin(theta_y), 0, math.cos(theta_y)]])
+
+        rotation_matrix_z = np.array([[math.cos(theta_z), -math.sin(theta_z), 0]
+                                         , [math.sin(theta_z), math.cos(theta_z), 0]
+                                         , [0, 0, 1]])
+
+        return (rotation_matrix_x @ rotation_matrix_y @ rotation_matrix_z)
+
+    def integrate_gyro(initial_acc, gyro_data, dt):
+        conversion = np.pi / 180
+        scale = 0.4
+        for g in gyro_data:
+            initial_acc = rotation_matrix(g * dt * conversion * scale) @ initial_acc
+        return initial_acc
+
+    def expected_acc_frame(acc_frame, raw_gyro_data, theta_gyro, dt):
+
+        corrected_gyro_data = get_corrected_gyro_data(raw_gyro_data, theta_gyro)
+        expected_final_acc_frames = integrate_gyro(acc_frame, corrected_gyro_data, dt)
+
+        return expected_final_acc_frames
+
+    return np.linalg.norm(accel_frame - expected_acc_frame(previous_accel_frame, raw_gyro_readings, theta_gyro, 0.01))
 
 def acc_loss(a_i, theta_acc):
     T = np.array([[1, -theta_acc[0], theta_acc[1]], [0, 1, -theta_acc[2]], [0, 0, 1]])
@@ -101,14 +151,14 @@ def gyro_optimize(num_intervals, static_mean_accs, all_raw_gyro_readings, interv
     # optimization of accelerometer parameters
     def gyro_error_and_jacobian(params):
         # for each static interval
-        f = np.ndarray((num_intervals))
-        df = np.ndarray((num_intervals, 9))
+        f = np.zeros(num_intervals)
+        df = np.zeros((num_intervals, 9))
         for i in range(1, num_intervals):
             previous_accel_frame = static_mean_accs[i-1]
             accel_frame = static_mean_accs[i]
             raw_gyro_readings = all_raw_gyro_readings[intervals[i-1][1]:intervals[i][0]]
             f[i] = gyro_loss(accel_frame, previous_accel_frame, raw_gyro_readings, params)
-            df[i] = gyro_loss_derivative(accel_frame, previous_accel_frame, raw_gyro_readings, params)
+            df[i] = gyro_loss_derivative(accel_frame, previous_accel_frame, raw_gyro_readings, np.expand_dims(params, 0))
         return f, df
 
     sol = root(gyro_error_and_jacobian, theta_gyro, jac=True, method='lm')
@@ -214,8 +264,8 @@ def main():
     # Accelerometer calibration
     total_intervals = args.intervals
     residual_opt = float("inf")
-    for k in range(1, total_intervals + 1):  # line 5
-    # for k in range(1, 2):  # line 5
+    # for k in range(1, total_intervals + 1):  # line 5
+    for k in range(1, 5):  # line 5
         threshold = k * sigma_init**2  # line 6 -- should be squared according to paper
         intervals, classifications = static_intervals(threshold, remaining_data, t_wait, samples_per_second)  # line 7
 
@@ -249,12 +299,14 @@ def main():
             static_mean_accs_opt = static_mean_accs
 
     # gyro_params, residual = gyro_optimize(total_intervals, static_mean_accs_opt, remaining_data[:,3:6], intervals_opt)
+    gyro_params, residual = gyro_optimize(4, static_mean_accs_opt, remaining_data[:, 3:6], intervals_opt[:4])
+
 
     print("Ideal accelerometer calibration parameters:")
     print(acc_params_opt)
     print(residual_opt)
-    # print("Ideal gyro calibration parameters:")
-    # print(gyro_params)
+    print("Ideal gyro calibration parameters:")
+    print(gyro_params)
 
 
 if __name__ == '__main__':
