@@ -265,7 +265,7 @@ def main():
     total_intervals = args.intervals
     residual_opt = float("inf")
     # for k in range(1, total_intervals + 1):  # line 5
-    for k in range(1, 5):  # line 5
+    for k in range(1, 4):  # line 5
         threshold = k * sigma_init**2  # line 6 -- should be squared according to paper
         intervals, classifications = static_intervals(threshold, remaining_data, t_wait, samples_per_second)  # line 7
 
@@ -299,7 +299,7 @@ def main():
             static_mean_accs_opt = static_mean_accs
 
     # gyro_params, residual = gyro_optimize(total_intervals, static_mean_accs_opt, remaining_data[:,3:6], intervals_opt)
-    gyro_params, residual = gyro_optimize(4, static_mean_accs_opt, remaining_data[:, 3:6], intervals_opt[:4])
+    gyro_params, residual = gyro_optimize(10, static_mean_accs_opt, remaining_data[:, 3:6], intervals_opt[:10])
 
 
     print("Ideal accelerometer calibration parameters:")
