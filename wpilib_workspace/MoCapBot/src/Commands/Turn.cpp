@@ -5,12 +5,12 @@
 Turn::Turn(int degrees) : Command("Turn") {
   Requires(Robot::drive_base);
 	radians = ((float) degrees) * M_PI / 180.0;
-	duration = degrees * 0.02; // TODO:
+	duration = degrees * 0.017; // TODO:
 }
 
 void Turn::Initialize() {
 	SetTimeout(duration);
-	Robot::drive_base->SetSpeed(-0.25, 0.25);
+	Robot::drive_base->SetSpeed(-0.5, 0.5);
 }
 
 void Turn::Execute() {
