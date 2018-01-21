@@ -3,20 +3,21 @@
 #include <math.h>
 
 Turn::Turn(int degrees) : Command("Turn") {
+  Requires(Robot::drive_base);
 	radians = ((float) degrees) * M_PI / 180.0;
-	duration = 0; // TODO:
+	duration = degrees * 0.02; // TODO:
 }
 
 void Turn::Initialize() {
 	SetTimeout(duration);
-	Robot::drive_base->SetSpeed(0.1, 0.1);
+	Robot::drive_base->SetSpeed(-0.25, 0.25);
 }
 
 void Turn::Execute() {
 }
 
 bool Turn::IsFinished() {
-	return false;
+	return IsTimedOut();
 }
 
 void Turn::End() {

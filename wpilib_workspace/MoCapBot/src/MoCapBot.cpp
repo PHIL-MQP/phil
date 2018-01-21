@@ -26,8 +26,6 @@ frc::JoystickButton *fwd = nullptr;
 frc::JoystickButton *turn = nullptr;
 DriveBase *Robot::drive_base = nullptr;
 AHRS *Robot::ahrs = nullptr;
-frc::Encoder *Robot::left_encoder = nullptr;
-frc::Encoder *Robot::right_encoder = nullptr;
 frc::AnalogOutput *Robot::mocap_start_trigger = nullptr;
 frc::AnalogOutput *Robot::mocap_stop_trigger = nullptr;
 
@@ -37,12 +35,6 @@ void Robot::RobotInit() {
   gamepad = new frc::Joystick(0);
   drive_base = new DriveBase();
   ahrs = new AHRS(frc::I2C::kMXP);
-  left_encoder = new frc::Encoder(RobotMap::kLeftEnocderA,
-      RobotMap::kLeftEnocderB);
-  right_encoder = new frc::Encoder(RobotMap::kRightEnocderA,
-      RobotMap::kRightEnocderB);
-  left_encoder->SetDistancePerPulse(0.000357);
-  right_encoder->SetDistancePerPulse(0.000357);
   mocap_stop_trigger = new frc::AnalogOutput(RobotMap::kTriggerStop);
   mocap_start_trigger = new frc::AnalogOutput(RobotMap::kTriggerStart);
 
@@ -50,7 +42,6 @@ void Robot::RobotInit() {
   mocap_stop_trigger->SetVoltage(5);
   running = false;
 
-  Scheduler::GetInstance()->AddCommand(new Circle(1));
   square = new frc::JoystickButton(gamepad, 1);
   square->WhenReleased(new Square());
   circle = new frc::JoystickButton(gamepad, 2);
@@ -68,7 +59,8 @@ void Robot::TeleopInit() {
   std::cout << "TeleopInit" << std::endl;
 
   std::ostringstream filename;
-  filename << "/home/lvuser/mocap_data-" << frc::Timer::GetFPGATimestamp() << ".csv";
+  filename << "/home/lvuser/mocap_data-" << frc::Timer::GetFPGATimestamp()
+      << ".csv";
   log.open(filename.str());
 
   if (!log) {
@@ -79,18 +71,14 @@ void Robot::TeleopInit() {
     std::cout << "log !good()" << std::endl;
   }
 
-  log << "accel_x,accel_y,accel_z,"
-      << "gyro_x,gyro_y,gyro_z,"
-      << "x,y,z,"
-      << "left_encoder_rate,right_encoder_rate,"
-      << "left_input,right_input,"
-      << "fpga time,navx time"
-      << std::endl;
+  log << "accel_x,accel_y,accel_z," << "gyro_x,gyro_y,gyro_z," << "x,y,z,"
+      << "left_encoder_rate,right_encoder_rate," << "left_input,right_input,"
+      << "fpga time,navx time" << std::endl;
 
   // tell the TK1 to start recording data
-//  uint8_t data = 1;
-//  std::cout << "Starting TK1" << std::endl;
-//  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+  uint8_t data = 1;
+  std::cout << "Starting TK1" << std::endl;
+  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 
   // tell the motion capture to start
   std::cout << "Triggering Motion Capture" << std::endl;
@@ -113,16 +101,16 @@ void Robot::DisabledInit() {
     log.close();
   }
 
-  // tell the TK1 to stop recording data
-//  uint8_t data = 0;
-//  std::cout << "Stopping TK1" << std::endl;
-//  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+//   tell the TK1 to stop recording data
+  uint8_t data = 0;
+  std::cout << "Stopping TK1" << std::endl;
+  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 }
 
 void Robot::TeleopPeriodic() {
   frc::Scheduler::GetInstance()->Run();
 
-  data_t sample = {0};
+  data_t sample = { 0 };
   sample.raw_accel_x = ahrs->GetRawAccelX();
   sample.raw_accel_y = ahrs->GetRawAccelY();
   sample.raw_accel_z = ahrs->GetRawAccelZ();
@@ -135,8 +123,8 @@ void Robot::TeleopPeriodic() {
   sample.x = ahrs->GetDisplacementX();
   sample.y = ahrs->GetDisplacementY();
   sample.z = ahrs->GetDisplacementZ();
-  sample.left_encoder_rate = left_encoder->GetRate();
-  sample.right_encoder_rate = right_encoder->GetRate();
+  sample.left_encoder_rate = drive_base->left_encoder->GetRate();
+  sample.right_encoder_rate = drive_base->right_encoder->GetRate();
   sample.left_input = gamepad->GetRawAxis(1);
   sample.right_input = -gamepad->GetRawAxis(5);
   sample.fpga_t = frc::Timer::GetFPGATimestamp();
@@ -145,35 +133,33 @@ void Robot::TeleopPeriodic() {
   sample.right_motor = drive_base->right_motor->GetInverted();
 
   SmartDashboard::PutBoolean("ready", true);
-  SmartDashboard::PutNumber("right encoder ticks", right_encoder->Get());
-  SmartDashboard::PutNumber("right encoder meters", right_encoder->GetDistance());
-  SmartDashboard::PutNumber("left encoder ticks", left_encoder->Get());
-  SmartDashboard::PutNumber("left encoder meters", left_encoder->GetDistance());
+  SmartDashboard::PutData("left pid", drive_base->left_pid);
+  SmartDashboard::PutData("right pid", drive_base->right_pid);
+  SmartDashboard::PutNumber("left encoder rate", drive_base->left_encoder->GetRate());
+  SmartDashboard::PutNumber("right encoder rate", drive_base->right_encoder->GetRate());
 
-  std::cout << left_encoder->Get() << " "
-		  << left_encoder->GetDistance() << " ";
-  std::cout
-	  << "["
-	  << std::setw(6)
-      << sample.raw_accel_x << "," << sample.raw_accel_y << "," << sample.raw_accel_z
-      << "," << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z
-      << "," << sample.x << "," << sample.y << "," << sample.z
-      << "," << sample.left_encoder_rate << "," << sample.right_encoder_rate
-	  << "," << sample.left_input << "," << sample.right_input
-      << "," << sample.fpga_t
-      << "," << sample.navx_t
-	  << "]"
+//  std::cout << "[" << std::setw(6) << sample.raw_accel_x << ","
+//      << sample.raw_accel_y << "," << sample.raw_accel_z << ","
+//      << sample.raw_gyro_x << "," << sample.raw_gyro_y << ","
+//      << sample.raw_gyro_z << "," << sample.x << "," << sample.y << ","
+//      << sample.z << "," << sample.left_encoder_rate << ","
+//      << sample.right_encoder_rate << "," << sample.left_input << ","
+//      << sample.right_input << "," << sample.fpga_t << "," << sample.navx_t
+//      << "]" << std::endl;
+
+  log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y << ","
+      << sample.raw_accel_z << "," << sample.raw_gyro_x << ","
+      << sample.raw_gyro_y << "," << sample.raw_gyro_z << "," << sample.x << ","
+      << sample.y << "," << sample.z << "," << sample.left_encoder_rate << ","
+      << sample.right_encoder_rate << "," << sample.left_input << ","
+      << sample.right_input << "," << sample.fpga_t << "," << sample.navx_t
       << std::endl;
+}
 
-//  log << std::setw(6)
-//      << sample.raw_accel_x << "," << sample.raw_accel_y << "," << sample.raw_accel_z
-//      << "," << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z
-//      << "," << sample.x << "," << sample.y << "," << sample.z
-//      << "," << sample.left_encoder_rate << "," << sample.right_encoder_rate
-//	  << "," << sample.left_input << "," << sample.right_input
-//      << "," << sample.fpga_t
-//      << "," << sample.navx_t
-//      << std::endl;
+void Robot::TestPeriodic() {
+  LiveWindow::GetInstance()->AddActuator("drive base", "left pid", drive_base->left_pid);
+  LiveWindow::GetInstance()->AddActuator("drive base", "right pid", drive_base->right_pid);
+  LiveWindow::GetInstance()->Run();
 }
 
 START_ROBOT_CLASS(Robot)

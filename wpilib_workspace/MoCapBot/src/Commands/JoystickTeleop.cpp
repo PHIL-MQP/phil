@@ -8,7 +8,6 @@ JoystickTeleop::JoystickTeleop() : Command("JoystickTeleop") {
 }
 
 void JoystickTeleop::Initialize() {
-
 }
 
 void JoystickTeleop::Execute() {

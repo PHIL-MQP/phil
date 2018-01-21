@@ -11,5 +11,5 @@ public:
 	void End() override;
 	void Interrupted() override;
 private:
-	double dist_m, duration;
+	double duration;
 };

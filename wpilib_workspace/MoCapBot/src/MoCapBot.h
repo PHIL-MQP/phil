@@ -44,14 +44,14 @@ public:
 
   void TeleopPeriodic() override;
 
+  void TestPeriodic() override;
+
   bool running = false;
   std::ofstream log;
 
   static frc::Joystick *gamepad;
   static DriveBase *drive_base;
 	static AHRS *ahrs;
-	static frc::Encoder *left_encoder;
-	static frc::Encoder *right_encoder;
 	static frc::AnalogOutput *mocap_start_trigger;
 	static frc::AnalogOutput *mocap_stop_trigger;
 };
