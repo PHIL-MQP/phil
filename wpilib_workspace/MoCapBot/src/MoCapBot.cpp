@@ -10,11 +10,19 @@
 #include <phil/phil.h>
 #include <SmartDashboard/SmartDashboard.h>
 
+#include <Commands/Forward.h>
+#include <Commands/Turn.h>
+#include <Commands/Circle.h>
+#include <Commands/Square.h>
 #include <RobotMap.h>
 #include <MoCapBot.h>
 #include <AHRS.h>
 
 Joystick *Robot::gamepad = nullptr;
+frc::JoystickButton *square = nullptr;
+frc::JoystickButton *circle = nullptr;
+frc::JoystickButton *fwd = nullptr;
+frc::JoystickButton *turn = nullptr;
 DriveBase *Robot::drive_base = nullptr;
 AHRS *Robot::ahrs = nullptr;
 frc::Encoder *Robot::left_encoder = nullptr;
@@ -32,15 +40,29 @@ void Robot::RobotInit() {
       RobotMap::kLeftEnocderB);
   right_encoder = new frc::Encoder(RobotMap::kRightEnocderA,
       RobotMap::kRightEnocderB);
+  left_encoder->SetDistancePerPulse(0.00142836185);
+  right_encoder->SetDistancePerPulse(0.00142836185);
   mocap_stop_trigger = new frc::AnalogOutput(RobotMap::kTriggerStop);
   mocap_start_trigger = new frc::AnalogOutput(RobotMap::kTriggerStart);
 
   mocap_start_trigger->SetVoltage(5);
   mocap_stop_trigger->SetVoltage(5);
   running = false;
+
+  Scheduler::GetInstance()->AddCommand(new Circle(1));
+  square = new frc::JoystickButton(gamepad, 1);
+  square->WhenReleased(new Square());
+  circle = new frc::JoystickButton(gamepad, 2);
+  circle->WhenReleased(new Circle(1));
+  fwd = new frc::JoystickButton(gamepad, 3);
+  fwd->WhenReleased(new Forward(1));
+  turn = new frc::JoystickButton(gamepad, 4);
+  turn->WhenReleased(new Turn(90));
+
 }
 
 void Robot::TeleopInit() {
+  SmartDashboard::PutBoolean("ready", false);
   // create the log to start capturing data
   std::cout << "TeleopInit" << std::endl;
 
@@ -49,7 +71,7 @@ void Robot::TeleopInit() {
   log.open(filename.str());
 
   if (!log) {
-    std::cout << strerror(errno) << '\n';
+    std::cout << "bad log!" << strerror(errno) << '\n';
   }
 
   if (!log.good()) {
@@ -65,18 +87,20 @@ void Robot::TeleopInit() {
       << std::endl;
 
   // tell the TK1 to start recording data
-  uint8_t data = 1;
-  std::cout << "Starting TK1" << std::endl;
-  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+//  uint8_t data = 1;
+//  std::cout << "Starting TK1" << std::endl;
+//  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 
   // tell the motion capture to start
   std::cout << "Triggering Motion Capture" << std::endl;
   Robot::mocap_start_trigger->SetVoltage(0);
   Robot::mocap_stop_trigger->SetVoltage(5);
   running = true;
+  SmartDashboard::PutBoolean("ready", true);
 }
 
 void Robot::DisabledInit() {
+  SmartDashboard::PutBoolean("ready", false);
   std::cout << "DisabledInit" << std::endl;
   if (running) {
     Robot::mocap_stop_trigger->SetVoltage(0);
@@ -89,9 +113,9 @@ void Robot::DisabledInit() {
   }
 
   // tell the TK1 to stop recording data
-  uint8_t data = 0;
-  std::cout << "Stopping TK1" << std::endl;
-  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+//  uint8_t data = 0;
+//  std::cout << "Stopping TK1" << std::endl;
+//  phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 }
 
 void Robot::TeleopPeriodic() {
@@ -119,6 +143,14 @@ void Robot::TeleopPeriodic() {
   sample.left_motor = drive_base->left_motor->Get();
   sample.right_motor = drive_base->right_motor->GetInverted();
 
+  SmartDashboard::PutBoolean("ready", true);
+  SmartDashboard::PutNumber("right encoder ticks", right_encoder->Get());
+  SmartDashboard::PutNumber("right encoder meters", right_encoder->GetDistance());
+  SmartDashboard::PutNumber("left encoder ticks", left_encoder->Get());
+  SmartDashboard::PutNumber("left encoder meters", left_encoder->GetDistance());
+
+  std::cout << left_encoder->GetRaw() << " "
+		  << left_encoder->GetDistance() << " ";
   std::cout
 	  << "["
 	  << std::setw(6)
@@ -132,15 +164,15 @@ void Robot::TeleopPeriodic() {
 	  << "]"
       << std::endl;
 
-  log << std::setw(6)
-      << sample.raw_accel_x << "," << sample.raw_accel_y << "," << sample.raw_accel_z
-      << "," << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z
-      << "," << sample.x << "," << sample.y << "," << sample.z
-      << "," << sample.left_encoder_rate << "," << sample.right_encoder_rate
-	  << "," << sample.left_input << "," << sample.right_input
-      << "," << sample.fpga_t
-      << "," << sample.navx_t
-      << std::endl;
+//  log << std::setw(6)
+//      << sample.raw_accel_x << "," << sample.raw_accel_y << "," << sample.raw_accel_z
+//      << "," << sample.raw_gyro_x << "," << sample.raw_gyro_y << "," << sample.raw_gyro_z
+//      << "," << sample.x << "," << sample.y << "," << sample.z
+//      << "," << sample.left_encoder_rate << "," << sample.right_encoder_rate
+//	  << "," << sample.left_input << "," << sample.right_input
+//      << "," << sample.fpga_t
+//      << "," << sample.navx_t
+//      << std::endl;
 }
 
 START_ROBOT_CLASS(Robot)

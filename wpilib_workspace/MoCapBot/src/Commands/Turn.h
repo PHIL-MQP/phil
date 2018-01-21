@@ -2,14 +2,15 @@
 
 #include <Commands/Command.h>
 
-class Forward: public Command {
+class Turn: public Command {
 public:
-	Forward(double dist_m);
+	Turn(int degrees);
 	void Initialize() override;
 	void Execute() override;
 	bool IsFinished() override;
 	void End() override;
 	void Interrupted() override;
 private:
-	double dist_m, duration;
+	double radians;
+	double duration;
 };

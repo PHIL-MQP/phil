@@ -1,12 +1,16 @@
+#include <iostream>
 #include <Commands/Forward.h>
 #include <MoCapBot.h>
 
-Forward::Forward() : Command("Forward") {
+Forward::Forward(double dist_m) : Command("Forward") {
+	const double SPEED_MPS = 1;
+	duration = dist_m / SPEED_MPS;
 }
 
 void Forward::Initialize() {
-	SetTimeout(1.0);
-	Robot::drive_base->SetSpeed(0.1, 0.1);
+	std::cout << "fwd" << std::endl;
+	SetTimeout(duration);
+	Robot::drive_base->SetSpeed(0.3, 0.3);
 }
 
 void Forward::Execute() {

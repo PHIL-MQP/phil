@@ -2,14 +2,15 @@
 
 #include <Commands/Command.h>
 
-class Forward: public Command {
+class Circle: public Command {
 public:
-	Forward(double dist_m);
+	Circle(double radius_m);
 	void Initialize() override;
 	void Execute() override;
 	bool IsFinished() override;
 	void End() override;
 	void Interrupted() override;
+
 private:
-	double dist_m, duration;
+	double left_speed, right_speed, duration;
 };
