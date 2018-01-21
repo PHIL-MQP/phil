@@ -4,6 +4,7 @@
 
 #include <CameraServer.h>
 #include <Joystick.h>
+#include <Buttons/JoystickButton.h>
 #include <Timer.h>
 #include <Commands/Scheduler.h>
 #include <opencv2/imgproc.hpp>
@@ -40,8 +41,8 @@ void Robot::RobotInit() {
       RobotMap::kLeftEnocderB);
   right_encoder = new frc::Encoder(RobotMap::kRightEnocderA,
       RobotMap::kRightEnocderB);
-  left_encoder->SetDistancePerPulse(0.00142836185);
-  right_encoder->SetDistancePerPulse(0.00142836185);
+  left_encoder->SetDistancePerPulse(0.000357);
+  right_encoder->SetDistancePerPulse(0.000357);
   mocap_stop_trigger = new frc::AnalogOutput(RobotMap::kTriggerStop);
   mocap_start_trigger = new frc::AnalogOutput(RobotMap::kTriggerStart);
 
@@ -149,7 +150,7 @@ void Robot::TeleopPeriodic() {
   SmartDashboard::PutNumber("left encoder ticks", left_encoder->Get());
   SmartDashboard::PutNumber("left encoder meters", left_encoder->GetDistance());
 
-  std::cout << left_encoder->GetRaw() << " "
+  std::cout << left_encoder->Get() << " "
 		  << left_encoder->GetDistance() << " ";
   std::cout
 	  << "["
