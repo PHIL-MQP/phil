@@ -1,7 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <aruco/aruco.h>
 
-void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam, cv::VideoWriter &out_video, bool step) {
+void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam, cv::VideoWriter &out_video, bool step, bool quiet) {
   cv::Mat frame;
   cv::Mat annotated_frame;
 
@@ -30,12 +30,6 @@ void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam, c
       }
 
       frame.copyTo(annotated_frame);
-      if (step) {
-        std::cin.get();
-      }
-      else {
-        cv::waitKey(10);
-      }
 
       /*detect markers in frame*/
       std::vector<aruco::Marker> markers = MDetector.detect(frame);
@@ -52,9 +46,18 @@ void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam, c
         }
       }
 
-      cv::imshow("annotated", annotated_frame);
+      if (!quiet) {
+        cv::imshow("annotated", annotated_frame);
+      }
+
+      if (step) {
+        std::cin.get();
+      }
+      else if (!quiet) {
+        cv::waitKey(10);
+      }
+
       out_video.write(annotated_frame);
-      cv::waitKey(1);
       ++frame_idx;
     }
   }
@@ -72,11 +75,15 @@ int main(int argc, char **argv) {
   char *params_filename = argv[2];
 
   bool step = false;
+  bool quiet = false;
   cv::VideoWriter out_video;
   std::string outfile;
   if (argc == 4) {
     if (strncmp(argv[3], "-s", 2) == 0) {
       step = true;
+    }
+    else if (strncmp(argv[3], "-q", 2) == 0) {
+      quiet = true;
     }
     else {
       // for output file
@@ -84,7 +91,12 @@ int main(int argc, char **argv) {
     }
   }
   else if (argc == 5) {
-    step = true;
+    if (strncmp(argv[3], "-s", 2) == 0) {
+      step = true;
+    }
+    else if (strncmp(argv[3], "-q", 2) == 0) {
+      quiet = true;
+    }
     // for output file
     out_video = cv::VideoWriter(argv[4], CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
   }
@@ -93,7 +105,7 @@ int main(int argc, char **argv) {
   aruco::CameraParameters params;
   params.readFromXMLFile(params_filename);
 
-  detectMarkers(cap, params, out_video, step);
+  detectMarkers(cap, params, out_video, step, quiet);
 }
 
 void show_help() {
@@ -103,6 +115,8 @@ void show_help() {
             << "you can use -s to step through frame by frame"
             << std::endl
             << "Example: ./detect_markers out.avi recorded_sensor_data/camera_calibration/11_12.yml"
+            << std::endl
+            << "         ./detect_markers out.avi recorded_sensor_data/camera_calibration/11_12.yml -q"
             << std::endl
             << "         ./detect_markers out.avi recorded_sensor_data/camera_calibration/11_12.yml -s out.avi"
             << std::endl;
