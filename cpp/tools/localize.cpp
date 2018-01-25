@@ -21,8 +21,12 @@ int main(int argc, char *argv[]) {
 
   cs::MjpegServer mjpegServer("httpserver", 8081);
   cs::CvSink sink("sink");
+  bool video = false;
+  cv::VideoCapture cap;
 
   if (strncmp(flag, "-v", 2) == 0) {
+    video = true;
+    cap = cv::VideoCapture(input);
   } else if (strncmp(flag, "-d", 2) == 0) {
     int device_number = std::stoi(input);
     cs::UsbCamera camera("usbcam", device_number);
@@ -55,7 +59,12 @@ int main(int argc, char *argv[]) {
   bool done = false;
   unsigned int frame_idx = 0;
   while (!done) {
-    sink.GrabFrame(frame);
+
+    if (video) {
+      cap >> frame;
+    } else {
+      sink.GrabFrame(frame);
+    }
 
     if (frame.empty()) {
       std::cout << "empty frame" << std::endl;
@@ -95,8 +104,9 @@ void show_help() {
   std::cout << "USAGE: ./localize [-v video_filename|-d device_number]  params_file"
             << std::endl
             << std::endl
-            << "EXAMPLE: ./localize -v 0 params.yml"
-            << "         ./localize -d test.avi params.yml"
+            << "EXAMPLE: ./localize -d 0 params.yml"
+            << std::endl
+            << "         ./localize -v test.avi params.yml"
             << std::endl;
 }
 
@@ -142,7 +152,10 @@ std::vector<int> getAdjacentNodes(int id) {
 
 }
 
-cv::Mat use_transforms(std::vector<aruco::Marker> markers, trackers_map_t trackers, cv::Mat annotated_frame, const config_t config) {
+cv::Mat use_transforms(std::vector<aruco::Marker> markers,
+                       trackers_map_t trackers,
+                       cv::Mat annotated_frame,
+                       const config_t config) {
   for (auto &marker : markers) {
     // insert the marker and its tracker if the tag is new
     if (trackers.count(marker.id) == 0) {
@@ -190,7 +203,7 @@ cv::Mat use_transforms(std::vector<aruco::Marker> markers, trackers_map_t tracke
     // if the marker is our origin, just report position away
     if (marker.id == orig) {
       cv::Mat pose;
-      cv::vconcat(marker.Tvec.t(), marker.Rvec.t(), pose);
+      cv::vconcat(marker.Tvec.t(), marker.Rvec, pose);
       std::cout << pose << std::endl;
     } else {
       // search though through the transforms
@@ -257,7 +270,7 @@ cv::Mat use_transforms(std::vector<aruco::Marker> markers, trackers_map_t tracke
         std::cout << std::endl;
         float a[6] = {0.f};
         cv::Mat pose;
-        cv::vconcat(marker.Tvec.t(), marker.Rvec.t(), pose);
+        cv::vconcat(marker.Tvec.t(), marker.Rvec, pose);
         cv::Mat r(2, 3, CV_32F, a);
         cv::Mat m;
         for (int j = 0; j < foundPath.size() - 1; j++) {

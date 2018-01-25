@@ -1,7 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <aruco/aruco.h>
 
-void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam) {
+void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam, bool step) {
   cv::Mat frame;
   cv::Mat annotated_frame;
 
@@ -10,7 +10,7 @@ void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam) {
   //Create the detector
   aruco::MarkerDetector MDetector;
   MDetector.setDetectionMode(aruco::DetectionMode::DM_VIDEO_FAST);
-  std::map <uint32_t, aruco::MarkerPoseTracker> tracker;//use a map so that for each id, we use a different pose tracker
+  std::map<uint32_t, aruco::MarkerPoseTracker> tracker; //use a map so that for each id, we use a different pose tracker
   cv::namedWindow("in", 1);
 
   if (!capture.isOpened()) {
@@ -30,12 +30,15 @@ void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam) {
       }
 
       frame.copyTo(annotated_frame);
-      std::cout << "frame: " << frame_idx << std::endl;
-      cv::imshow("in", frame);
-      cv::waitKey(1);
+      if (step) {
+        std::cin.get();
+      }
+      else {
+        cv::waitKey(10);
+      }
 
       /*detect markers in frame*/
-      std::vector <aruco::Marker> markers = MDetector.detect(frame);
+      std::vector<aruco::Marker> markers = MDetector.detect(frame);
 
       for (auto &marker:markers) {
         tracker[marker.id].estimatePose(marker, CamParam, MarkerSize);
@@ -59,7 +62,7 @@ void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam) {
 void show_help();
 
 int main(int argc, char **argv) {
-  if (argc != 3) {
+  if (argc < 3) {
     show_help();
     return EXIT_FAILURE;
   }
@@ -67,17 +70,28 @@ int main(int argc, char **argv) {
   char *video_filename = argv[1];
   char *params_filename = argv[2];
 
+  bool step = false;
+  if (argc == 4) {
+    if (strncmp(argv[3], "-s", 2) == 0) {
+      step = true;
+    }
+  }
+
   cv::VideoCapture cap(video_filename);
   aruco::CameraParameters params;
   params.readFromXMLFile(params_filename);
 
-  detectMarkers(cap, params);
+  detectMarkers(cap, params, step);
 }
 
 void show_help() {
-  std::cout << "USAGE: ./detect_markers VideoFile CameraParamsFile"
+  std::cout << "USAGE: ./detect_markers VideoFile CameraParamsFile [-s]"
             << std::endl
+            << std::endl
+            << "you can use -s to step through frame by frame"
             << std::endl
             << "Example: ./detect_markers out.avi recorded_sensor_data/camera_calibration/11_12.yml"
+            << std::endl
+            << "         ./detect_markers out.avi recorded_sensor_data/camera_calibration/11_12.yml -s"
             << std::endl;
 }
