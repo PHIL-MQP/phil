@@ -9,13 +9,12 @@ void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam) {
 
   //Create the detector
   aruco::MarkerDetector MDetector;
-  MDetector.setThresholdParams(7, 7);
-  MDetector.setThresholdParamRange(2, 0);
-  map<uint32_t, aruco::MarkerPoseTracker> tracker;//use a map so that for each id, we use a different pose tracker
+  MDetector.setDetectionMode(aruco::DetectionMode::DM_VIDEO_FAST);
+  std::map <uint32_t, aruco::MarkerPoseTracker> tracker;//use a map so that for each id, we use a different pose tracker
   cv::namedWindow("in", 1);
 
   if (!capture.isOpened()) {
-    cout << "Can not load video";
+    std::cout << "Can not load video";
   } else {
     capture >> frame;
 
@@ -36,7 +35,7 @@ void detectMarkers(cv::VideoCapture capture, aruco::CameraParameters CamParam) {
       cv::waitKey(1);
 
       /*detect markers in frame*/
-      vector<aruco::Marker> markers = MDetector.detect(frame);
+      std::vector <aruco::Marker> markers = MDetector.detect(frame);
 
       for (auto &marker:markers) {
         tracker[marker.id].estimatePose(marker, CamParam, MarkerSize);
