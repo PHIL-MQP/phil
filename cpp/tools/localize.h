@@ -2,6 +2,10 @@
 
 #include <opencv2/opencv.hpp>
 #include <aruco/aruco.h>
+#include <cscore.h>
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
 
 struct Trans {
   int toId;
@@ -15,14 +19,9 @@ struct config_t {
   float marker_size = 0.f;
 };
 
-void show_help();
-
 typedef std::map<int, aruco::MarkerPoseTracker> trackers_map_t;
 
-cv::Mat use_transforms(std::vector<aruco::Marker> markers,
-                       trackers_map_t trackers,
-                       cv::Mat annotated_frame,
-                       config_t config);
+void show_help();
 
 std::vector<int> getAdjacentNodes(int id);
 
