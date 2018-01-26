@@ -4,25 +4,30 @@
 #include <aruco/aruco.h>
 #include <algorithm>
 #include <cmath>
+
+#include "localize.h"
+
 void localize(cv::VideoCapture cap, aruco::CameraParameters camParam);
 // void localize(cv::VideoCapture cap, cv::Mat intrinsics, cv::Mat distortion);
 
-void computeCameraPose();
+// void computeCameraPose();
 
-struct myMarker {
-	int id;
-	cv::Mat t;
-	cv::Mat r;
-};
-
-void show_help();
+// struct myMarker {
+// 	int id;
+// 	cv::Mat t;
+// 	cv::Mat r;
+// };
 
 int main(int argc, char *argv[])
 {
-	if(argc != 3) {
-		// show_help();
-		return EXIT_FAILURE;
-	}
+	// if(argc != 4) {
+	// 	show_help();
+	// 	return EXIT_FAILURE;
+	// }
+
+  // char *flag = argv[1];
+  // char *input = argv[2];
+  // char *params_filename = argv[3];
 
 	char *video_filename = argv[1];
 	char *params_filename = argv[2];
@@ -30,18 +35,26 @@ int main(int argc, char *argv[])
 	aruco::CameraParameters params;
 	params.readFromXMLFile(params_filename);
 
+  cs::MjpegServer mjpegServer("httpserver", 8081);
+  cs::CvSink sink("sink");
+
+  // if (strncmp(flag, "-v", 2) == 0) {
+  // } else if (strncmp(flag, "-d", 2) == 0) {
+  //   int device_number = std::stoi(input);
+  //   cs::UsbCamera camera("usbcam", device_number);
+  //   camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, 30);
+  //   mjpegServer.SetSource(camera);
+  //   sink.SetSource(camera);
+  // } else {
+  //   show_help();
+  //   return EXIT_FAILURE;
+  // }
+
 	localize(cap, params);
 
 	return 0;
 }
 
-struct Trans
-{
-	int toId;
-	int fromId;
-	cv::Mat t;
-	cv::Mat r;
-};
 
 std::vector<Trans> globalTrans;
 std::vector<int> globalIds;
@@ -62,7 +75,7 @@ int inTransforms(int toId, int fromId){
 	return 0;
 }
 
-int inIds(int id){
+int inIds(int id) {
 	// for(int i = 0; i < globalIds.size(); i++){
 	// 	std::cout << globalIds[i] << std::endl;
 	// }
@@ -324,4 +337,13 @@ void localize(cv::VideoCapture capture, aruco::CameraParameters CamParam)
   	++frame_idx;
   }
 }
+}
+
+void show_help() {
+  std::cout << "USAGE: ./localize [-v video_filename|-d device_number]  params_file"
+            << std::endl
+            << std::endl
+            << "EXAMPLE: ./localize -v 0 params.yml"
+            << "         ./localize -d test.avi params.yml"
+            << std::endl;
 }
