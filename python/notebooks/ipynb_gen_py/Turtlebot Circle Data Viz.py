@@ -160,7 +160,7 @@ plt.ylabel("radians")
 plt.show()
 
 
-# In[14]:
+# In[1]:
 
 def DoubleIntegrateAccelerometer(acc_data, gyro_data, T, K, b, drift=np.zeros((3,1))):
     x = 0
@@ -176,7 +176,7 @@ def DoubleIntegrateAccelerometer(acc_data, gyro_data, T, K, b, drift=np.zeros((3
     ays = []
     yaw = 0
     for idx, (a_s, g_s) in enumerate(zip(acc_data, gyro_data)):
-        g_s_rot = R @ (g_s * 8)
+        g_s_rot = (R @ g_s) * np.pi / 180
         yaw += g_s_rot[2] * dt_s
         YawR = np.array([[np.cos(yaw), -np.sin(yaw), 0], [np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])
         a_s_rot = YawR @ a_s

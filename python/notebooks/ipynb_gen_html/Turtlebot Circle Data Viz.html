@@ -23839,7 +23839,7 @@ oKIUEYlARSkiEoGKUkQkAhWliEgE/x8jRQOEWiHgdAAAAABJRU5ErkJggg==
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">DoubleIntegrateAccelerometer</span><span class="p">(</span><span class="n">acc_data</span><span class="p">,</span> <span class="n">gyro_data</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">drift</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">))):</span>
@@ -23856,7 +23856,7 @@ oKIUEYlARSkiEoGKUkQkAhWliEgE/x8jRQOEWiHgdAAAAABJRU5ErkJggg==
     <span class="n">ays</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">yaw</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">a_s</span><span class="p">,</span> <span class="n">g_s</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">acc_data</span><span class="p">,</span> <span class="n">gyro_data</span><span class="p">)):</span>
-        <span class="n">g_s_rot</span> <span class="o">=</span> <span class="n">R</span> <span class="o">@</span> <span class="p">(</span><span class="n">g_s</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="n">g_s_rot</span> <span class="o">=</span> <span class="p">(</span><span class="n">R</span> <span class="o">@</span> <span class="n">g_s</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span>
         <span class="n">yaw</span> <span class="o">+=</span> <span class="n">g_s_rot</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">dt_s</span>
         <span class="n">YawR</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">yaw</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">yaw</span><span class="p">),</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">yaw</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">yaw</span><span class="p">),</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
         <span class="n">a_s_rot</span> <span class="o">=</span> <span class="n">YawR</span> <span class="o">@</span> <span class="n">a_s</span>
@@ -23882,6 +23882,31 @@ oKIUEYlARSkiEoGKUkQkAhWliEgE/x8jRQOEWiHgdAAAAABJRU5ErkJggg==
 </pre></div>
 
 </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+<div class="prompt"></div>
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-fg">&lt;ipython-input-1-5492148dd68a&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-fg">()</span>
+<span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span><span class="ansi-green-fg">def</span> DoubleIntegrateAccelerometer<span class="ansi-blue-fg">(</span>acc_data<span class="ansi-blue-fg">,</span> gyro_data<span class="ansi-blue-fg">,</span> T<span class="ansi-blue-fg">,</span> K<span class="ansi-blue-fg">,</span> b<span class="ansi-blue-fg">,</span> drift<span class="ansi-blue-fg">=</span>np<span class="ansi-blue-fg">.</span>zeros<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">3</span><span class="ansi-blue-fg">,</span><span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">      2</span>     x <span class="ansi-blue-fg">=</span> <span class="ansi-cyan-fg">0</span>
+<span class="ansi-green-intense-fg ansi-bold">      3</span>     y <span class="ansi-blue-fg">=</span> <span class="ansi-cyan-fg">0</span>
+<span class="ansi-green-intense-fg ansi-bold">      4</span>     vx <span class="ansi-blue-fg">=</span> <span class="ansi-cyan-fg">0</span>
+<span class="ansi-green-intense-fg ansi-bold">      5</span>     vy <span class="ansi-blue-fg">=</span> <span class="ansi-cyan-fg">0</span>
+
+<span class="ansi-red-fg">NameError</span>: name &#39;np&#39; is not defined</pre>
+</div>
+</div>
+
 </div>
 </div>
 

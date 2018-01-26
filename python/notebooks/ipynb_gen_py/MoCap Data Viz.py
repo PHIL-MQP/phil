@@ -1,9 +1,10 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[56]:
 
 import numpy as np
+np.set_printoptions(precision=4, suppress=True)
 import matplotlib.pyplot as plt
 import csv
 import json
@@ -11,7 +12,7 @@ import json
 
 # # Read MoCap data and RoboRIO data form files
 
-# In[2]:
+# In[57]:
 
 data_dir = "../../recorded_sensor_data/mocap_12_10-03-30-00/"
 sensor_file = data_dir + "sensor_data.csv"
@@ -30,15 +31,16 @@ robot_center_offset = robot_center - template_centroid
 
 # skip headers
 next(sensor_reader)
-next(mocap_reader)
-next(mocap_reader)
-next(mocap_reader)
-next(mocap_reader)
-next(mocap_reader)
+for i in range(5):
+    next(mocap_reader)
 
 sensor_data = []
 for sensor_row in sensor_reader:
     data = [float(d) for d in sensor_row]
+    # FYI: negate encoder rates
+    mask = np.ones(len(data))
+    mask[10] = -1
+    data = data * mask
     sensor_data.append(data)
 sensor_data = np.array(sensor_data)
 
@@ -54,20 +56,9 @@ for mocap_row in mocap_reader:
 mocap_data = np.array(mocap_data)
 
 
-# In[3]:
-
-def yawdiff(y1, y2):
-    diff = y2 - y1
-    if diff > np.pi:
-        return diff - np.pi * 2;
-    if diff < -np.pi:
-        return diff + np.pi * 2;
-    return diff;
-
-
 # ### Check the amount of data between the two matches?
 
-# In[4]:
+# In[58]:
 
 print("Seconds of IMU data recorded: ", (sensor_data[-1][-1] - sensor_data[0][-1])/1000.0)
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
@@ -75,8 +66,9 @@ print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 # # Plot Mocap Data by Axis
 
-# In[5]:
+# In[59]:
 
+plt.figure(figsize=(15,15))
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
 plt.plot(mocap_data[:,4], label="rz")
@@ -92,10 +84,10 @@ plt.show()
 
 # # Plot X/Y position from MoCap
 
-# In[6]:
+# In[60]:
 
-mocap_states = np.ndarray((mocap_data.shape[0], 9))
-mocap_state = np.zeros(9)
+mocap_states = np.ndarray((mocap_data.shape[0], 3))
+mocap_states[0] = np.array([mocap_data[0,0], mocap_data[0,1], mocap_data[0,2]])
 for mocap_idx in range(1, len(mocap_data)):
     data = mocap_data[mocap_idx]
     last_data = mocap_data[mocap_idx - 1]
@@ -107,12 +99,11 @@ for mocap_idx in range(1, len(mocap_data)):
     tz = (data[7] + robot_center_offset[2]) / 1000
     mocap_state[0] = tx
     mocap_state[1] = ty
-    drz = yawdiff(rz, last_data[4]) # handles wrap-around
-    mocap_state[2] += drz
+    mocap_state[2] = rz
     mocap_states[mocap_idx-1] = mocap_state
 
 
-# In[7]:
+# In[64]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[0,0], mocap_states[0,1], marker='.', s=100, color='b')
@@ -120,8 +111,24 @@ plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r')
 plt.axis("square")
 plt.show()
 
+plt.figure(figsize=(10,10))
+plt.plot(mocap_states[:,2], label='yaw')
+plt.title("mocap yaw")
+plt.show()
 
-# In[8]:
+
+# ## Regard the first mocap pose as the "origin" for the dead reckoning methods
+
+# In[65]:
+
+global_origin_x = mocap_states[0,0]
+global_origin_y = mocap_states[0,1]
+global_origin_yaw = mocap_states[0,2]
+global_origin_xy = np.array([[global_origin_x], [global_origin_y]])
+print([global_origin_x, global_origin_y, global_origin_yaw])
+
+
+# In[66]:
 
 plt.plot(sensor_data[:,0], label="acc x")
 plt.plot(sensor_data[:,1], label="acc y")
@@ -131,7 +138,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[9]:
+# In[67]:
 
 plt.plot(sensor_data[:,3], label="Gyro x")
 plt.plot(sensor_data[:,4], label="Gyro y")
@@ -141,52 +148,56 @@ plt.legend()
 plt.show()
 
 
-# In[10]:
+# In[68]:
 
 yaws = []
 yaw = 0
 last_t = sensor_data[0][-1]
 for data in sensor_data:
-    gyro_z = data[5]
-    dt_s = data[-1] - last_t
+    gyro_z = data[5] * 0.4
+    dt_s = (data[-1] - last_t)/1000
     yaw += dt_s * gyro_z
     yaws.append(yaw)
     last_t = data[-1]
 
 
-# In[11]:
+# In[69]:
 
 plt.plot(yaws, label="integrated gyro")
+plt.ylabel("degrees")
 plt.show()
 
 
 # # X/Y from NavX
 
-# In[12]:
+# In[70]:
 
-# adjust the NavX data to start with the correct X/Y
-navx_x = sensor_data[:,6] - sensor_data[0,6] + mocap_states[0][0]
-navx_y = sensor_data[:,7] - sensor_data[0,7] + mocap_states[0][1]
+# adjust the NavX data to start with the correct global X, Y, and Yaw
+navx_x = sensor_data[:,6] - sensor_data[0,6]
+navx_y = sensor_data[:,7] - sensor_data[0,7]
+navx_xy = np.vstack((navx_x, navx_y))
+
+# subtract initial X/Y (idk why this is not just 0???)
+global_yaw_rot = np.array([[np.cos(global_origin_yaw), -np.sin(global_origin_yaw)], [np.sin(global_origin_yaw), np.cos(global_origin_yaw)]])
+navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
 
 
 # # Encoder
 
-# In[13]:
+# In[71]:
 
 # encoder kinematics
-encoder_x = mocap_states[0][0]
-encoder_y = mocap_states[0][1]
-encoder_theta = mocap_states[0][2]
+encoder_x = global_origin_x
+encoder_y = global_origin_y
+encoder_yaw = mocap_states[0][2]
 encoder_xs = []
 encoder_ys = []
 alpha = 1.0
-wheel_radius_m = 0.072
+wheel_radius_m = 0.074
 track_width_m = 0.9
-dt_s = 0.02
+dt_s = 0.05
 
-pulse_per_revolution = 128
-distance_per_pulse =(wheel_radius_m * 2 * np.pi) /  pulse_per_revolution
-print(distance_per_pulse)
+distance_per_pulse = 0.000357 # measured on mocap robot
 
 for data in sensor_data:
     wl = float(data[9]) * distance_per_pulse
@@ -195,20 +206,21 @@ for data in sensor_data:
     B = alpha * track_width_m
     T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
     dydt, dpdt = T @ np.array([wl, wr])
-    encoder_x = encoder_x + np.cos(encoder_theta) * dydt * dt_s
-    encoder_y = encoder_y + np.sin(encoder_theta) * dydt * dt_s
-    encoder_theta += dpdt * dt_s
+    encoder_x = encoder_x + np.cos(encoder_yaw) * dydt * dt_s
+    encoder_y = encoder_y + np.sin(encoder_yaw) * dydt * dt_s
+    encoder_yaw += dpdt * dt_s
     
     encoder_xs.append(encoder_x)
     encoder_ys.append(encoder_y)
 
 
-# In[14]:
+# In[72]:
 
 plt.figure(figsize=(20,10))
-#640,700 is a constant-speed interval
-plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate')
-plt.plot(sensor_data[:,10]*distance_per_pulse, label='right encoder rate')
+plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
+plt.plot(sensor_data[:,10]*distance_per_pulse, label='right encoder rate (m/s)')
+plt.plot(-sensor_data[:,11],label='left joystick (-1 to 1)')
+plt.plot(sensor_data[:,12], label='right joystick (-1 to 1)')
 plt.title("encoder on MoCap robot")
 plt.legend()
 plt.show()
@@ -216,9 +228,9 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[15]:
+# In[73]:
 
-def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
+def DoubleIntegrate(accelerometer_data, yaws, K, T, b, dt_s, x0, y0):
     x = x0
     y = y0
     vx = 0
@@ -229,9 +241,13 @@ def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
     vys = []
     axs = []
     ays = []
-    
-    for a_s in accelerometer_data:
-        a_o = T@K@(a_s+b).T
+    for a_s, yaw in zip(accelerometer_data, yaws):
+        yaw_rad = yaw * np.pi / 180
+        yaw_rot = np.array([[np.cos(yaw_rad), -np.sin(yaw_rad), 0], [np.sin(yaw_rad), np.cos(yaw_rad), 0], [0, 0, 1]])
+        
+        a_s_rot = yaw_rot @ a_s
+        
+        a_o = T@K@(a_s_rot+b).T
         ax = a_o[0][0]
         ay = a_o[1][0]
         
@@ -249,87 +265,87 @@ def DoubleIntegrate(accelerometer_data, K, T, b, x0=0, y0=0, dt_s=0.02):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[16]:
+# ## Double Integrate Mocap Robot Sensor Data
+
+# In[74]:
 
 means = np.mean(sensor_data[:100],axis=0)
 print("Average Accel X value:", means[0])
 print("Average Accel Y value:", means[1])
 print("Average Accel Z value:", means[2])
 
-K = np.array([[1,0,0],[0,1,0],[0,0,1]])*0.01
-T = np.array([[1,0,0.01],[0,1,0],[0,0,1]])
 b = np.array([[-means[0], -means[1], 0]])
-no_bias = DoubleIntegrate(sensor_data[:,3:6], K, np.eye(3), np.array([[0,0,0]]), x0=mocap_states[0][0], y0=mocap_states[0][1])
-calib = DoubleIntegrate(sensor_data[:,3:6], K, T, b, x0=mocap_states[0][0], y0=mocap_states[0][1])
+no_bias = DoubleIntegrate(sensor_data[:,3:6], 
+                          yaws,
+                          np.eye(3),
+                          np.eye(3),
+                          np.array([[0,0,0]]),
+                          dt_s,
+                          global_origin_x,
+                          global_origin_y)
+# calib = DoubleIntegrate(sensor_data[:,3:6],
+#                         yaws,ca
+#                         np.eye(3),
+#                         np.eye(3),
+#                         b,
+#                         dt_s,
+#                         global_origin_x,
+#                         global_origin_y)
 
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
-plt.plot(calib[2], label="calibrated vxs")
-plt.plot(calib[3], label="calibrated vys")
+# plt.plot(calib[2], label="calibrated vxs")
+# plt.plot(calib[3], label="calibrated vys")
 plt.title("velocities from integrating accelerometer")
 plt.legend()
 plt.show()
 
 
-# In[40]:
+# In[75]:
 
-plt.figure(figsize=(10,10))
+print(mocap_states[0:7,0])
+print(mocap_states[0:7:2,0])
+
+
+# In[88]:
+
+plt.figure(figsize=(15,15))
 plt.title("Sensor Data versus MoCap")
-# all this acc stuff is wrong!
-# plt.scatter(no_bias[0], no_bias[1], marker='.', s=1, color='b', label='Accelerometer, no bias')
-# plt.scatter(calib[0], calib[1], marker='.', s=1, color='g', label='Accelerometer, with bias')
-# plt.plot(encoder_xs, encoder_ys, color='k', label='encoders')
-plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
-plt.scatter(navx_x, navx_y, marker='.', s=1, color='m', label="navx API")
-tt = -1.85
-xx = -.3
-yy = 1.2
-RR = np.array([[np.cos(tt), -np.sin(tt), 0, xx], [np.sin(tt), np.cos(tt), 0, yy], [0, 0, 1, 0], [0, 0, 0, 1]])
-dd = RR @ np.array([navx_x, navx_y, np.zeros(navx_x.shape[0]), np.ones(navx_x.shape[0])])
-plt.scatter(navx_x, navx_y, marker='.', s=1, color='c', label="API navx")
-plt.scatter(dd[0,:], dd[1,:], marker='.', s=1, color='y', label="navx API rot")
+TT = 400
+
+# :2 accounts for the fact the the mocap samples twice as fast as our encoder/IMU data
+plt.scatter(mocap_states[:TT:2,0], mocap_states[:TT:2,1], marker='.', s=2, color='r', label='MoCap')
+# plt.scatter(encoder_xs[:TT], encoder_ys[:TT], marker='.', s=2, color='k', label='encoders')
+
+plt.scatter(navx_xy[0,:TT], navx_xy[1,:TT], marker='.', s=2, color='y', label="navx API")
+# plt.scatter(no_bias[0][:TT], no_bias[1][:TT], marker='.', s=1, color='b', label='Accelerometer, no bias')
+# plt.scatter(calib[0][:TT], calib[1][:TT], marker='.', s=1, color='g', label='Accelerometer, with bias')
 plt.axis("square")
 
 plt.legend()
 plt.show()
 
 
-# In[20]:
-
-dts_fpgas = []
-dts_navxs = []
-for i in range(1000):
-    dt_s_fpga = (sensor_data[i+1][-1] - sensor_data[i][-1]) / 1000
-    dt_s_navx = (sensor_data[i+1][-2] - sensor_data[i][-2])
-    dts_fpgas.append(dt_s_fpga)
-    dts_navxs.append(dt_s_navx)
-    
-plt.plot(dts_fpgas, label='fpga')
-plt.plot(dts_navxs, label='navx')
-plt.ylabel("delt t (seconds)")
-plt.legend()
-plt.title("Sensor reading timestamps")
-plt.show()
-
-
 # ## Testing on Turtlebot accelerometer data
 
-# In[21]:
+# In[19]:
 
 turtlebot_dir = "../../recorded_sensor_data/turtlebot_original/"
 data_file = turtlebot_dir + "interpolated_data.csv"
 reader = csv.reader(open(data_file, 'r'))
 
-accelerometer_data = []
-encoder_x = 0
-encoder_y = 0
-encoder_theta = 0.5
-encoder_xs = []
-encoder_ys = []
-alpha = 1.0
-wheel_radius_m = 0.038
-track_width_m = 0.23
-dt_s = 0.1
+tb_accelerometer_data = []
+tb_encoder_x = 0
+tb_encoder_y = 0
+tb_encoder_yaw = 0.5
+tb_encoder_xs = []
+tb_encoder_ys = []
+tb_alpha = 1.0
+tb_wheel_radius_m = 0.038
+tb_track_width_m = 0.23
+tb_dt_s = 0.1
+tb_yaws = []
+tb_yaw = 0
 
 next(reader)
 for data in reader:
@@ -338,37 +354,46 @@ for data in reader:
     ax = float(data[2])
     ay = float(data[3])
     t = float(data[-1])
+    tb_gyro_z = float(data[7]) * 0.4
     
-    accelerometer_data.append([ax, ay, t])
-    B = alpha * track_width_m
-    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
+    tb_accelerometer_data.append([ax, ay, t])
+    B = tb_alpha * tb_track_width_m
+    T = tb_wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
     dydt, dpdt = T @ np.array([wl, wr])
-    encoder_x = encoder_x + np.cos(encoder_theta) * dydt * dt_s
-    encoder_y = encoder_y + np.sin(encoder_theta) * dydt * dt_s
-    encoder_theta += dpdt * dt_s
+    tb_encoder_x = tb_encoder_x + np.cos(tb_encoder_yaw) * dydt * tb_dt_s
+    tb_encoder_y = tb_encoder_y + np.sin(tb_encoder_yaw) * dydt * tb_dt_s
+    tb_encoder_yaw += dpdt * tb_dt_s
     
-    encoder_xs.append(encoder_x)
-    encoder_ys.append(encoder_y)
+    tb_yaw += tb_dt_s * tb_gyro_z
     
-init_means = np.mean(accelerometer_data[:40], axis=0)
-full_means = np.mean(accelerometer_data, axis=0)
+    tb_encoder_xs.append(tb_encoder_x)
+    tb_encoder_ys.append(tb_encoder_y)
+    tb_yaws.append(tb_yaw)
+    
+init_means = np.mean(tb_accelerometer_data[:40], axis=0)
+full_means = np.mean(tb_accelerometer_data, axis=0)
 print("Average Init Accel X value:", init_means[0])
 print("Average Init Accel Y value:", init_means[1])
 print("Average Accel X value:", full_means[0])
 print("Average Accel Y value:", full_means[1])
 
-no_bias = DoubleIntegrate(accelerometer_data, np.eye(3), np.eye(3), np.zeros((1,3)), dt_s=0.1)
-K = np.eye(3)*50
+plt.plot(tb_yaws, label="integrated gyro")
+plt.ylabel("degrees")
+plt.title("Turtlebot Yaw")
+plt.show()
+
+no_bias = DoubleIntegrate(tb_accelerometer_data, tb_yaws, np.eye(3), np.eye(3), np.zeros((1,3)), dt_s=tb_dt_s)
+K = np.eye(3)
 T = np.eye(3)
 b = np.array([[-init_means[0], -init_means[1], 0]])
-init_calib = DoubleIntegrate(accelerometer_data, K, T, b)
+init_calib = DoubleIntegrate(tb_accelerometer_data, tb_yaws, K, T, b, dt_s=tb_dt_s)
 b = np.array([[-full_means[0], -full_means[1], 0]])
-full_calib = DoubleIntegrate(accelerometer_data, K, T, b)
+full_calib = DoubleIntegrate(tb_accelerometer_data, tb_yaws, K, T, b, dt_s=tb_dt_s)
 b = np.array([[0.0096, -0.0052, 0]])
-guess_calib = DoubleIntegrate(accelerometer_data, K, T, b)
+guess_calib = DoubleIntegrate(tb_accelerometer_data, tb_yaws, K, T, b, dt_s=tb_dt_s)
 
 plt.figure(figsize=(10,10))
-plt.scatter(encoder_xs, encoder_ys, marker='.', s=2, color='r', label='Encoder Data')
+plt.scatter(tb_encoder_xs, tb_encoder_ys, marker='.', s=2, color='r', label='Encoder Data')
 plt.scatter(no_bias[0], no_bias[1], marker='o', s=1, color='y', label='Accelerometer, no bias')
 plt.scatter(init_calib[0], init_calib[1], marker='o', s=1, color='g', label='Accelerometer, init means')
 plt.scatter(full_calib[0], full_calib[1], marker='o', s=1, color='k', label='Accelerometer, full means')
@@ -381,8 +406,8 @@ plt.show()
 plt.figure(figsize=(10,10))
 plt.plot(no_bias[4], label="no bias axs")
 plt.plot(no_bias[5], label="no bias ays")
-plt.plot(calib[4], label="calibrated axs")
-plt.plot(calib[5], label="calibrated ays")
+plt.plot(init_calib[4], label="calibrated axs")
+plt.plot(init_calib[5], label="calibrated ays")
 plt.title("Accelerations")
 plt.legend()
 plt.show()
@@ -390,21 +415,21 @@ plt.show()
 plt.figure(figsize=(10,10))
 plt.plot(no_bias[2], label="no bias vxs")
 plt.plot(no_bias[3], label="no bias vys")
-plt.plot(calib[2], label="calibrated vxs")
-plt.plot(calib[3], label="calibrated vys")
+plt.plot(init_calib[2], label="calibrated vxs")
+plt.plot(init_calib[3], label="calibrated vys")
 plt.title("velocities from integrating accelerometer")
 plt.legend()
 plt.show()
 
 
-# # Camera Stuff
+# # Comparing Aruco localization to Mocap
 
-# In[22]:
+# In[ ]:
 
 import cv2
 
 
-# In[23]:
+# In[ ]:
 
 img_dir = "../../recorded_sensor_data/practice_image_processing/"
 vid_file = img_dir + "out.avi"
@@ -431,12 +456,32 @@ for timestamp in img_timestamp_reader:
         break
 
 
-# In[24]:
+# In[ ]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')
 plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
-plt.title("Accelerometer versus MoCap")
+plt.title("Camera versus MoCap")
 plt.legend()
+plt.show()
+
+
+# ## Comparing TimeStamp Accuracy between NavX and RoboRIO (FPGA)
+
+# In[ ]:
+
+dts_fpgas = []
+dts_navxs = []
+for i in range(1000):
+    dt_s_fpga = (sensor_data[i+1][-1] - sensor_data[i][-1]) / 1000
+    dt_s_navx = (sensor_data[i+1][-2] - sensor_data[i][-2])
+    dts_fpgas.append(dt_s_fpga)
+    dts_navxs.append(dt_s_navx)
+    
+plt.plot(dts_fpgas, label='fpga')
+plt.plot(dts_navxs, label='navx')
+plt.ylabel("delt t (seconds)")
+plt.legend()
+plt.title("Sensor reading timestamps")
 plt.show()
 
