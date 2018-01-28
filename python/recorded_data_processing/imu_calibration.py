@@ -99,7 +99,7 @@ def gyro_loss(accel_frame, previous_accel_frame, raw_gyro_readings, theta_gyro):
     ugk = ugk / np.linalg.norm(ugk)
 
     uak = accel_frame / np.linalg.norm(accel_frame)
-    print(uak, ugk)
+    # print(uak, ugk)
     return np.linalg.norm(uak - ugk)
 
 
@@ -270,6 +270,13 @@ def main():
     remaining_data = data[t_init_idx:]
     sigma_init = np.linalg.norm(np.var(init_data[:, :3], axis=0))  # line 4
 
+    if args.plot:
+        plt.title("T Init Data")
+        plt.plot(data[:, 0], label='accel x')
+        plt.plot(data[:, 1], label='accel y')
+        plt.plot(data[:, 2], label='accel z')
+        plt.show()
+
     # Accelerometer calibration
     total_intervals = args.intervals
     residual_opt = float("inf")
@@ -282,6 +289,8 @@ def main():
             print("Skipping threshold {:0.16f}. Found {:d}/{:d} static intervals".format(threshold, len(intervals),
                                                                                          total_intervals))
             continue
+        else:
+            print("Threshold {:0.16f} found all {:d} intervals".format(threshold, len(intervals)))
 
         if args.plot:
             plt.title("Static Classifier for threshold %0.16f" % threshold)

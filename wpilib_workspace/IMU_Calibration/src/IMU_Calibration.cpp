@@ -73,7 +73,7 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
   log << "accelx,accely,accelz,gyrox,gyroy,gyroz,time" << std::endl;
   while (c < number_of_samples) {
     // This buffer shouldn't be too big or you'll segfault everything!
-    const size_t buff_size = 10;
+    const size_t buff_size = 100;
     INS buffer[buff_size];
     for (size_t i = 0; i < buff_size && c < number_of_samples; ) {
       gettimeofday(&t1, &tz);
@@ -97,7 +97,7 @@ int collectSamples(size_t number_of_samples, AHRS *ahrs) {
 
     }
 
-    std::cout << "saving some samples to file" << std::endl;
+    std::cout << buffer[0].accel[0] << std::endl;
     for (size_t i = 0; i < buff_size; i++) {
       log << std::setw(9)
           << buffer[i].accel[0] << ","
