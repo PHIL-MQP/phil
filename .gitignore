@@ -12,11 +12,11 @@ RemoteSystemsTempFiles
 
 # IDEA stuff
 # User-specific stuff:
-workspace.xml
-tasks.xml
-misc.xml
-python.iml
-modules.xml
+*workspace.xml
+*tasks.xml
+*misc.xml
+*python.iml
+*modules.xml
 
 # CMake
 cmake-build-debug/
