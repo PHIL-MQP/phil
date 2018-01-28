@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[56]:
+# In[1]:
 
 import numpy as np
 np.set_printoptions(precision=4, suppress=True)
@@ -12,7 +12,7 @@ import json
 
 # # Read MoCap data and RoboRIO data form files
 
-# In[57]:
+# In[2]:
 
 data_dir = "../../recorded_sensor_data/mocap_12_10-03-30-00/"
 sensor_file = data_dir + "sensor_data.csv"
@@ -58,17 +58,17 @@ mocap_data = np.array(mocap_data)
 
 # ### Check the amount of data between the two matches?
 
-# In[58]:
+# In[43]:
 
+# these should be pretty darn close
 print("Seconds of IMU data recorded: ", (sensor_data[-1][-1] - sensor_data[0][-1])/1000.0)
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 
 # # Plot Mocap Data by Axis
 
-# In[59]:
+# In[44]:
 
-plt.figure(figsize=(15,15))
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
 plt.plot(mocap_data[:,4], label="rz")
@@ -84,7 +84,7 @@ plt.show()
 
 # # Plot X/Y position from MoCap
 
-# In[60]:
+# In[5]:
 
 mocap_states = np.ndarray((mocap_data.shape[0], 3))
 mocap_states[0] = np.array([mocap_data[0,0], mocap_data[0,1], mocap_data[0,2]])
@@ -97,13 +97,13 @@ for mocap_idx in range(1, len(mocap_data)):
     tx = (data[5] + robot_center_offset[0]) / 1000
     ty = (data[6] + robot_center_offset[1]) / 1000
     tz = (data[7] + robot_center_offset[2]) / 1000
-    mocap_state[0] = tx
-    mocap_state[1] = ty
-    mocap_state[2] = rz
-    mocap_states[mocap_idx-1] = mocap_state
+    mocap_states[mocap_idx-1][0] = tx
+    mocap_states[mocap_idx-1][1] = ty
+    mocap_states[mocap_idx-1][2] = rz
+    
 
 
-# In[64]:
+# In[6]:
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[0,0], mocap_states[0,1], marker='.', s=100, color='b')
@@ -117,60 +117,132 @@ plt.title("mocap yaw")
 plt.show()
 
 
+# ### Here's what the data looks like in that weird "jump". Turns out it's not actually a "jump" but smooth transition
+
+# In[45]:
+
+print(mocap_states[2010:2030,2])
+
+
 # ## Regard the first mocap pose as the "origin" for the dead reckoning methods
 
-# In[65]:
+# In[46]:
 
 global_origin_x = mocap_states[0,0]
 global_origin_y = mocap_states[0,1]
 global_origin_yaw = mocap_states[0,2]
 global_origin_xy = np.array([[global_origin_x], [global_origin_y]])
-print([global_origin_x, global_origin_y, global_origin_yaw])
+print("Global Origin", [global_origin_x, global_origin_y, global_origin_yaw])
 
 
-# In[66]:
+# In[9]:
 
 plt.plot(sensor_data[:,0], label="acc x")
 plt.plot(sensor_data[:,1], label="acc y")
 plt.plot(sensor_data[:,2], label="acc z")
 plt.title("acc Data")
 plt.legend(bbox_to_anchor=(1,1))
+plt.ylabel("g")
 plt.show()
 
 
-# In[67]:
+# In[10]:
 
 plt.plot(sensor_data[:,3], label="Gyro x")
 plt.plot(sensor_data[:,4], label="Gyro y")
 plt.plot(sensor_data[:,5], label="Gyro z")
 plt.title("Gyro Data")
 plt.legend()
+plt.ylabel("degrees/second")
 plt.show()
 
 
-# In[68]:
+# # Base frame calibration
+
+# In[78]:
+
+def base_rotation(mean_acc_while_stationary):
+    """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
+    a = mean_acc_while_stationary
+    b = np.array([0, 0, 1])
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    v_x = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    R = np.eye(3) + v_x + (v_x@v_x)*(1/(1+c))
+    return R
+   
+t_init = 100 # samples
+stationary_accelerometer_data = sensor_data[:t_init,0:3]
+stationary_mean_acc_raw = np.mean(stationary_accelerometer_data, axis=0)
+stationary_mean_acc = stationary_mean_acc_raw / np.linalg.norm(stationary_mean_acc_raw)
+
+R = base_rotation(stationary_mean_acc)
+
+rotated_acc_data = np.ndarray((sensor_data.shape[0], 3))
+rotated_gyro_data = np.ndarray((sensor_data.shape[0], 3))
+corrected_acc = (R @ sensor_data[:,0:3].T).T
+corrected_gyro = (R @ sensor_data[:,3:6].T).T
+# the differences is too small to notice so we don't plot them
+
+
+# # Integrating Navx Gyro to get Angle
+
+# In[79]:
 
 yaws = []
-yaw = 0
+yaw = np.rad2deg(global_origin_yaw)
 last_t = sensor_data[0][-1]
 for data in sensor_data:
-    gyro_z = data[5] * 0.4
+    gyro_z = data[5] * -0.4
     dt_s = (data[-1] - last_t)/1000
     yaw += dt_s * gyro_z
     yaws.append(yaw)
     last_t = data[-1]
 
 
-# In[69]:
+# In[80]:
 
 plt.plot(yaws, label="integrated gyro")
+# sample every other point (50hz versus 100hz collection) and convert to degrees
+plt.plot(np.rad2deg(mocap_states[0:-1:2,2]), label='mocap')
 plt.ylabel("degrees")
+plt.title("Yaw of robot")
+plt.show()
+
+
+# # Analysis of accurate of Integrating Yaw from NavX Gyro
+
+# In[100]:
+
+error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
+
+# ignore outlies
+for idx, e in enumerate(error):
+    if abs(e) > 25:
+        error[idx] = 0
+
+average_error_by_second = []
+for i in range(1, error.shape[0] // 20):
+    average_error_by_second.append(np.mean(abs(error[(i-1)*20:i*20])))
+
+plt.plot(error)
+plt.xlabel("sample #")
+plt.ylabel("degrees")
+plt.title("Error between Gyro integration and Mocap data")
+plt.show()
+
+plt.figure()
+plt.plot(average_error_by_second)
+plt.plot([5]*len(average_error_by_second))
+plt.title("averge error by second")
+plt.xlabel("time (seconds)")
+plt.ylabel("average error in degrees during that second")
 plt.show()
 
 
 # # X/Y from NavX
 
-# In[70]:
+# In[13]:
 
 # adjust the NavX data to start with the correct global X, Y, and Yaw
 navx_x = sensor_data[:,6] - sensor_data[0,6]
@@ -184,7 +256,7 @@ navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
 
 # # Encoder
 
-# In[71]:
+# In[14]:
 
 # encoder kinematics
 encoder_x = global_origin_x
@@ -214,7 +286,7 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[72]:
+# In[15]:
 
 plt.figure(figsize=(20,10))
 plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
@@ -228,7 +300,7 @@ plt.show()
 
 # ## Double Integrating Accelerometer
 
-# In[73]:
+# In[16]:
 
 def DoubleIntegrate(accelerometer_data, yaws, K, T, b, dt_s, x0, y0):
     x = x0
@@ -267,7 +339,7 @@ def DoubleIntegrate(accelerometer_data, yaws, K, T, b, dt_s, x0, y0):
 
 # ## Double Integrate Mocap Robot Sensor Data
 
-# In[74]:
+# In[17]:
 
 means = np.mean(sensor_data[:100],axis=0)
 print("Average Accel X value:", means[0])
@@ -301,13 +373,13 @@ plt.legend()
 plt.show()
 
 
-# In[75]:
+# In[18]:
 
 print(mocap_states[0:7,0])
 print(mocap_states[0:7:2,0])
 
 
-# In[88]:
+# In[19]:
 
 plt.figure(figsize=(15,15))
 plt.title("Sensor Data versus MoCap")
@@ -328,7 +400,7 @@ plt.show()
 
 # ## Testing on Turtlebot accelerometer data
 
-# In[19]:
+# In[20]:
 
 turtlebot_dir = "../../recorded_sensor_data/turtlebot_original/"
 data_file = turtlebot_dir + "interpolated_data.csv"
