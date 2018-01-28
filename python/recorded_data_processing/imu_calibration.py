@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import csv
 import time
 import numpy as np
@@ -86,7 +88,7 @@ def gyro_loss(accel_frame, previous_accel_frame, raw_gyro_readings, theta_gyro):
     def integrate_gyro(initial_acc, gyro_data, dt):
         conversion = np.pi / 180
         for g in gyro_data:
-            initial_acc = rotation_matrix(g * dt * conversion * 0.4) @ initial_acc
+            initial_acc = rotation_matrix(g * dt * conversion) @ initial_acc
         return initial_acc
 
     def expected_acc_frame(acc_frame, raw_gyro_data, theta_gyro, dt):
@@ -99,7 +101,6 @@ def gyro_loss(accel_frame, previous_accel_frame, raw_gyro_readings, theta_gyro):
     ugk = ugk / np.linalg.norm(ugk)
 
     uak = accel_frame / np.linalg.norm(accel_frame)
-    # print(uak, ugk)
     return np.linalg.norm(uak - ugk)
 
 
@@ -148,7 +149,7 @@ def gyro_optimize(num_intervals, static_mean_accs, all_raw_gyro_readings, interv
     :param intervals: the range of the detected static intervals [num_intervalsx2]
     :return:
     """
-    theta_gyro = np.array([0, 0, 0, 0, 0, 0, 0.4, 0.4, 0.4], dtype=np.float64)
+    theta_gyro = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1], dtype=np.float64)
 
     # optimization of accelerometer parameters
     def gyro_error_and_jacobian(params):
@@ -164,19 +165,15 @@ def gyro_optimize(num_intervals, static_mean_accs, all_raw_gyro_readings, interv
             # df[i] = gyro_loss_derivative(accel_frame, previous_accel_frame, raw_gyro_readings,
             #                              np.expand_dims(params, 0))
         # return f, df
-        # t1 = time.time()
-        # print(t1-t0)
-        # print(f)
         return f
 
-    sol = root(gyro_error_and_jacobian, theta_gyro, jac=False, method='lm', options={'maxiter': 100})
+    sol = root(gyro_error_and_jacobian, theta_gyro, jac=False, method='lm', options={'maxiter': 1000})
     gyro_params = sol.x
 
     if not sol.success:
         print("Optimizer Failed: ", sol.message, gyro_params)
     else:
-        print("Gyro LM Converged!")
-        print(sol.nfev)
+        print("Gyro LM Converged! in {:d} iterations".format(sol.nfev))
 
     residual = compute_residual(num_intervals, static_mean_accs, gyro_params)
 
@@ -197,13 +194,13 @@ def acc_optimize(intervals, static_mean_accs):
             df[i] = acc_loss_derivative(a_i, np.expand_dims(params, 0))
         return f, df
 
-    sol = root(accelerometer_error_and_jacobian, theta_acc, jac=True, method='lm', options={'maxiter': 100})
+    sol = root(accelerometer_error_and_jacobian, theta_acc, jac=True, method='lm', options={'maxiter': 10})
     acc_params = sol.x
 
     if not sol.success:
         print("Optimizer Failed: ", sol.message, acc_params)
     else:
-        print("Accelerometer LM Converged!")
+        print("Accelerometer Converged! in {:d} iterations".format(sol.nfev))
 
     residual = compute_residual(intervals, static_mean_accs, acc_params)
 
@@ -270,19 +267,13 @@ def main():
     remaining_data = data[t_init_idx:]
     sigma_init = np.linalg.norm(np.var(init_data[:, :3], axis=0))  # line 4
 
-    if args.plot:
-        plt.title("T Init Data")
-        plt.plot(data[:, 0], label='accel x')
-        plt.plot(data[:, 1], label='accel y')
-        plt.plot(data[:, 2], label='accel z')
-        plt.show()
-
     # Accelerometer calibration
     total_intervals = args.intervals
     residual_opt = float("inf")
     for k in range(1, total_intervals + 1):  # line 5
         # for k in range(1, 5):  # line 5
         threshold = k * sigma_init ** 2  # line 6 -- should be squared according to paper
+
         intervals, classifications = static_intervals(threshold, remaining_data, t_wait, samples_per_second)  # line 7
 
         if len(intervals) != total_intervals:
@@ -325,13 +316,13 @@ def main():
     plt.legend(bbox_to_anchor=(1.1, 1))
     plt.show()
 
-    gyro_params, residual = gyro_optimize(total_intervals, static_mean_accs_opt, remaining_data[:, 3:6], intervals_opt)
+    gyro_params_opt, residual = gyro_optimize(total_intervals, static_mean_accs_opt, remaining_data[:, 3:6],
+                                              intervals_opt)
 
     print("Ideal accelerometer calibration parameters:")
     print(acc_params_opt)
-    print(residual_opt)
     print("Ideal gyro calibration parameters:")
-    print(gyro_params)
+    print(gyro_params_opt)
 
 
 if __name__ == '__main__':
