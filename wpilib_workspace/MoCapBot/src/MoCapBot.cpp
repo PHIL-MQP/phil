@@ -59,8 +59,7 @@ void Robot::TeleopInit() {
   std::cout << "TeleopInit" << std::endl;
 
   std::ostringstream filename;
-  filename << "/home/lvuser/mocap_data-" << frc::Timer::GetFPGATimestamp()
-      << ".csv";
+  filename << "/home/lvuser/mocap_data-" << frc::Timer::GetFPGATimestamp() << ".csv";
   log.open(filename.str());
 
   if (!log) {
@@ -86,6 +85,10 @@ void Robot::TeleopInit() {
   Robot::mocap_stop_trigger->SetVoltage(5);
   running = true;
   SmartDashboard::PutBoolean("ready", true);
+
+  ahrs->Reset();
+  ahrs->ResetDisplacement();
+  std::cout << "Status Is Fatal: " << ahrs->StatusIsFatal() << std::endl;
 }
 
 void Robot::DisabledInit() {
@@ -138,14 +141,14 @@ void Robot::TeleopPeriodic() {
   SmartDashboard::PutNumber("left encoder rate", drive_base->left_encoder->GetRate());
   SmartDashboard::PutNumber("right encoder rate", drive_base->right_encoder->GetRate());
 
-//  std::cout << "[" << std::setw(6) << sample.raw_accel_x << ","
-//      << sample.raw_accel_y << "," << sample.raw_accel_z << ","
-//      << sample.raw_gyro_x << "," << sample.raw_gyro_y << ","
-//      << sample.raw_gyro_z << "," << sample.x << "," << sample.y << ","
-//      << sample.z << "," << sample.left_encoder_rate << ","
-//      << sample.right_encoder_rate << "," << sample.left_input << ","
-//      << sample.right_input << "," << sample.fpga_t << "," << sample.navx_t
-//      << "]" << std::endl;
+  std::cout << "[" << std::setw(6) << sample.raw_accel_x << ","
+      << sample.raw_accel_y << "," << sample.raw_accel_z << ","
+      << sample.raw_gyro_x << "," << sample.raw_gyro_y << ","
+      << sample.raw_gyro_z << "," << sample.x << "," << sample.y << ","
+      << sample.z << "," << sample.left_encoder_rate << ","
+      << sample.right_encoder_rate << "," << sample.left_input << ","
+      << sample.right_input << "," << sample.fpga_t << "," << sample.navx_t
+      << "]" << std::endl;
 
   log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y << ","
       << sample.raw_accel_z << "," << sample.raw_gyro_x << ","

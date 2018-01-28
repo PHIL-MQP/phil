@@ -28,10 +28,11 @@ int main(int argc, char **argv) {
   AHRS *ahrs;
 
   try {
-    ahrs = new AHRS(I2C::Port::kMXP);
-    err_code = collectSamples(40000, ahrs);
-//    err_code = collectSamples(700, ahrs);
-    if (err_code) {
+    ahrs = new AHRS(frc::I2C::kMXP);
+    constexpr int seconds_to_record = 50 + 36 * 15;
+    err_code = collectSamples(seconds_to_record * 100, ahrs);
+    err_code = collectSamples(100, ahrs);
+    if (err_code != 0) {
       return err_code;
     }
   } catch (std::exception& ex) {
