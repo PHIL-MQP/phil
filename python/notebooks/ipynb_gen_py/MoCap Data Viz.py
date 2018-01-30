@@ -255,7 +255,7 @@ plt.show()
 
 # # Base frame calibration
 
-# In[80]:
+# In[12]:
 
 def base_rotation(mean_acc_while_stationary):
     """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
@@ -314,7 +314,7 @@ plt.show()
 
 # # Integrating Navx Gyro to get Angle
 
-# In[81]:
+# In[13]:
 
 yaws = []
 yaw = np.rad2deg(global_origin_yaw)
@@ -331,7 +331,7 @@ for data in sensor_data:
     naive_yaws.append(og_yaw)
 
 
-# In[82]:
+# In[14]:
 
 plt.plot(yaws, label="final integrated gyro")
 plt.plot(naive_yaws, label="0.4 * raw integrated gyro")
@@ -349,7 +349,7 @@ plt.show()
 
 # # Analysis of accurate of Integrating Yaw from NavX Gyro
 
-# In[83]:
+# In[15]:
 
 error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
 
@@ -379,7 +379,7 @@ print("from this it is not clear whether gyro drift plays a role in the error. H
 
 # # X/Y from NavX
 
-# In[84]:
+# In[16]:
 
 # adjust the NavX data to start with the correct global X, Y, and Yaw
 navx_x = sensor_data[:,6] - sensor_data[0,6]
@@ -393,7 +393,7 @@ navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
 
 # # Encoder
 
-# In[108]:
+# In[17]:
 
 # encoder kinematics
 encoder_x = global_origin_x
@@ -423,7 +423,7 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[109]:
+# In[18]:
 
 plt.figure(figsize=(20,10))
 plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
@@ -441,7 +441,7 @@ plt.show()
 #  - double integrate accelerometer
 #  - integrate gyro Z axis
 
-# In[110]:
+# In[19]:
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     x = x0
@@ -481,18 +481,18 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
 
 # ## Double Integrate Mocap Robot Sensor Data
 
-# In[111]:
+# In[20]:
 
 pva_from_imu = PositionFromIMU(final_imu_data, 0.02, global_origin_x, global_origin_y, global_origin_yaw)
 
-plt.plot(pva_from_imu2[2], label="vxs")
-plt.plot(pva_from_imu2[3], label="vys")
+plt.plot(pva_from_imu[2], label="vxs")
+plt.plot(pva_from_imu[3], label="vys")
 plt.title("velocities from IMU")
 plt.legend()
 plt.show()
 
 
-# In[112]:
+# In[21]:
 
 plt.figure(figsize=(15,15))
 plt.title("Sensor Data versus MoCap")
@@ -506,148 +506,6 @@ plt.scatter(navx_xy[0,:TT], navx_xy[1,:TT], marker='.', s=2, color='y', label="n
 plt.scatter(pva_from_imu[0][:TT], pva_from_imu[1][:TT], marker='.', s=1, color='b', label='IMU')
 plt.axis("square")
 
-plt.legend()
-plt.show()
-
-
-# # Testing on (original) Turtlebot accelerometer data
-# 
-# This data was collected carelessly, but over MXP so it should be usable. The navx may have shifted slightly while driving.
-
-# In[90]:
-
-turtlebot_dir = "../../recorded_sensor_data/turtlebot_original/"
-data_file = turtlebot_dir + "interpolated_data.csv"
-reader = csv.reader(open(data_file, 'r'))
-
-tb_accelerometer_data = []
-tb_encoder_x = 0
-tb_encoder_y = 0
-tb_encoder_yaw = 0.5
-tb_encoder_xs = []
-tb_encoder_ys = []
-tb_alpha = 1.0
-tb_wheel_radius_m = 0.038
-tb_track_width_m = 0.23
-tb_dt_s = 0.1
-tb_yaws = []
-tb_yaw = 0
-
-next(reader)
-for data in reader:
-    wl = float(data[0])
-    wr = float(data[1])
-    ax = float(data[2])
-    ay = float(data[3])
-    t = float(data[-1])
-    tb_gyro_z = float(data[7]) * 0.4
-    
-    tb_accelerometer_data.append([ax, ay, t])
-    B = tb_alpha * tb_track_width_m
-    T = tb_wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
-    dydt, dpdt = T @ np.array([wl, wr])
-    tb_encoder_x = tb_encoder_x + np.cos(tb_encoder_yaw) * dydt * tb_dt_s
-    tb_encoder_y = tb_encoder_y + np.sin(tb_encoder_yaw) * dydt * tb_dt_s
-    tb_encoder_yaw += dpdt * tb_dt_s
-    
-    tb_yaw += tb_dt_s * tb_gyro_z
-    
-    tb_encoder_xs.append(tb_encoder_x)
-    tb_encoder_ys.append(tb_encoder_y)
-    tb_yaws.append(tb_yaw)
-    
-init_means = np.mean(tb_accelerometer_data[:40], axis=0)
-full_means = np.mean(tb_accelerometer_data, axis=0)
-print("Average Init Accel X value:", init_means[0])
-print("Average Init Accel Y value:", init_means[1])
-print("Average Accel X value:", full_means[0])
-print("Average Accel Y value:", full_means[1])
-
-plt.plot(tb_yaws, label="integrated gyro")
-plt.ylabel("degrees")
-plt.title("Turtlebot Yaw")
-plt.show()
-
-no_bias = DoubleIntegrate(tb_accelerometer_data, tb_yaws, np.eye(3), np.eye(3), np.zeros((1,3)), dt_s=tb_dt_s)
-K = np.eye(3)
-T = np.eye(3)
-b = np.array([[-init_means[0], -init_means[1], 0]])
-init_calib = DoubleIntegrate(tb_accelerometer_data, tb_yaws, K, T, b, dt_s=tb_dt_s)
-b = np.array([[-full_means[0], -full_means[1], 0]])
-full_calib = DoubleIntegrate(tb_accelerometer_data, tb_yaws, K, T, b, dt_s=tb_dt_s)
-b = np.array([[0.0096, -0.0052, 0]])
-guess_calib = DoubleIntegrate(tb_accelerometer_data, tb_yaws, K, T, b, dt_s=tb_dt_s)
-
-plt.figure(figsize=(10,10))
-plt.scatter(tb_encoder_xs, tb_encoder_ys, marker='.', s=2, color='r', label='Encoder Data')
-plt.scatter(no_bias[0], no_bias[1], marker='o', s=1, color='y', label='Accelerometer, no bias')
-plt.scatter(init_calib[0], init_calib[1], marker='o', s=1, color='g', label='Accelerometer, init means')
-plt.scatter(full_calib[0], full_calib[1], marker='o', s=1, color='k', label='Accelerometer, full means')
-plt.scatter(guess_calib[0], guess_calib[1], marker='o', s=1, color='b', label='Accelerometer, guessed bias')
-plt.title("Accelerometer versus Encoder (Turtlebot)")
-plt.axis("square")
-plt.legend(prop={'size': 10})
-plt.show()
-
-plt.figure(figsize=(10,10))
-plt.plot(no_bias[4], label="no bias axs")
-plt.plot(no_bias[5], label="no bias ays")
-plt.plot(init_calib[4], label="calibrated axs")
-plt.plot(init_calib[5], label="calibrated ays")
-plt.title("Accelerations")
-plt.legend()
-plt.show()
-
-plt.figure(figsize=(10,10))
-plt.plot(no_bias[2], label="no bias vxs")
-plt.plot(no_bias[3], label="no bias vys")
-plt.plot(init_calib[2], label="calibrated vxs")
-plt.plot(init_calib[3], label="calibrated vys")
-plt.title("velocities from integrating accelerometer")
-plt.legend()
-plt.show()
-
-
-# # Comparing Aruco localization to Mocap
-
-# In[ ]:
-
-import cv2
-
-
-# In[ ]:
-
-img_dir = "../../recorded_sensor_data/practice_image_processing/"
-vid_file = img_dir + "out.avi"
-vid = cv2.VideoCapture(vid_file)
-img_timestamp_file = img_dir + "frame_time_stamps.csv"
-img_timestamp_reader = csv.reader(open(img_timestamp_file))
-camera_xs = []
-camera_ys = []
-for timestamp in img_timestamp_reader:
-    t = float(timestamp[0])
-    ok, frame = vid.read()
-    
-    # (t, frame)
-    # detect markers in frame
-    
-    # compute position relative to markers
-    camera_x = 0
-    camera_y = 0
-    
-    camera_xs.append(camera_x)
-    camera_ys.append(camera_y)
-    
-    if not ok:
-        break
-
-
-# In[ ]:
-
-plt.figure(figsize=(10,10))
-plt.scatter(camera_xs, camera_ys, marker='.', s=1, color='b', label='camera')
-plt.scatter(mocap_states[:,0], mocap_states[:,1], marker='.', s=1, color='r', label='MoCap')
-plt.title("Camera versus MoCap")
 plt.legend()
 plt.show()
 
@@ -670,9 +528,4 @@ plt.ylabel("delt t (seconds)")
 plt.legend()
 plt.title("Sensor reading timestamps")
 plt.show()
-
-
-# In[ ]:
-
-
 
