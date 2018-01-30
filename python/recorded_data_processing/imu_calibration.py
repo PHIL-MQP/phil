@@ -149,7 +149,9 @@ def gyro_optimize(num_intervals, static_mean_accs, all_raw_gyro_readings, interv
     :param intervals: the range of the detected static intervals [num_intervalsx2]
     :return:
     """
-    theta_gyro = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1], dtype=np.float64)
+
+
+    theta_gyro = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.float64)
 
     # optimization of accelerometer parameters
     def gyro_error_and_jacobian(params):
