@@ -325,6 +325,8 @@ def main():
     print(acc_params_opt)
     print("Ideal gyro calibration parameters:")
     print(gyro_params_opt)
+    print("gyro biases:")
+    print(gyro_biases)
 
 
 if __name__ == '__main__':
