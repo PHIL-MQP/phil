@@ -83,7 +83,8 @@ mocap_data = np.array(mocap_data)
 # In[3]:
 
 # these should be pretty darn close
-print("Seconds of IMU data recorded: ", (sensor_data[-1][-1] - sensor_data[0][-1])/1000.0)
+print("Seconds of IMU data recorded (by stamp): ", (sensor_data[-1][-1] - sensor_data[0][-1])/1000.0)
+print("Seconds of IMU data recorded (by length): ", sensor_data.shape[0] * 0.02)
 print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 
@@ -150,11 +151,74 @@ plt.show()
 print(mocap_states[2010:2030,2])
 
 
+# ## Compute numeric velocit/acceleration from mocap 
+# 
+# We take the numerical derivatives using a 3 point endpoint and midpoint approximations
+
+# In[8]:
+
+N = mocap_states.shape[0]
+mocap_vx = np.empty(N)
+mocap_vy = np.empty(N)
+mocap_ax = np.empty(N)
+mocap_ay = np.empty(N)
+
+# endpoint approx
+h = 0.02
+mocap_vx[0] = 1/(2*h)*(-3*mocap_states[0,0]+4*mocap_states[1,0]-mocap_states[2,0])
+mocap_vy[0] = 1/(2*h)*(-3*mocap_states[0,1]+4*mocap_states[1,1]-mocap_states[2,1])
+
+for i in range(1,N-1):
+    # midpoint approx
+    mocap_vx[i] = 1/(2*h)*(mocap_states[i+1,0]-mocap_states[i-1,0])
+    mocap_vy[i] = 1/(2*h)*(mocap_states[i+1,1]-mocap_states[i-1,1])
+
+# another endpoint approx
+mocap_vx[-1] = 1/(2*h)*(-3*mocap_states[-1,0]+4*mocap_states[-2,0]-mocap_states[-3,0])
+mocap_vx[-1] = 1/(2*h)*(-3*mocap_states[-1,1]+4*mocap_states[-2,1]-mocap_states[-3,1])
+
+
+# In[9]:
+
+mocap_ax[0] = 1/(2*h)*(-3*mocap_vx[0]+4*mocap_vx[1]-mocap_vx[2])
+mocap_ay[0] = 1/(2*h)*(-3*mocap_vy[0]+4*mocap_vy[1]-mocap_vy[2])
+
+for i in range(1,N-1):
+    # midpoint approx
+    mocap_ax[i] = 1/(2*h)*(mocap_vx[i+1]-mocap_vx[i-1])
+    mocap_ay[i] = 1/(2*h)*(mocap_vy[i+1]-mocap_vy[i-1])
+
+# another endpoint approx
+mocap_ax[-1] = 1/(2*h)*(-3*mocap_vx[-1]+4*mocap_vx[-2]-mocap_vx[-3])
+mocap_ax[-1] = 1/(2*h)*(-3*mocap_vy[-1]+4*mocap_vy[-2]-mocap_vy[-3])
+
+
+# In[10]:
+
+plt.figure(figsize=(10,10))
+plt.plot(mocap_vx, label='vx')
+plt.plot(mocap_vy, label='vy')
+plt.legend()
+plt.title("velocity derived numerically from mocap")
+plt.ylabel("m/s")
+plt.xlabel("samples")
+plt.show()
+
+plt.figure(figsize=(10,10))
+plt.plot(mocap_ax, label='ax')
+plt.plot(mocap_ay, label='ay')
+plt.legend()
+plt.title("acc derived numerically from mocap")
+plt.ylabel("m/s^2")
+plt.xlabel("samples")
+plt.show()
+
+
 # ## Regard the first mocap pose as the "origin" for the dead reckoning methods
 # 
 # It's important to note that there are actually a bunch of points at the origin, then the origin jumps a few centimeters to another spot. I can't explain this but we'll just be aware of that as we compare against mocap.
 
-# In[8]:
+# In[11]:
 
 global_origin_x = mocap_states[0,0]
 global_origin_y = mocap_states[0,1]
@@ -163,7 +227,7 @@ global_origin_xy = np.array([[global_origin_x], [global_origin_y]])
 print("Global Origin", [global_origin_x, global_origin_y, global_origin_yaw])
 
 
-# In[9]:
+# In[12]:
 
 print_h2("Uncalibrated data:")
 plt.plot(sensor_data[:,0], label="acc x")
@@ -187,7 +251,7 @@ plt.show()
 # 
 # We first apply the results of our IMU calibration experiment. Truthfully, they have little effect other than accounting for the magical $0.4$ constant we've been using. It's also worth noting that these numbers come from the the _other_ NavX so it's not really fair to use them but I want to illustrate the whole procedure.
 
-# In[10]:
+# In[13]:
 
 def calibrate(input_data):
     # Ideal accelerometer calibration parameters
@@ -225,7 +289,7 @@ def calibrate(input_data):
 calibrated_imu_data = calibrate(sensor_data)
 
 
-# In[11]:
+# In[14]:
 
 print_h2("Calibrated data vs Raw Data")
 plt.figure(figsize=(10,10))
@@ -255,7 +319,7 @@ plt.show()
 
 # # Base frame calibration
 
-# In[12]:
+# In[15]:
 
 def base_rotation(mean_acc_while_stationary):
     """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
@@ -314,7 +378,7 @@ plt.show()
 
 # # Integrating Navx Gyro to get Angle
 
-# In[13]:
+# In[16]:
 
 yaws = []
 yaw = np.rad2deg(global_origin_yaw)
@@ -331,7 +395,7 @@ for data in sensor_data:
     naive_yaws.append(og_yaw)
 
 
-# In[14]:
+# In[17]:
 
 plt.plot(yaws, label="final integrated gyro")
 plt.plot(naive_yaws, label="0.4 * raw integrated gyro")
@@ -349,7 +413,7 @@ plt.show()
 
 # # Analysis of accurate of Integrating Yaw from NavX Gyro
 
-# In[15]:
+# In[18]:
 
 error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
 
@@ -379,7 +443,7 @@ print("from this it is not clear whether gyro drift plays a role in the error. H
 
 # # X/Y from NavX
 
-# In[16]:
+# In[19]:
 
 # adjust the NavX data to start with the correct global X, Y, and Yaw
 navx_x = sensor_data[:,6] - sensor_data[0,6]
@@ -393,7 +457,7 @@ navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
 
 # # Encoder
 
-# In[17]:
+# In[20]:
 
 # encoder kinematics
 encoder_x = global_origin_x
@@ -423,7 +487,7 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[18]:
+# In[21]:
 
 plt.figure(figsize=(20,10))
 plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
@@ -441,7 +505,7 @@ plt.show()
 #  - double integrate accelerometer
 #  - integrate gyro Z axis
 
-# In[19]:
+# In[22]:
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     x = x0
@@ -466,8 +530,8 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
         
         vx += ax * dt_s
         vy += ay * dt_s
-        x += vx * dt_s + 0.5 * ax * dt_s ** 2
-        y += vy * dt_s + 0.5 * ay * dt_s ** 2
+        x += vx * dt_s + 0.5 * ax * (dt_s ** 2)
+        y += vy * dt_s + 0.5 * ay * (dt_s ** 2)
                 
         axs.append(ax)
         ays.append(ay)
@@ -481,7 +545,7 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
 
 # ## Double Integrate Mocap Robot Sensor Data
 
-# In[20]:
+# In[23]:
 
 pva_from_imu = PositionFromIMU(final_imu_data, 0.02, global_origin_x, global_origin_y, global_origin_yaw)
 
@@ -492,7 +556,7 @@ plt.legend()
 plt.show()
 
 
-# In[21]:
+# In[24]:
 
 plt.figure(figsize=(15,15))
 plt.title("Sensor Data versus MoCap")
@@ -501,8 +565,8 @@ TT = 400
 # :2 accounts for the fact the the mocap samples twice as fast as our encoder/IMU data
 plt.scatter(mocap_states[:TT*2:2,0], mocap_states[:TT*2:2,1], marker='.', s=2, color='r', label='MoCap')
 
-plt.scatter(encoder_xs[:TT], encoder_ys[:TT], marker='.', s=2, color='k', label='encoders')
-plt.scatter(navx_xy[0,:TT], navx_xy[1,:TT], marker='.', s=2, color='y', label="navx API")
+# plt.scatter(encoder_xs[:TT], encoder_ys[:TT], marker='.', s=2, color='k', label='encoders')
+# plt.scatter(navx_xy[0,:TT], navx_xy[1,:TT], marker='.', s=2, color='y', label="navx API")
 plt.scatter(pva_from_imu[0][:TT], pva_from_imu[1][:TT], marker='.', s=1, color='b', label='IMU')
 plt.axis("square")
 
@@ -512,7 +576,7 @@ plt.show()
 
 # ## Comparing TimeStamp Accuracy between NavX and RoboRIO (FPGA)
 
-# In[ ]:
+# In[25]:
 
 dts_fpgas = []
 dts_navxs = []
