@@ -28,7 +28,7 @@ int main(int argc, const char **argv) {
   }
 
   cs::UsbCamera camera{"usbcam", 0};
-  camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, 30);
+  camera.SetVideoMode(cs::VideoMode::kMJPEG, 1280, 720, 30);
   cs::MjpegServer mjpegServer{"httpserver", 8081};
   mjpegServer.SetSource(camera);
   cs::CvSink sink{"sink"};
