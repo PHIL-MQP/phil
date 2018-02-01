@@ -115,18 +115,17 @@ plt.show()
 
 mocap_states = np.ndarray((mocap_data.shape[0], 3))
 mocap_states[0] = np.array([mocap_data[0,0], mocap_data[0,1], mocap_data[0,2]])
-for mocap_idx in range(1, len(mocap_data)):
+for mocap_idx in range(0, len(mocap_data)):
     data = mocap_data[mocap_idx]
-    last_data = mocap_data[mocap_idx - 1]
     rx = data[2]
     ry = data[3]
     rz = data[4]
     tx = (data[5] + robot_center_offset[0]) / 1000
     ty = (data[6] + robot_center_offset[1]) / 1000
     tz = (data[7] + robot_center_offset[2]) / 1000
-    mocap_states[mocap_idx-1][0] = tx
-    mocap_states[mocap_idx-1][1] = ty
-    mocap_states[mocap_idx-1][2] = rz
+    mocap_states[mocap_idx][0] = tx
+    mocap_states[mocap_idx][1] = ty
+    mocap_states[mocap_idx][2] = rz
     
 
 
@@ -151,9 +150,9 @@ plt.show()
 print(mocap_states[2010:2030,2])
 
 
-# ## Compute numeric velocit/acceleration from mocap 
+# ## Compute numeric velocit/acceleration from mocap
 # 
-# We take the numerical derivatives using a 3 point endpoint and midpoint approximations
+# We take the numerical derivatives using a 3 point endpoint and midpoint approximations. We also compute the rotational velocity around the Z axis (yaw gyro rate) by 
 
 # In[8]:
 
@@ -175,7 +174,7 @@ for i in range(1,N-1):
 
 # another endpoint approx
 mocap_vx[-1] = 1/(2*h)*(-3*mocap_states[-1,0]+4*mocap_states[-2,0]-mocap_states[-3,0])
-mocap_vx[-1] = 1/(2*h)*(-3*mocap_states[-1,1]+4*mocap_states[-2,1]-mocap_states[-3,1])
+mocap_vy[-1] = 1/(2*h)*(-3*mocap_states[-1,1]+4*mocap_states[-2,1]-mocap_states[-3,1])
 
 
 # In[9]:
@@ -190,7 +189,7 @@ for i in range(1,N-1):
 
 # another endpoint approx
 mocap_ax[-1] = 1/(2*h)*(-3*mocap_vx[-1]+4*mocap_vx[-2]-mocap_vx[-3])
-mocap_ax[-1] = 1/(2*h)*(-3*mocap_vy[-1]+4*mocap_vy[-2]-mocap_vy[-3])
+mocap_ay[-1] = 1/(2*h)*(-3*mocap_vy[-1]+4*mocap_vy[-2]-mocap_vy[-3])
 
 
 # In[10]:
@@ -376,138 +375,23 @@ plt.ylabel("degrees/second")
 plt.show()
 
 
-# # Integrating Navx Gyro to get Angle
-
-# In[16]:
-
-yaws = []
-yaw = np.rad2deg(global_origin_yaw)
-for data in final_imu_data:
-    gyro_z = -data[5]  # the negative sign is to tf into mocap frame
-    yaw += 0.02 * gyro_z
-    yaws.append(yaw)
-    
-naive_yaws = []
-og_yaw = np.rad2deg(global_origin_yaw)
-for data in sensor_data:
-    gyro_z = -data[5] * 0.4
-    og_yaw += 0.02 * gyro_z
-    naive_yaws.append(og_yaw)
-
-
-# In[17]:
-
-plt.plot(yaws, label="final integrated gyro")
-plt.plot(naive_yaws, label="0.4 * raw integrated gyro")
-# sample every other point (50hz versus 100hz collection) and convert to degrees
-plt.plot(np.rad2deg(mocap_states[0:-1:2,2]), label='mocap')
-plt.ylabel("degrees")
-plt.title("Yaw of robot")
-plt.legend()
-plt.show()
-
-
-# This suggests that the IMU calibration is not correct.
-# A naive 0.4 and just as good as the calibrated and rotated data.
-# It seems to make the intgrated yaw **worse**
-
-# # Analysis of accurate of Integrating Yaw from NavX Gyro
-
-# In[18]:
-
-error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
-
-# ignore outlies
-error = error[:900]
-
-average_error_by_second = []
-for i in range(1, error.shape[0] // 20):
-    average_error_by_second.append(np.mean(abs(error[(i-1)*20:i*20])))
-
-plt.plot(error)
-plt.xlabel("sample #")
-plt.ylabel("degrees")
-plt.title("Error between Gyro integration and Mocap data")
-plt.show()
-
-plt.figure()
-plt.plot(average_error_by_second)
-plt.plot([5]*len(average_error_by_second))
-plt.title("averge error by second")
-plt.xlabel("time (seconds)")
-plt.ylabel("average error in degrees during that second")
-plt.show()
-
-print("from this it is not clear whether gyro drift plays a role in the error. However, error is within 5 degrees for the first 20 seconds.")
-
-
-# # X/Y from NavX
-
-# In[19]:
-
-# adjust the NavX data to start with the correct global X, Y, and Yaw
-navx_x = sensor_data[:,6] - sensor_data[0,6]
-navx_y = sensor_data[:,7] - sensor_data[0,7]
-navx_xy = np.vstack((navx_x, navx_y))
-
-# subtract initial X/Y (idk why this is not just 0???)
-global_yaw_rot = np.array([[np.cos(global_origin_yaw), -np.sin(global_origin_yaw)], [np.sin(global_origin_yaw), np.cos(global_origin_yaw)]])
-navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
-
-
-# # Encoder
-
-# In[20]:
-
-# encoder kinematics
-encoder_x = global_origin_x
-encoder_y = global_origin_y
-encoder_yaw = mocap_states[0][2]
-encoder_xs = []
-encoder_ys = []
-alpha = 1.0
-wheel_radius_m = 0.074
-track_width_m = 0.9
-dt_s = 0.05
-
-distance_per_pulse = 0.000357 # measured on mocap robot
-
-for data in sensor_data:
-    wl = float(data[9]) * distance_per_pulse
-    wr = float(data[10]) * distance_per_pulse
-    
-    B = alpha * track_width_m
-    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
-    dydt, dpdt = T @ np.array([wl, wr])
-    encoder_x = encoder_x + np.cos(encoder_yaw) * dydt * dt_s
-    encoder_y = encoder_y + np.sin(encoder_yaw) * dydt * dt_s
-    encoder_yaw += dpdt * dt_s
-    
-    encoder_xs.append(encoder_x)
-    encoder_ys.append(encoder_y)
-
-
-# In[21]:
-
-plt.figure(figsize=(20,10))
-plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
-plt.plot(sensor_data[:,10]*distance_per_pulse, label='right encoder rate (m/s)')
-plt.plot(-sensor_data[:,11],label='left joystick (-1 to 1)')
-plt.plot(sensor_data[:,12], label='right joystick (-1 to 1)')
-plt.title("encoder on MoCap robot")
-plt.legend()
-plt.show()
-
-
-# ## Getting position from IMU
+# ## Calibration Complete!
 # 
-# Consists of simply
-#  - double integrate accelerometer
-#  - integrate gyro Z axis
+# The data is now read to be processed by a Kalman Filter or double integrated or whatever else you want
 
-# In[22]:
+# In[28]:
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
+    """
+    This is the double integration method
+    
+    Args:
+        imu_data (ndarray(?x6)) the first three columns are assumed to be accelerometer x,y,z. Columns 3-6 are gyro x,y,z
+        dt_s (float) the time between samples in imu_data in seconds
+        x0 (float) initial x position
+        y0 (float) initial y position
+        yaw0 (float) initial yaw angle
+    """
     x = x0
     y = y0
     vx = 0
@@ -543,9 +427,162 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     return xs, ys, vxs, vys, axs, ays
 
 
+# ## Compare numerical derived acceleration to measure acceleration
+# 
+# we can do this now that we've done calibration
+
+# In[16]:
+
+plt.figure(figsize=(15,15))()
+fake_mocap_data = np.zeros(len(mocap_ax), 6)
+fake_mocap_data[:,0] = mocap_ax
+fake_mocap_data[:,1] = mocap_ay
+fake_mocap_data[:,5] = mocap_gyro_z
+PositionFromIMU(fake_mocap_data, dt_s, global_origin_x, global_origin_y, global_origin_yaw)
+plt.plot(mocap_ax[::2], label='mocap ax')
+plt.plot(final_imu_data[:,0], label='measured ax')
+plt.legend()
+plt.title("Acceleration")
+plt.ylabel("m/s^2")
+plt.xlabel("samples")
+plt.show()
+
+
+# This is surprisingly similar. Especially in the beginning they seem to match very well.
+# 
+# What if we double integrate the twice differentiated mocap data?
+
+# In[ ]:
+
+
+
+
+# ## Integrating Navx Gyro to get Angle
+
+# In[17]:
+
+yaws = []
+yaw = np.rad2deg(global_origin_yaw)
+for data in final_imu_data:
+    gyro_z = -data[5]  # the negative sign is to tf into mocap frame
+    yaw += 0.02 * gyro_z
+    yaws.append(yaw)
+    
+naive_yaws = []
+og_yaw = np.rad2deg(global_origin_yaw)
+for data in sensor_data:
+    gyro_z = -data[5] * 0.4
+    og_yaw += 0.02 * gyro_z
+    naive_yaws.append(og_yaw)
+
+
+# In[18]:
+
+plt.plot(yaws, label="final integrated gyro")
+plt.plot(naive_yaws, label="0.4 * raw integrated gyro")
+# sample every other point (50hz versus 100hz collection) and convert to degrees
+plt.plot(np.rad2deg(mocap_states[0:-1:2,2]), label='mocap')
+plt.ylabel("degrees")
+plt.title("Yaw of robot")
+plt.legend()
+plt.show()
+
+
+# This suggests that the IMU calibration is not correct.
+# A naive 0.4 and just as good as the calibrated and rotated data.
+# It seems to make the intgrated yaw **worse**
+
+# # Analysis of accurate of Integrating Yaw from NavX Gyro
+
+# In[19]:
+
+error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
+
+# ignore outlies
+error = error[:900]
+
+average_error_by_second = []
+for i in range(1, error.shape[0] // 20):
+    average_error_by_second.append(np.mean(abs(error[(i-1)*20:i*20])))
+
+plt.plot(error)
+plt.xlabel("sample #")
+plt.ylabel("degrees")
+plt.title("Error between Gyro integration and Mocap data")
+plt.show()
+
+plt.figure()
+plt.plot(average_error_by_second)
+plt.plot([5]*len(average_error_by_second))
+plt.title("averge error by second")
+plt.xlabel("time (seconds)")
+plt.ylabel("average error in degrees during that second")
+plt.show()
+
+print("from this it is not clear whether gyro drift plays a role in the error. However, error is within 5 degrees for the first 20 seconds.")
+
+
+# # X/Y from NavX
+
+# In[20]:
+
+# adjust the NavX data to start with the correct global X, Y, and Yaw
+navx_x = sensor_data[:,6] - sensor_data[0,6]
+navx_y = sensor_data[:,7] - sensor_data[0,7]
+navx_xy = np.vstack((navx_x, navx_y))
+
+# subtract initial X/Y (idk why this is not just 0???)
+global_yaw_rot = np.array([[np.cos(global_origin_yaw), -np.sin(global_origin_yaw)], [np.sin(global_origin_yaw), np.cos(global_origin_yaw)]])
+navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
+
+
+# # Encoder
+
+# In[21]:
+
+# encoder kinematics
+encoder_x = global_origin_x
+encoder_y = global_origin_y
+encoder_yaw = mocap_states[0][2]
+encoder_xs = []
+encoder_ys = []
+alpha = 1.0
+wheel_radius_m = 0.074
+track_width_m = 0.9
+dt_s = 0.05
+
+distance_per_pulse = 0.000357 # measured on mocap robot
+
+for data in sensor_data:
+    wl = float(data[9]) * distance_per_pulse
+    wr = float(data[10]) * distance_per_pulse
+    
+    B = alpha * track_width_m
+    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
+    dydt, dpdt = T @ np.array([wl, wr])
+    encoder_x = encoder_x + np.cos(encoder_yaw) * dydt * dt_s
+    encoder_y = encoder_y + np.sin(encoder_yaw) * dydt * dt_s
+    encoder_yaw += dpdt * dt_s
+    
+    encoder_xs.append(encoder_x)
+    encoder_ys.append(encoder_y)
+
+
+# In[22]:
+
+plt.figure(figsize=(20,10))
+plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
+plt.plot(sensor_data[:,10]*distance_per_pulse, label='right encoder rate (m/s)')
+plt.plot(-sensor_data[:,11],label='left joystick (-1 to 1)')
+plt.plot(sensor_data[:,12], label='right joystick (-1 to 1)')
+plt.title("encoder on MoCap robot")
+plt.legend()
+plt.show()
+
+
 # ## Double Integrate Mocap Robot Sensor Data
 
-# In[23]:
+# In[24]:
 
 pva_from_imu = PositionFromIMU(final_imu_data, 0.02, global_origin_x, global_origin_y, global_origin_yaw)
 
@@ -556,7 +593,7 @@ plt.legend()
 plt.show()
 
 
-# In[24]:
+# In[25]:
 
 plt.figure(figsize=(15,15))
 plt.title("Sensor Data versus MoCap")
@@ -576,7 +613,7 @@ plt.show()
 
 # ## Comparing TimeStamp Accuracy between NavX and RoboRIO (FPGA)
 
-# In[25]:
+# In[26]:
 
 dts_fpgas = []
 dts_navxs = []
