@@ -41,7 +41,6 @@ int main(int argc, char **argv) {
   std::cout << "Read " << timestamps.size() << " timestamps" << std::endl;
 
   std::ofstream poses_stamped;
-  time_stamps_file.open(poses_stamped);
 
   if (!poses_stamped.good()) {
     std::cerr << "Time stamp file failed to open: " << strerror(errno) << std::endl;
@@ -50,7 +49,7 @@ int main(int argc, char **argv) {
 
   // print the numbers to stdout
   std::cout << "timestamps read in:\n";
-  std::copy(timestamps.begin(), timestamps.end(), 
+  std::copy(timestamps.begin(), timestamps.end(),
             std::ostream_iterator<double>(std::cout, "\n"));
   std::cout << std::endl;
 
