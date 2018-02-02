@@ -261,12 +261,13 @@ def calibrate(input_data):
     gyro_calibration_params = np.array([0.00844165, 0.00196508, -0.00410652,
                                        -0.01548789, -0.00191488, -0.00770839,
                                        0.40658698, 0.40275294, 0.40165824])
+    
     Ta = np.array([[1, -acc_calibration_params[0], acc_calibration_params[1]],
                    [0, 1, -acc_calibration_params[2]],
                    [0, 0, 1]])
     Tg = np.array([[1, -gyro_calibration_params[0], gyro_calibration_params[1]],
                    [gyro_calibration_params[2], 1, -gyro_calibration_params[3]],
-                   [-gyro_calibration_params[5], gyro_calibration_params[5], 1]])
+                   [-gyro_calibration_params[4], gyro_calibration_params[5], 1]])
     
     Ka = np.array([[acc_calibration_params[3], 0, 0],
                    [0, acc_calibration_params[4], 0],
@@ -318,7 +319,7 @@ plt.show()
 
 # # Base frame calibration
 
-# In[15]:
+# In[28]:
 
 def base_rotation(mean_acc_while_stationary):
     """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
@@ -346,6 +347,9 @@ R = base_yaw_rot @ base_rotation(stationary_mean_acc)
 final_imu_data = np.empty(calibrated_imu_data.shape)
 final_imu_data[:,0:3] = (R @ calibrated_imu_data[:,0:3].T).T
 final_imu_data[:,3:6] = (R @ calibrated_imu_data[:,3:6].T).T
+
+# convert from g's to m/s^2
+final_imu_data[:,0:3] *= 9.8
 
 print_h2("Calibrated and Rotated versus Original Data")
 print("some differences are visible, especially in the gyroscope")
@@ -379,7 +383,7 @@ plt.show()
 # 
 # The data is now read to be processed by a Kalman Filter or double integrated or whatever else you want
 
-# In[28]:
+# In[29]:
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     """
@@ -412,10 +416,10 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
         ax = a[0]
         ay = a[1]
         
+        x += vx * dt_s + ax * (dt_s ** 2)
+        y += vy * dt_s + ay * (dt_s ** 2)
         vx += ax * dt_s
         vy += ay * dt_s
-        x += vx * dt_s + 0.5 * ax * (dt_s ** 2)
-        y += vy * dt_s + 0.5 * ay * (dt_s ** 2)
                 
         axs.append(ax)
         ays.append(ay)
@@ -431,19 +435,44 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
 # 
 # we can do this now that we've done calibration
 
-# In[16]:
+# In[30]:
 
-plt.figure(figsize=(15,15))()
-fake_mocap_data = np.zeros(len(mocap_ax), 6)
-fake_mocap_data[:,0] = mocap_ax
-fake_mocap_data[:,1] = mocap_ay
-fake_mocap_data[:,5] = mocap_gyro_z
-PositionFromIMU(fake_mocap_data, dt_s, global_origin_x, global_origin_y, global_origin_yaw)
+plt.figure(figsize=(10,10))
 plt.plot(mocap_ax[::2], label='mocap ax')
 plt.plot(final_imu_data[:,0], label='measured ax')
 plt.legend()
-plt.title("Acceleration")
+plt.title("Acceleration in X")
 plt.ylabel("m/s^2")
+plt.xlabel("samples")
+plt.show()
+
+plt.figure(figsize=(10,10))
+plt.plot(mocap_ay[::2], label='mocap ay')
+plt.plot(final_imu_data[:,1], label='measured ay')
+plt.legend()
+plt.title("Acceleration in Y")
+plt.ylabel("m/s^2")
+plt.xlabel("samples")
+plt.show()
+
+# Velocity
+temp_intergration = PositionFromIMU(final_imu_data, 0.02, global_origin_x, global_origin_y, global_origin_yaw)
+
+plt.figure(figsize=(10,10))
+plt.plot(mocap_vx[::2], label='mocap vx')
+plt.plot(temp_intergration[2], label='measured vx')
+plt.legend()
+plt.title("Velocity in X")
+plt.ylabel("m/s")
+plt.xlabel("samples")
+plt.show()
+
+plt.figure(figsize=(10,10))
+plt.plot(mocap_vy[::2], label='mocap vy')
+plt.plot(temp_intergration[3], label='measured vy')
+plt.legend()
+plt.title("Velocity in Y")
+plt.ylabel("m/s")
 plt.xlabel("samples")
 plt.show()
 
@@ -452,14 +481,18 @@ plt.show()
 # 
 # What if we double integrate the twice differentiated mocap data?
 
-# In[ ]:
+# In[31]:
 
-
+# fake_mocap_data = np.zeros((len(mocap_ax), 6))
+# fake_mocap_data[:,0] = mocap_ax
+# fake_mocap_data[:,1] = mocap_ay
+# fake_mocap_data[:,5] = mocap_gyro_z
+# PositionFromIMU(fake_mocap_data, dt_s, global_origin_x, global_origin_y, global_origin_yaw)
 
 
 # ## Integrating Navx Gyro to get Angle
 
-# In[17]:
+# In[32]:
 
 yaws = []
 yaw = np.rad2deg(global_origin_yaw)
@@ -476,7 +509,7 @@ for data in sensor_data:
     naive_yaws.append(og_yaw)
 
 
-# In[18]:
+# In[33]:
 
 plt.plot(yaws, label="final integrated gyro")
 plt.plot(naive_yaws, label="0.4 * raw integrated gyro")
@@ -494,7 +527,7 @@ plt.show()
 
 # # Analysis of accurate of Integrating Yaw from NavX Gyro
 
-# In[19]:
+# In[34]:
 
 error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
 
@@ -524,7 +557,7 @@ print("from this it is not clear whether gyro drift plays a role in the error. H
 
 # # X/Y from NavX
 
-# In[20]:
+# In[35]:
 
 # adjust the NavX data to start with the correct global X, Y, and Yaw
 navx_x = sensor_data[:,6] - sensor_data[0,6]
@@ -538,7 +571,7 @@ navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
 
 # # Encoder
 
-# In[21]:
+# In[36]:
 
 # encoder kinematics
 encoder_x = global_origin_x
@@ -568,7 +601,7 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[22]:
+# In[37]:
 
 plt.figure(figsize=(20,10))
 plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
@@ -582,7 +615,7 @@ plt.show()
 
 # ## Double Integrate Mocap Robot Sensor Data
 
-# In[24]:
+# In[38]:
 
 pva_from_imu = PositionFromIMU(final_imu_data, 0.02, global_origin_x, global_origin_y, global_origin_yaw)
 
@@ -593,7 +626,7 @@ plt.legend()
 plt.show()
 
 
-# In[25]:
+# In[39]:
 
 plt.figure(figsize=(15,15))
 plt.title("Sensor Data versus MoCap")
@@ -613,7 +646,7 @@ plt.show()
 
 # ## Comparing TimeStamp Accuracy between NavX and RoboRIO (FPGA)
 
-# In[26]:
+# In[27]:
 
 dts_fpgas = []
 dts_navxs = []
