@@ -1,0 +1,8 @@
+. filter=lfs diff=lfs merge=lfs -text
+./drive_1/raspberry_pi.avi filter=lfs diff=lfs merge=lfs -text
+./drive_3/pi.avi filter=lfs diff=lfs merge=lfs -text
+./drive_3/tk1.avi filter=lfs diff=lfs merge=lfs -text
+./drive_2/pi.avi filter=lfs diff=lfs merge=lfs -text
+./drive_2/tk1.avi filter=lfs diff=lfs merge=lfs -text
+./auto/tk1.avi filter=lfs diff=lfs merge=lfs -text
+./drive_1/tk1.avi filter=lfs diff=lfs merge=lfs -text
