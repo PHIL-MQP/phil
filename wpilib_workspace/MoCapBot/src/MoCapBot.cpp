@@ -12,6 +12,7 @@
 #include <SmartDashboard/SmartDashboard.h>
 
 #include <Commands/Forward.h>
+#include <Commands/DriftTest.h>
 #include <Commands/Turn.h>
 #include <Commands/Circle.h>
 #include <Commands/Square.h>
@@ -24,6 +25,7 @@ frc::JoystickButton *square = nullptr;
 frc::JoystickButton *circle = nullptr;
 frc::JoystickButton *fwd = nullptr;
 frc::JoystickButton *turn = nullptr;
+frc::JoystickButton *drift = nullptr;
 DriveBase *Robot::drive_base = nullptr;
 AHRS *Robot::ahrs = nullptr;
 frc::AnalogOutput *Robot::mocap_start_trigger = nullptr;
@@ -50,6 +52,8 @@ void Robot::RobotInit() {
 	fwd->WhenReleased(new Forward(1));
 	turn = new frc::JoystickButton(gamepad, 4);
 	turn->WhenReleased(new Turn(90));
+	drift = new frc::JoystickButton(gamepad, 5);
+	drift->WhenReleased(new DriftTest(5));
 
 }
 
@@ -81,7 +85,7 @@ void Robot::TeleopInit() {
 	std::cout << "Starting TK1" << std::endl;
 	phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 	std::cout << "Starting PI" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("pi.local", &data, 1, nullptr, 0);
+	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0);
 
 	// tell the motion capture to start
 	std::cout << "Triggering Motion Capture" << std::endl;
@@ -113,7 +117,7 @@ void Robot::DisabledInit() {
 	std::cout << "Stopping TK1" << std::endl;
 	phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 	std::cout << "Stopping PI" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("pi.local", &data, 1, nullptr, 0);
+	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0);
 }
 
 void Robot::TeleopPeriodic() {

@@ -13,7 +13,7 @@ Circle::Circle(double radius_m) : Command("Circle") {
 
 void Circle::Initialize() {
 	std::cout << "circle " << duration << std::endl;
-	SetTimeout(8);
+	SetTimeout(7.35);
 	Robot::drive_base->SetSpeed(0.1, 0.9);
 }
 
