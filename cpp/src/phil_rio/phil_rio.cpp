@@ -102,6 +102,15 @@ phil::pose_t Phil::GetPosition() {
   return pose;
 }
 
+void Phil::SendUDPTo(std::string hostname,
+                     uint8_t *request,
+                     size_t request_size,
+                     uint8_t *response,
+                     size_t response_size) {
+  UDPClient temp_udp_client(hostname);
+  temp_udp_client.RawTransaction(request, request_size, response, response_size);
+}
+
 void Phil::SendUDPToTK1(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size) {
   udp_client.RawTransaction(request, request_size, response, response_size);
 }

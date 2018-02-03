@@ -8,7 +8,7 @@
 #include <Timer.h>
 #include <Commands/Scheduler.h>
 #include <opencv2/imgproc.hpp>
-#include <phil/phil.h>
+#include <phil/phil_rio/phil_rio.h>
 #include <SmartDashboard/SmartDashboard.h>
 
 #include <Commands/Forward.h>
@@ -80,6 +80,8 @@ void Robot::TeleopInit() {
 	uint8_t data = 1;
 	std::cout << "Starting TK1" << std::endl;
 	phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+	std::cout << "Starting PI" << std::endl;
+	phil::Phil::GetInstance()->SendUDPTo("pi.local", &data, 1, nullptr, 0);
 
 	// tell the motion capture to start
 	std::cout << "Triggering Motion Capture" << std::endl;
@@ -110,6 +112,8 @@ void Robot::DisabledInit() {
 	uint8_t data = 0;
 	std::cout << "Stopping TK1" << std::endl;
 	phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
+	std::cout << "Stopping PI" << std::endl;
+	phil::Phil::GetInstance()->SendUDPTo("pi.local", &data, 1, nullptr, 0);
 }
 
 void Robot::TeleopPeriodic() {

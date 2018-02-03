@@ -48,6 +48,11 @@ class Phil {
   pose_t GetPosition();
 
   /**
+   * Send an arbitrary UDP message to any host on the network.
+   */
+  void SendUDPTo(std::string hostname, uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
+
+  /**
    * Send an arbitrary UDP message to the TK1.
    */
   void SendUDPToTK1(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
