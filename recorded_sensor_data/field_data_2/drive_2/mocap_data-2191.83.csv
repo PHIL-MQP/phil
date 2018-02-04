@@ -1,4 +1,4 @@
-raw_accel_x,raw_accel_y,raw_accel_zworld_accel_x,world_accel_yyaw,fused_headingx,y,z,left_encoder_rate,right_encoder_rate,left_input,right_input,fpga time,navx time
+raw_accel_x,raw_accel_y,raw_accel_z,world_accel_x,world_accel_y,yaw,fused_heading,x,y,z,left_encoder_rate,right_encoder_rate,left_input,right_input,fpga time,navx time
 0.0393066,0.0262451,0.941284,0.001,0.004,-105.39,254.6,3.78784,1.51228,0,0,0,-0.0078125,-0.023622,2191.94,2221374
 0.0393066,0.0262451,0.941284,0.001,0.004,-105.39,254.6,3.78784,1.51228,0,0,0,-0.0078125,-0.023622,2191.95,2221374
 0.0361328,0.0278931,0.949707,0,-0.001,-0.06,359.93,0,0,0,0,0,-0.0078125,-0.023622,2191.97,2221389

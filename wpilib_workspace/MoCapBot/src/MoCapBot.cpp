@@ -75,8 +75,8 @@ void Robot::TeleopInit() {
 		std::cout << "log !good()" << std::endl;
 	}
 
-	log << "raw_accel_x,raw_accel_y,raw_accel_z"
-			<< "world_accel_x,world_accel_y" << "yaw,fused_heading" << "x,y,z,"
+	log << "raw_accel_x,raw_accel_y,raw_accel_z,"
+			<< "world_accel_x,world_accel_y," << "yaw,fused_heading," << "x,y,z,"
 			<< "left_encoder_rate,right_encoder_rate,"
 			<< "left_input,right_input," << "fpga time,navx time" << std::endl;
 

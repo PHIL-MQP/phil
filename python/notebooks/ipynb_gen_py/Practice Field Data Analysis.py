@@ -3,7 +3,7 @@
 
 # # Practice Field Data Analysis
 
-# In[4]:
+# In[1]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,7 +16,7 @@ import csv
 # 
 # this was one of the trials that actually recorded properly
 
-# In[5]:
+# In[2]:
 
 reader = csv.reader(open("./recorded_sensor_data/field_data_1/5x4_teleop/mocap_data-839.451.csv", 'r'))  # not actually mocap data
 headers = next(reader)
@@ -35,7 +35,7 @@ for i, h in enumerate(headers):
 
 # ## Integrate gyro Z to get yaw
 
-# In[6]:
+# In[3]:
 
 yaws = []
 yaw = 0
@@ -45,7 +45,7 @@ for data in sensor_data:
     yaws.append(yaw)
 
 
-# In[12]:
+# In[4]:
 
 fig, ax = plt.subplots(figsize=(8,5))
 ax.set_title("Yaw of robot")
@@ -71,3 +71,29 @@ HTML(html)
 
 
 # If you play this along side the video of the robot you can see they seem quite reasonable. 
+
+# # Sensor data from the second round of testing
+# 
+# The data recorded in these tests is different from the data recorded in the first test.
+
+# In[5]:
+
+reader = csv.reader(open("./recorded_sensor_data/field_data_2/drive_3/mocap_data-57.122.csv", 'r'))  # not actually mocap data
+headers = next(reader)
+sensor_data = []
+for row in reader:
+    data = [float(d) for d in row]
+    sensor_data.append(data)
+    
+# sensor data is a Nx15 array. N is the number of data points
+sensor_data = np.array(sensor_data)
+print("sensor_data shape:", sensor_data.shape)
+print("idx header")
+for i, h in enumerate(headers):
+    print(i, h)
+
+
+# In[ ]:
+
+
+
