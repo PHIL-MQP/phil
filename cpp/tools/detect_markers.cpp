@@ -74,6 +74,12 @@ int main(int argc, char **argv) {
   char *video_filename = argv[1];
   char *params_filename = argv[2];
 
+  cv::VideoCapture cap(video_filename);
+  const unsigned int w = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  const unsigned int h = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+  const unsigned int fps = cap.get(CV_CAP_PROP_FPS);
+  cv::Size input_size(w, h);
+
   bool step = false;
   bool quiet = false;
   cv::VideoWriter out_video;
@@ -87,7 +93,7 @@ int main(int argc, char **argv) {
     }
     else {
       // for output file
-      out_video = cv::VideoWriter(argv[3], CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
+      out_video = cv::VideoWriter(argv[3], CV_FOURCC('M', 'J', 'P', 'G'), fps, input_size);
     }
   }
   else if (argc == 5) {
@@ -98,10 +104,9 @@ int main(int argc, char **argv) {
       quiet = true;
     }
     // for output file
-    out_video = cv::VideoWriter(argv[4], CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
+    out_video = cv::VideoWriter(argv[4], CV_FOURCC('M', 'J', 'P', 'G'), fps, input_size);
   }
 
-  cv::VideoCapture cap(video_filename);
   aruco::CameraParameters params;
   params.readFromXMLFile(params_filename);
 

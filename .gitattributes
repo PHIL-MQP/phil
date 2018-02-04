@@ -1,7 +1,8 @@
-recorded_sensor_data/field_data_2/drive_2/pi.avi filter=lfs diff=lfs merge=lfs -text
-recorded_sensor_data/field_data_2/drive_2/tk1.avi filter=lfs diff=lfs merge=lfs -text
-recorded_sensor_data/field_data_2/drive_3/pi.avi filter=lfs diff=lfs merge=lfs -text
-recorded_sensor_data/field_data_2/drive_3/tk1.avi filter=lfs diff=lfs merge=lfs -text
-recorded_sensor_data/field_data_2/auto/tk1.avi filter=lfs diff=lfs merge=lfs -text
-recorded_sensor_data/field_data_2/drive_1/raspberry_pi.avi filter=lfs diff=lfs merge=lfs -text
-recorded_sensor_data/field_data_2/drive_1/tk1.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/drive_1/*.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/drive_2/*.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/drive_3/*.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/auto/*.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/**/*.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/drive_1/annotated_tk1.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/drive_2/annotated_tk1.avi filter=lfs diff=lfs merge=lfs -text
+recorded_sensor_data/field_data_2/drive_3/annotated_tk1.avi filter=lfs diff=lfs merge=lfs -text
