@@ -31,8 +31,7 @@ void detectMarkers(cv::VideoCapture capture,
     unsigned long last_detected_marker_timestamp = 0ul;
     std::unordered_map<int, unsigned int> detection_counts;
     while (capture.isOpened()) {
-      capture.grab();
-      capture.retrieve(frame);
+      capture >> frame;
 
       if (frame.empty()) {
         break;
@@ -47,31 +46,14 @@ void detectMarkers(cv::VideoCapture capture,
         // filter!
         if (ids.count(static_cast<const unsigned long &>(marker.id)) != 0) {
           tracker[marker.id].estimatePose(marker, cam_params, marker_size);
-          if (marker.id > 82) {
-            std::cout << "fuck" << std::endl;
-          }
-          if (marker.id > 82) {
-            marker.draw(annotated_frame, cv::Scalar(0, 255, 0), 6);
-          }
-          else {
-            marker.draw(annotated_frame, cv::Scalar(0, 0, 255), 2);
-          }
+          marker.draw(annotated_frame, cv::Scalar(0, 0, 255), 2);
 
           // draw the filtered tags that were detected
           aruco::CvDrawingUtils::draw3dCube(annotated_frame, marker, cam_params);
           aruco::CvDrawingUtils::draw3dAxis(annotated_frame, marker, cam_params);
 
           out_file << timestamps[frame_idx] << "," << marker.id << std::endl;
-
-          if (marker.id > 82) {
-            std::cout << marker << std::endl;
-            cv::imshow("filtered annotated", annotated_frame);
-            cv::waitKey(10);
-            std::cin.get();
-            continue;
-          }
         }
-
       }
 
       cv::imshow("filtered annotated", annotated_frame);
@@ -196,6 +178,10 @@ int main(int argc, char **argv) {
 
 void show_help() {
   std::cout << "USAGE: ./marker_detection_analysis video_file timer_stamps camera_params ids_to_filter [-s]"
+            << std::endl
+            << std::endl
+            << "This program will create a file called out_data.csv, which is a csv of time stamp, tag id. "
+            << "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py"
             << std::endl
             << std::endl
             << "you can use -s to step through frame by frame"

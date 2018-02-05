@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import sys
 from subprocess import call
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -19,6 +19,7 @@ def main():
         args = ['./cpp/.build/tools/detect_markers', full_infile, args.camera_calibration, '-q', full_outfile]
         print('calling:', args)
         call(args)
+
 
 if __name__ == '__main__':
     main()

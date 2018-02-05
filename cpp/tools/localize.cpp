@@ -302,13 +302,13 @@ void localize(cv::VideoCapture capture, aruco::CameraParameters CamParam) {
                 }
                 // std::cout << m << std::endl;
 
-                if (m.at<float>(0, 0) > -9999f) {
+                if (m.at<float>(0, 0) > -99999.f) {
                   pose = pose + m;
                   // std::cout << m.row(0).t() << '\n';
                   // std::cout << out << endl;
                 } else {
                   std::cout << "error computing transform \t";
-                  pose.at<float>(0, 0) = -99999f;
+                  pose.at<float>(0, 0) = -99999.f;
                   break;
                 }
 
