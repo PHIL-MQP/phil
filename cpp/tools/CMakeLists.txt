@@ -23,6 +23,10 @@ if (NOT ${RIO})
     target_link_libraries(detect_markers aruco ${phil_opencv_libs})
     target_include_directories(detect_markers PRIVATE ${OpenCV_INCLUDE_DIRS})
 
+    add_executable(marker_detection_analysis marker_detection_analysis.cpp)
+    target_link_libraries(marker_detection_analysis aruco ${phil_opencv_libs})
+    target_include_directories(marker_detection_analysis PRIVATE ${OpenCV_INCLUDE_DIRS})
+
     add_executable(fisheye unwarp_fisheye.cpp)
     target_link_libraries(fisheye ${phil_opencv_libs})
     target_include_directories(fisheye PRIVATE ${OpenCV_INCLUDE_DIRS})
