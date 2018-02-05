@@ -10,7 +10,7 @@ void detectMarkers(cv::VideoCapture capture,
   cv::Mat frame;
   cv::Mat annotated_frame;
 
-  float marker_size = 0.175; // meters
+  float marker_size = 0.158; // meters
 
   // create output file stream
   std::ofstream out_file("out_data.csv");
@@ -47,14 +47,31 @@ void detectMarkers(cv::VideoCapture capture,
         // filter!
         if (ids.count(static_cast<const unsigned long &>(marker.id)) != 0) {
           tracker[marker.id].estimatePose(marker, cam_params, marker_size);
-          marker.draw(annotated_frame, cv::Scalar(0, 0, 255), 2);
+          if (marker.id > 82) {
+            std::cout << "fuck" << std::endl;
+          }
+          if (marker.id > 82) {
+            marker.draw(annotated_frame, cv::Scalar(0, 255, 0), 6);
+          }
+          else {
+            marker.draw(annotated_frame, cv::Scalar(0, 0, 255), 2);
+          }
 
           // draw the filtered tags that were detected
           aruco::CvDrawingUtils::draw3dCube(annotated_frame, marker, cam_params);
           aruco::CvDrawingUtils::draw3dAxis(annotated_frame, marker, cam_params);
 
           out_file << timestamps[frame_idx] << "," << marker.id << std::endl;
+
+          if (marker.id > 82) {
+            std::cout << marker << std::endl;
+            cv::imshow("filtered annotated", annotated_frame);
+            cv::waitKey(10);
+            std::cin.get();
+            continue;
+          }
         }
+
       }
 
       cv::imshow("filtered annotated", annotated_frame);
