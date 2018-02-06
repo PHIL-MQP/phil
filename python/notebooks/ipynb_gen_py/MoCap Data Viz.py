@@ -383,7 +383,7 @@ plt.show()
 # 
 # The data is now read to be processed by a Kalman Filter or double integrated or whatever else you want
 
-# In[29]:
+# In[1]:
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     """
@@ -416,8 +416,8 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
         ax = a[0]
         ay = a[1]
         
-        x += vx * dt_s + ax * (dt_s ** 2)
-        y += vy * dt_s + ay * (dt_s ** 2)
+        x += vx * dt_s + 0.5 * ax * (dt_s ** 2)
+        y += vy * dt_s + 0.5 * ay * (dt_s ** 2)
         vx += ax * dt_s
         vy += ay * dt_s
                 

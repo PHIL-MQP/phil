@@ -21521,7 +21521,7 @@ EVlmFOBERERElhkFOBEREZFlRgFOREREZJn5/wEsDSQoDAMLcwAAAABJRU5ErkJggg==
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">PositionFromIMU</span><span class="p">(</span><span class="n">imu_data</span><span class="p">,</span> <span class="n">dt_s</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">yaw0</span><span class="p">):</span>
@@ -21555,8 +21555,8 @@ EVlmFOBERERElhkFOBEREZFlRgFOREREZJn5/wEsDSQoDAMLcwAAAABJRU5ErkJggg==
         <span class="n">ax</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">ay</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         
-        <span class="n">x</span> <span class="o">+=</span> <span class="n">vx</span> <span class="o">*</span> <span class="n">dt_s</span> <span class="o">+</span> <span class="n">ax</span> <span class="o">*</span> <span class="p">(</span><span class="n">dt_s</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">+=</span> <span class="n">vy</span> <span class="o">*</span> <span class="n">dt_s</span> <span class="o">+</span> <span class="n">ay</span> <span class="o">*</span> <span class="p">(</span><span class="n">dt_s</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="n">vx</span> <span class="o">*</span> <span class="n">dt_s</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ax</span> <span class="o">*</span> <span class="p">(</span><span class="n">dt_s</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="n">vy</span> <span class="o">*</span> <span class="n">dt_s</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">ay</span> <span class="o">*</span> <span class="p">(</span><span class="n">dt_s</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">vx</span> <span class="o">+=</span> <span class="n">ax</span> <span class="o">*</span> <span class="n">dt_s</span>
         <span class="n">vy</span> <span class="o">+=</span> <span class="n">ay</span> <span class="o">*</span> <span class="n">dt_s</span>
                 
