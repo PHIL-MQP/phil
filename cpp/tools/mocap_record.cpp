@@ -72,6 +72,7 @@ int main(int argc, const char **argv) {
 
   while (true) {
     uint64_t time = sink.GrabFrame(frame);
+    std::cout << time << std::endl;
 
     if (time == 0) {
       std::cout << "error: " << sink.GetError() << std::endl;

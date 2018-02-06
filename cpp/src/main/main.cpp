@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     uint64_t time = sink.GrabFrame(frame);
 
     // do localization
-    double time_s = time / 1e7; // convert 100's of nanoseconds to seconds
+    double time_s = time / 1e6; // convert micoseconds to seconds
     phil::pose_t pose = phil::compute_pose(time_s, frame, rio_data);
 
     table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
