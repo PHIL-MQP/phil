@@ -9,7 +9,6 @@
 #include "phil/common/udp.h"
 #include "phil/localization/localization.h"
 
-
 /**
  * The main program that runs on the TK1. Receives sensor data from the camera and the RoboRIO and performs localization
  */
@@ -51,8 +50,9 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    // grab latest camera frame
-    uint64_t time = sink.GrabFrame(frame);
+    // TODO: implement camera and beacon as callback or interrupt style,
+    // and run update step of EKF with just the camera data
+     uint64_t time = sink.GrabFrame(frame);
 
     // do localization
     double time_s = time / 1e6; // convert micoseconds to seconds
