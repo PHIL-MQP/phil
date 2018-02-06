@@ -22,6 +22,26 @@ def main():
     plt.ylabel("Number of detections")
     plt.xlabel("Tag ID #")
     plt.title("Tags Detected")
+
+    distinct_times = [0]
+    last_distinct_idx = 0
+    for idx in range(1, data.shape[0]):
+        if data[idx, 0] != data[last_distinct_idx, 0]:
+            dt_s = (data[idx, 0] - data[last_distinct_idx, 0]) / 1e7
+            distinct_times.append(dt_s)
+            last_distinct_idx = idx
+    distinct_times = np.array(distinct_times)
+
+    plt.figure()
+    plt.plot(distinct_times)
+    plt.ylabel("time since last detected tag")
+    plt.xlabel("instances of detected tags")
+    plt.title("time between detected tags")
+
+    print(np.mean(distinct_times))
+    print(np.median(distinct_times))
+    print(np.max(distinct_times))
+
     plt.show()
 
 
