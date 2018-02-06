@@ -8,17 +8,21 @@ import matplotlib.pyplot as plt
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', help='output of marker_detection_analysis program')
+    parser.add_argument('ids', help='file of ids that you want to allow (filters out others)')
     args = parser.parse_args()
 
+    ids = np.genfromtxt(args.ids, delimiter=',', dtype=np.int32)
     reader = csv.reader(open(args.infile, 'r'))
     data = []
     for line in reader:
-        data.append([int(d) for d in line])
+        if int(line[1]) in ids:
+            data.append([int(d) for d in line[:2]])
     data = np.array(data)
 
     plt.figure()
-    plt.hist(data[:, 1], bins=100)
-    plt.xticks(range(0, 100, 2))
+    max_id = np.max(ids)
+    plt.hist(data[:, 1], bins=max_id)
+    plt.xticks(range(0, max_id, 2))
     plt.ylabel("Number of detections")
     plt.xlabel("Tag ID #")
     plt.title("Tags Detected")

@@ -46,9 +46,14 @@ void detectMarkers(cv::VideoCapture capture,
         aruco::CvDrawingUtils::draw3dAxis(annotated_frame, marker, cam_params);
 
         // output to std out so one can redirect to any file they want
-        std::cout << timestamps[frame_idx] << "," << marker.id << "," << marker.Tvec << "," << marker.Rvec << std::endl;
+        std::cout << timestamps[frame_idx] << "," << marker.id << ","
+                  << marker.Tvec.at<float>(0) << ","
+                  << marker.Tvec.at<float>(1) << ","
+                  << marker.Tvec.at<float>(2) << ","
+                  << marker.Rvec.at<float>(0) << ","
+                  << marker.Rvec.at<float>(1) << ","
+                  << marker.Rvec.at<float>(2) << std::endl;
       }
-
 
       if (step) {
         cv::imshow("annotated", annotated_frame);
