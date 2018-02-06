@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <networktables/NetworkTableInstance.h>
 #include <marker_mapper/markermapper.h>
+#include <aruco/aruco.h>
 
 #include "phil/common/udp.h"
 #include "phil/localization/localization.h"
@@ -17,6 +18,7 @@ int main(int argc, char **argv) {
 
   // camera server
   // TODO: abstract away video versus live camera data
+  // TODO: add arguments for device/w/h/fps?
   cs::UsbCamera camera{"usbcam", 0};
   camera.SetVideoMode(cs::VideoMode::kMJPEG, 320, 240, 30);
   cs::MjpegServer mjpegServer{"httpserver", 8081};
@@ -27,9 +29,7 @@ int main(int argc, char **argv) {
   // read in the markermapper config yaml file
   aruco::MarkerMap mmap;
   mmap.readFromFile("map.yaml");
-
-  mmap.
-
+  mmap.setDictionary("ARUCO_MIP_16h3");
 
   // comms with the roborio
   phil::UDPServer server;

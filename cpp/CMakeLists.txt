@@ -87,7 +87,7 @@ endif ()
 if (NOT ${RIO})
     add_executable(phil_main ${main_src} ${common_src} ${localization_src})
     target_include_directories(phil_main PRIVATE ${phil_include_dir} ${OpenCV_INCLUDE_DIRS} ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${CSCORE_INCLUDE_DIR})
-    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs})
+    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco)
 
     # custom target to scp the program to the TK1 and run it?
 endif ()
