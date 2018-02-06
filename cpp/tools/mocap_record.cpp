@@ -1,5 +1,4 @@
 #include <iostream>
-#include <errno.h>
 #include <cstring>
 #include <fstream>
 #include <cscore.h>
@@ -10,25 +9,25 @@
 
 int main(int argc, const char **argv) {
   args::ArgumentParser parser("This program records camera frames and their timestamps",
-                              "This program is meant to run on TK1 during Motion Capture"
-                                  "recording tests. However, it is general purpose and could be used on a laptop."
+                              "This program is meant to run on TK1 during Motion Capture recording tests."
+                                  "However, it is general purpose and could also be used on a laptop."
                                   "It cannot be built for the RoboRIO.");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-  args::ValueFlag<std::string>
-      server_hostname_flag(parser, "hostname", "hostname of the server sending start/stop", {'o'});
+  args::Positional<int> device(parser, "device number", "0 refers to /dev/video0");
 
-  try
-  {
+  try {
     parser.ParseCLI(argc, argv);
   }
-  catch (args::Help &e)
-  {
+  catch (args::Help &e) {
     std::cout << parser;
     return 0;
   }
 
-  cs::UsbCamera camera{"usbcam", 0};
-  camera.SetVideoMode(cs::VideoMode::kMJPEG, 1280, 720, 30);
+  cs::UsbCamera camera{"usbcam", args::get(device)};
+  const int w = 640;
+  const int h = 480;
+  const int fps = 30;
+  camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
   cs::MjpegServer mjpegServer{"httpserver", 8081};
   mjpegServer.SetSource(camera);
   cs::CvSink sink{"sink"};
@@ -42,7 +41,7 @@ int main(int argc, const char **argv) {
   strftime(timestamp_filename, 50, "timestamps_%m_%d_%H-%M-%S.csv", ltm);
 
   cv::Mat frame;
-  cv::VideoWriter video(video_filename, CV_FOURCC('M', 'J', 'P', 'G'), 28, cv::Size(320, 240));
+  cv::VideoWriter video(video_filename, CV_FOURCC('M', 'J', 'P', 'G'), fps, cv::Size(w, h));
 
   std::ofstream time_stamps_file;
   time_stamps_file.open(timestamp_filename);
@@ -50,11 +49,6 @@ int main(int argc, const char **argv) {
   if (!time_stamps_file.good()) {
     std::cerr << "Time stamp file failed to open: " << strerror(errno) << std::endl;
     return EXIT_FAILURE;
-  }
-
-  std::string hostname = "phil-tk1.local";
-  if (server_hostname_flag) {
-    hostname = args::get(server_hostname_flag);
   }
 
   // wait for UDP message to start
@@ -71,6 +65,7 @@ int main(int argc, const char **argv) {
 
   for (int i = 0; i < 1000; i++) {
     uint64_t time = sink.GrabFrame(frame);
+    std::cout << time << std::endl;
     if (time == 0) {
       std::cout << "error: " << sink.GetError() << std::endl;
       continue;

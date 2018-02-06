@@ -5,7 +5,7 @@ if (NOT WIN32)
     add_executable(udp_client udp_client.cpp ${common_src})
     target_include_directories(udp_client PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 
-    add_executable(test_udp_trigger test_udp_trigger_tk1.cpp ${common_src})
+    add_executable(test_udp_trigger test_udp_trigger.cpp ${common_src})
     target_include_directories(test_udp_trigger PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 endif ()
 
