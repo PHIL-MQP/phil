@@ -13,7 +13,10 @@ int main(int argc, const char **argv) {
                                   "However, it is general purpose and could also be used on a laptop."
                                   "It cannot be built for the RoboRIO.");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-  args::Positional<int> device(parser, "device number", "0 refers to /dev/video0");
+  args::Positional<int> device(parser, "device_number", "0 refers to /dev/video0", args::Options::Required);
+  args::Positional<int> width(parser, "width", "width in pixels", args::Options::Required);
+  args::Positional<int> height(parser, "height", "height in pixels", args::Options::Required);
+  args::Positional<int> frames_per_second(parser, "fps", "frames per second", args::Options::Required);
 
   try {
     parser.ParseCLI(argc, argv);
@@ -22,12 +25,16 @@ int main(int argc, const char **argv) {
     std::cout << parser;
     return 0;
   }
+  catch (args::RequiredError &e) {
+    std::cout << parser;
+    return 0;
+  }
 
   cs::UsbCamera camera{"usbcam", args::get(device)};
-  const int w = 640;
-  const int h = 480;
-  const int fps = 30;
-  camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
+  const int w = args::get(width);
+  const int h = args::get(height);
+  const int fps = args::get(frames_per_second);
+  camera.SetVideoMode(cs::VideoMode::kYUYV, w, h, fps);
   cs::MjpegServer mjpegServer{"httpserver", 8081};
   mjpegServer.SetSource(camera);
   cs::CvSink sink{"sink"};
@@ -63,9 +70,9 @@ int main(int argc, const char **argv) {
   timeout.tv_sec = 0;
   udp_server.SetTimeout(timeout);
 
-  for (int i = 0; i < 1000; i++) {
+  while (true) {
     uint64_t time = sink.GrabFrame(frame);
-    std::cout << time << std::endl;
+
     if (time == 0) {
       std::cout << "error: " << sink.GetError() << std::endl;
       continue;

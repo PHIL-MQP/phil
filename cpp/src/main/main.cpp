@@ -3,6 +3,8 @@
 #include <cscore.h>
 #include <opencv2/opencv.hpp>
 #include <networktables/NetworkTableInstance.h>
+#include <marker_mapper/markermapper.h>
+
 #include "phil/common/udp.h"
 #include "phil/localization/localization.h"
 
@@ -21,6 +23,13 @@ int main(int argc, char **argv) {
   mjpegServer.SetSource(camera);
   cs::CvSink sink{"sink"};
   sink.SetSource(camera);
+
+  // read in the markermapper config yaml file
+  aruco::MarkerMap mmap;
+  mmap.readFromFile("map.yaml");
+
+  mmap.
+
 
   // comms with the roborio
   phil::UDPServer server;
