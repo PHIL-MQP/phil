@@ -23,9 +23,7 @@ def main():
         print("data direction [{}] does not exist".format(args.data_directory))
         return
 
-    data_filename = os.path.join(args.data_directory, "interpolated_data.csv")
-    metadata_filename = os.path.join(args.data_directory, "metadata.json")
-    metadata = json.load(open(metadata_filename, 'r'))
+    data_filename = os.path.join(args.data_directory, "sensor_data.csv")
     data_file = open(data_filename, 'r')
     reader = csv.reader(data_file)
 
@@ -33,7 +31,7 @@ def main():
     wheel_radius_m = 0.038
     track_width_m = 0.23
     acc_scale = 2  # just a guess
-    dt_s = 0.1  # the rate of the interpolation
+    dt_s = 0.02  # the rate of the interpolation
 
     N = 9
     L = 6

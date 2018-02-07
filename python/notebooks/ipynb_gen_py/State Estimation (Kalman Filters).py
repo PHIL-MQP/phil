@@ -6,9 +6,10 @@
 # 
 # $$ x = \begin{bmatrix}
 # x & y & \theta &
-# \dot{x} & \dot{y} & \dot{\theta} \end{bmatrix}^T $$
+# \dot{x} & \dot{y} & \dot{\theta} &
+# \ddot{x} & \ddot{y} & \ddot{\theta} \end{bmatrix}^T $$
 # 
-# The control inputs are the wheel velocities.
+# The control inputs are the wheel accelerations (which we assume are a function of motor.set() values, such as those from a joystick
 # 
 # $$ u = \begin{bmatrix}
 # w_l \\
@@ -16,6 +17,14 @@
 # \alpha_l \\
 # \alpha_r \\
 # \end{bmatrix} $$
+# 
+# Our measurement vectors
+# 
+# $$ y_{navx} = \begin{bmatrix} a_x \\ a_y \\ \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$
+# 
+# $$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$
+# 
+# $$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$
 # 
 # Key prediction & update equations
 # 
@@ -55,7 +64,7 @@
 # \ddot{\theta}_{t+1} &= \frac{R}{W} * \alpha_l + \frac{-R}{W} * \alpha_r \\
 # \end{align}
 
-# ## If state is just position and velocity and acceleration
+# ## The State-Space Equations
 # 
 # $$
 # \begin{bmatrix}
@@ -81,15 +90,15 @@
 # 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
 # \end{bmatrix}
 # \begin{bmatrix}
-# x \\
-# y \\
-# \theta \\
-# \dot{x} \\
-# \dot{y} \\
-# \dot{\theta} \\
-# \ddot{x} \\
-# \ddot{y} \\
-# \ddot{\theta} \\
+# x_t \\
+# y_t \\
+# \theta_t \\
+# \dot{x}_t \\
+# \dot{y}_t \\
+# \dot{\theta}_t \\
+# \ddot{x}_t \\
+# \ddot{y}_t \\
+# \ddot{\theta}_t \\
 # \end{bmatrix} +
 # \begin{bmatrix}
 # \cos(\theta_t)\frac{1}{4}\Delta t^2 & \cos(\theta_t)\frac{1}{4}\Delta t^2 \\
@@ -103,8 +112,8 @@
 # 0 & 0 \\
 # \end{bmatrix}
 # \begin{bmatrix}
-# \alpha_l \\
-# \alpha_r \\
+# \alpha_{l,t} \\
+# \alpha_{r,t} \\
 # \end{bmatrix}
 # $$
 
@@ -132,27 +141,17 @@
 
 # ### The measurement Vector + Update bit
 # 
+# The KF update step for the sensor data coming from the RoboRIO
+# 
 # $$
 # \begin{bmatrix}
-# \text{Accelerometer }\ddot{x} \\
-# \text{Accelerometer }\ddot{y} \\
-# \text{Gyro }\dot{\theta} \\
-# \text{Camera }x \\
-# \text{Camera }y \\
-# \text{Camera }\theta \\
-# \text{Encoders }x \\
-# \text{Encoders }y \\
-# \text{Encoders }\theta \\
+# a_x \\
+# a_y \\
+# \theta \\
 # \end{bmatrix} -
 # \begin{bmatrix}
 # 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
 # 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
-# 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 # 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
 # \end{bmatrix}
 # \begin{bmatrix}
@@ -167,6 +166,57 @@
 # \ddot{\theta} \\
 # \end{bmatrix}
 # $$
+# 
+# update step for the beacons
+# 
+# $$
+# \begin{bmatrix}
+# \text{Beacons}_x \\
+# \text{Beacons}_y \\
+# \end{bmatrix} -
+# \begin{bmatrix}
+# 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# \end{bmatrix}
+# \begin{bmatrix}
+# x \\
+# y \\
+# \theta \\
+# \dot{x} \\
+# \dot{y} \\
+# \dot{\theta} \\
+# \ddot{x} \\
+# \ddot{y} \\
+# \ddot{\theta} \\
+# \end{bmatrix}
+# $$
+# 
+# update step for the camera
+# 
+# $$
+# \begin{bmatrix}
+# \text{Camera}_x \\
+# \text{Camera}_y \\
+# \text{Camera}_\theta \\
+# \end{bmatrix} -
+# \begin{bmatrix}
+# 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# \end{bmatrix}
+# \begin{bmatrix}
+# x \\
+# y \\
+# \theta \\
+# \dot{x} \\
+# \dot{y} \\
+# \dot{\theta} \\
+# \ddot{x} \\
+# \ddot{y} \\
+# \ddot{\theta} \\
+# \end{bmatrix}
+# $$
+# 
+# Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.
 
 # ### The process covariance matrix
 # 
@@ -203,3 +253,7 @@
 #    - This is done using your sensor models
 #  - Keep each sample with a probability equal to w
 #  - To get one number, take a weighted average of all particles (weighted by their probabilities)
+
+# Resources:
+# 
+# https://www.researchgate.net/post/Extended_Kalman_Filter_with_asynchronous_measurements

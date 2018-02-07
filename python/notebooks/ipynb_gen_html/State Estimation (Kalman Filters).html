@@ -11787,13 +11787,15 @@ div#notebook {
 <h1 id="Kalman-Filter">Kalman Filter<a class="anchor-link" href="#Kalman-Filter">&#182;</a></h1><p>A linear kalman filter. First we define our state variables x</p>
 $$ x = \begin{bmatrix}
 x & y & \theta &
-\dot{x} & \dot{y} & \dot{\theta} \end{bmatrix}^T $$<p>The control inputs are the wheel velocities.</p>
+\dot{x} & \dot{y} & \dot{\theta} &
+\ddot{x} & \ddot{y} & \ddot{\theta} \end{bmatrix}^T $$<p>The control inputs are the wheel accelerations (which we assume are a function of motor.set() values, such as those from a joystick</p>
 $$ u = \begin{bmatrix}
 w_l \\
 w_r \\
 \alpha_l \\
 \alpha_r \\
-\end{bmatrix} $$<p>Key prediction &amp; update equations</p>
+\end{bmatrix} $$<p>Our measurement vectors</p>
+$$ y_{navx} = \begin{bmatrix} a_x \\ a_y \\ \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$$$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$$$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$<p>Key prediction &amp; update equations</p>
 $$ \hat{x}_{t} = Ax_t + Bu_t $$$$ P_{t+1} = AP_tA^T + Q $$$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$$$ P_t = (I - K_tC)P_t $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
 \begin{align}
 x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
@@ -11824,7 +11826,7 @@ y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="If-state-is-just-position-and-velocity-and-acceleration">If state is just position and velocity and acceleration<a class="anchor-link" href="#If-state-is-just-position-and-velocity-and-acceleration">&#182;</a></h2>$$
+<h2 id="The-State-Space-Equations">The State-Space Equations<a class="anchor-link" href="#The-State-Space-Equations">&#182;</a></h2>$$
 \begin{bmatrix}
 x_{t+1} \\
 y_{t+1} \\
@@ -11848,15 +11850,15 @@ y_{t+1} \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
 \end{bmatrix}
 \begin{bmatrix}
-x \\
-y \\
-\theta \\
-\dot{x} \\
-\dot{y} \\
-\dot{\theta} \\
-\ddot{x} \\
-\ddot{y} \\
-\ddot{\theta} \\
+x_t \\
+y_t \\
+\theta_t \\
+\dot{x}_t \\
+\dot{y}_t \\
+\dot{\theta}_t \\
+\ddot{x}_t \\
+\ddot{y}_t \\
+\ddot{\theta}_t \\
 \end{bmatrix} +
 \begin{bmatrix}
 \cos(\theta_t)\frac{1}{4}\Delta t^2 & \cos(\theta_t)\frac{1}{4}\Delta t^2 \\
@@ -11870,8 +11872,8 @@ y \\
 0 & 0 \\
 \end{bmatrix}
 \begin{bmatrix}
-\alpha_l \\
-\alpha_r \\
+\alpha_{l,t} \\
+\alpha_{r,t} \\
 \end{bmatrix}
 $$
 </div>
@@ -11954,27 +11956,16 @@ $$
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3>$$
+<h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>The KF update step for the sensor data coming from the RoboRIO</p>
+$$
 \begin{bmatrix}
-\text{Accelerometer }\ddot{x} \\
-\text{Accelerometer }\ddot{y} \\
-\text{Gyro }\dot{\theta} \\
-\text{Camera }x \\
-\text{Camera }y \\
-\text{Camera }\theta \\
-\text{Encoders }x \\
-\text{Encoders }y \\
-\text{Encoders }\theta \\
+a_x \\
+a_y \\
+\theta \\
 \end{bmatrix} -
 \begin{bmatrix}
 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
-1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
 \end{bmatrix}
 \begin{bmatrix}
@@ -11988,7 +11979,51 @@ y \\
 \ddot{y} \\
 \ddot{\theta} \\
 \end{bmatrix}
+$$<p>update step for the beacons</p>
 $$
+\begin{bmatrix}
+\text{Beacons}_x \\
+\text{Beacons}_y \\
+\end{bmatrix} -
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+\theta \\
+\dot{x} \\
+\dot{y} \\
+\dot{\theta} \\
+\ddot{x} \\
+\ddot{y} \\
+\ddot{\theta} \\
+\end{bmatrix}
+$$<p>update step for the camera</p>
+$$
+\begin{bmatrix}
+\text{Camera}_x \\
+\text{Camera}_y \\
+\text{Camera}_\theta \\
+\end{bmatrix} -
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+\theta \\
+\dot{x} \\
+\dot{y} \\
+\dot{\theta} \\
+\ddot{x} \\
+\ddot{y} \\
+\ddot{\theta} \\
+\end{bmatrix}
+$$<p>Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.</p>
+
 </div>
 </div>
 </div>
@@ -12041,6 +12076,17 @@ $$ K_t = (P_tC^T)(CP_tC^T + R)^{-1} $$$$ K_t(CP_tC^T + R) = (P_tC^T)(CP_tC^T + R
 <li>Keep each sample with a probability equal to w</li>
 <li>To get one number, take a weighted average of all particles (weighted by their probabilities)</li>
 </ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Resources:</p>
+<p><a href="https://www.researchgate.net/post/Extended_Kalman_Filter_with_asynchronous_measurements">https://www.researchgate.net/post/Extended_Kalman_Filter_with_asynchronous_measurements</a></p>
 
 </div>
 </div>
