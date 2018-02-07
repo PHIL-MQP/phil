@@ -5,7 +5,8 @@
 void detectMarkers(cv::VideoCapture capture,
                    const std::vector<unsigned long> &timestamps,
                    aruco::CameraParameters cam_params,
-                   bool step) {
+                   bool step,
+                   bool show) {
   cv::Mat frame;
   cv::Mat annotated_frame;
 
@@ -38,6 +39,7 @@ void detectMarkers(cv::VideoCapture capture,
       std::vector<aruco::Marker> markers = MDetector.detect(frame);
 
       for (auto &marker : markers) {
+
         tracker[marker.id].estimatePose(marker, cam_params, marker_size);
 
         // draw the tags that were detected
@@ -55,10 +57,12 @@ void detectMarkers(cv::VideoCapture capture,
                   << marker.Rvec.at<float>(2) << std::endl;
       }
 
-      if (step) {
+      if (show) {
         cv::imshow("annotated", annotated_frame);
         cv::waitKey(10);
-        std::cin.get();
+        if (step) {
+          std::cin.get();
+        }
       }
 
       std::string dt_str;
@@ -131,27 +135,34 @@ int main(int argc, char **argv) {
     }
   }
 
+  bool show = false;
   bool step = false;
   if (argc == 5) {
-    step = true;
-    std::cout << "Stepping (press enter for next frame)" << std::endl;
+    if (strncmp(argv[4], "-s", 2) == 0) {
+      step = true;
+      show = true;
+      std::cout << "Stepping (press enter for next frame)" << std::endl;
+    } else if (strncmp(argv[4], "-v", 2) == 0) {
+      show = true;
+    }
   }
 
-  detectMarkers(cap, timestamps, params, step);
+  detectMarkers(cap, timestamps, params, step, show);
 }
 
 void show_help() {
-  std::cout << "USAGE: ./marker_detection_analysis video_file timer_stamps camera_params [-s]"
+  std::cout << "USAGE: ./marker_detection_analysis video_file timer_stamps camera_params [-s|-v]"
             << std::endl
             << std::endl
             << "This program will print detected tag info to standard out."
             << "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py"
+            << "-v will show the video, -s will show and step through each frame (press enter)"
             << std::endl
             << std::endl
             << "you can use -s to step through frame by frame"
             << std::endl
             << "Example: ./marker_detection_analysis input.avi timestamps.csv camera_params.yml"
             << std::endl
-            << "         ./marker_detection_analysis input.avi timestamps.csv camera_params.yml -s"
+            << "         ./marker_detection_analysis input.avi timestamps.csv camera_params.yml -v"
             << std::endl;
 }
