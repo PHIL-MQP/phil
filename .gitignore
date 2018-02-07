@@ -36,7 +36,9 @@ out/
 ## PSoC Createor Files
 Generated_Source
 *.cycdx
+*.cyfit
 *.cyprj.*
 *.cywrk.*
 ARM_GCC_541
-
+codegentemp/
+Export

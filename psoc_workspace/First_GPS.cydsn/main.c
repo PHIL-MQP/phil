@@ -19,8 +19,10 @@
 #include "USBUART.h"
 #include "VDAC8_P.h"			// Voltage DAC to create chirp signal (0-1 V p-to-p)
 #include "VDAC8_M.h"			// Voltage DAC to create chirp signal (0-1 V p-to-p)
-#include "PGA.h"				// Amplifiers with gain = 4 to increase output voltage
-#include "TransducerDrive.h"	// Opamp follower used to drive the piezo speaker
+#include "PGA_P.h"				// Amplifiers with gain = 4 to increase output voltage
+#include "TransducerDrive_P.h"	// Opamp follower used to drive the piezo speaker
+#include "PGA_M.h"				// Amplifiers with gain = 4 to increase output voltage
+#include "TransducerDrive_M.h"	// Opamp follower used to drive the piezo speaker
 #include "PseudoRandom.h"		// Hardware pseudo-random number generator
 #include "BitTime.h"			// Timer interrupt for radio bit sampling time and millis function
 #include "radioRxPin.h"			// Receiver data pin

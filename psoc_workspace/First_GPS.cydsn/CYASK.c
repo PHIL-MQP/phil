@@ -7,9 +7,9 @@
 #include "CYASK.h"
 #include "CRC.h"
 
-#include "rxPin.h"
-#include "txPin.h"
-#include "pttPin.h"
+#include "radioRxPin.h"
+#include "radioTxPin.h"
+#include "radioPttPin.h"
 
 
 // Interrupt handler uses this to find the most recently initialised instance of this driver
