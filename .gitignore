@@ -32,3 +32,9 @@ out/
 # Latex
 *.log
 *.aux
+
+## PSoC Createor Files
+Generated_Source
+*.cycdx
+*.cyprj.*
+ARM_GCC_541
