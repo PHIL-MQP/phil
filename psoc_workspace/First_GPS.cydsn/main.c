@@ -133,14 +133,15 @@ const uint32_t sample_rate = 62500;
 // The 4th variable is the length of the total chirp in samples
 // The 5th variable is the number of samples remaining before we are done generating this chirp (used by interrupt routine to know when to stop)
 static float sin_index = 0;
-static float sample_incr = 0;		// Number of table positions to increase "sample" each tick, mult. by 65536 (for 16 fraction bits)
+static float sample_incr = 0;
+// Number of table positions to increase "sample" each tick, mult. by 65536 (for 16 fraction bits)
 static float  sample_incr_incr = 0;	// Amount to change (+/-) sample_incr_x65536 each tick (2nd derivitive of "sample" position), causes chirp
 uint32_t sample_count_max = 0;			// Number of samples in complete ping (at sample_rate)
 uint32_t sample_count = 0;				// Number of samples remaining in current chirp (at sample_rate)
 
 // Parameters describing the physical chirp (starting frequency, ending frequency, length in time, and volume level):
-uint16_t f0 = 10000;				// Starting frequency of chirp in Hz
-uint16_t f1 = 20000;				// Ending frequency of chirp in Hz
+uint16_t f0 = 500;				// Starting frequency of chirp in Hz
+uint16_t f1 = 2000;				// Ending frequency of chirp in Hz
 uint32_t length = 1000;				// Length of timed operations in milliseconds (e.g. beep)
 
 
@@ -336,11 +337,12 @@ int main()
 // Produce sine signal and send it to the transducer DACs as 10-bit values
 void chirp(const uint16_t f0, const uint16_t f1, const uint32_t len)	// Generate a test beep frequency f and len milliseconds
 {
-	sin_index = 0;
-    sample_incr = 60;
-    sample_incr_incr = 0.1;
+  	sin_index = 0;
+    sample_incr = (f0*2048.f)/sample_rate;
+    float final_sample_incr = (f1*2048.f)/sample_rate;//reads every 60 indexes per wave so sample_incr*30waves/sec
+    sample_incr_incr = ((final_sample_incr-sample_incr)*1000)/(len*sample_rate);
 
-    sample_count_max = 10 * 2048; // 10 for number of waves, 2048 samples per wave
+    sample_count_max = (62500 * len)/1000; // 10 for number of waves, 2048 samples per wave
     sample_count = sample_count_max;
 }
 
