@@ -37,58 +37,113 @@ void chirp(const uint16_t f0, const uint16_t f1, const uint32_t len);	// Routine
 int16_t sine(const uint16_t x);	// Sine routine using lookup table
 uint16 prs();					// Read and advance state of pseudo random sequence
 
-// One quarter of a sine wave in 513 10-bit values (0-1023):
+// One quarter of a sine wave in 2048 10-bit values (0-2047):
 // Note: sineTbl is stored in Flash memory
-const int16_t sineTbl[] = {		
-0,3,6,9,13,16,19,22,25,28,31,35,38,41,44,47,50,53,56,60,63,66,69,72,75,78,82,
-85,88,91,94,97,100,103,107,110,113,116,119,122,125,128,131,135,138,141,144,
-147,150,153,156,159,163,166,169,172,175,178,181,184,187,190,193,196,200,203,
-206,209,212,215,218,221,224,227,230,233,236,239,242,246,249,252,255,258,261,
-264,267,270,273,276,279,282,285,288,291,294,297,300,303,306,309,312,315,318,
-321,324,327,330,333,336,339,342,345,348,351,353,356,359,362,365,368,371,374,
-377,380,383,386,389,391,394,397,400,403,406,409,412,415,417,420,423,426,429,
-432,435,437,440,443,446,449,452,454,457,460,463,466,468,471,474,477,479,482,
-485,488,491,493,496,499,502,504,507,510,512,515,518,521,523,526,529,531,534,
-537,539,542,545,547,550,553,555,558,560,563,566,568,571,574,576,579,581,584,
-586,589,592,594,597,599,602,604,607,609,612,614,617,619,622,624,627,629,632,
-634,637,639,642,644,647,649,651,654,656,659,661,663,666,668,671,673,675,678,
-680,682,685,687,689,692,694,696,699,701,703,705,708,710,712,714,717,719,721,
-723,726,728,730,732,734,737,739,741,743,745,747,750,752,754,756,758,760,762,
-764,766,768,771,773,775,777,779,781,783,785,787,789,791,793,795,797,799,801,
-803,805,806,808,810,812,814,816,818,820,822,824,825,827,829,831,833,835,836,
-838,840,842,844,845,847,849,851,852,854,856,858,859,861,863,864,866,868,869,
-871,873,874,876,877,879,881,882,884,885,887,889,890,892,893,895,896,898,899,
-901,902,904,905,907,908,909,911,912,914,915,917,918,919,921,922,923,925,926,
-927,929,930,931,933,934,935,937,938,939,940,941,943,944,945,946,948,949,950,
-951,952,953,954,956,957,958,959,960,961,962,963,964,965,966,967,968,969,970,
-971,972,973,974,975,976,977,978,979,980,981,982,983,983,984,985,986,987,988,
-988,989,990,991,992,992,993,994,995,995,996,997,997,998,999,999,1000,1001,1001,
-1002,1003,1003,1004,1005,1005,1006,1006,1007,1007,1008,1008,1009,1010,1010,
-1011,1011,1011,1012,1012,1013,1013,1014,1014,1015,1015,1015,1016,1016,1016,
-1017,1017,1017,1018,1018,1018,1019,1019,1019,1019,1020,1020,1020,1020,1021,
-1021,1021,1021,1021,1022,1022,1022,1022,1022,1022,1022,1023,1023,1023,1023,
-1023,1023,1023,1023,1023,1023,1023
+const int16_t sineTbl[] = {
+128,128,128,129,129,129,130,130,131,131,131,132,132,133,133,133,134,134,135,135,135,136,136,136,137,
+137,138,138,138,139,139,140,140,140,141,141,142,142,142,143,143,143,144,144,145,145,145,146,146,147,
+147,147,148,148,149,149,149,150,150,150,151,151,152,152,152,153,153,154,154,154,155,155,155,156,156,
+157,157,157,158,158,158,159,159,160,160,160,161,161,162,162,162,163,163,163,164,164,165,165,165,166,
+166,166,167,167,167,168,168,169,169,169,170,170,170,171,171,172,172,172,173,173,173,174,174,174,175,
+175,176,176,176,177,177,177,178,178,178,179,179,180,180,180,181,181,181,182,182,182,183,183,183,184,
+184,184,185,185,186,186,186,187,187,187,188,188,188,189,189,189,190,190,190,191,191,191,192,192,192,
+193,193,193,194,194,194,195,195,195,196,196,196,197,197,197,198,198,198,199,199,199,200,200,200,201,
+201,201,202,202,202,203,203,203,203,204,204,204,205,205,205,206,206,206,207,207,207,207,208,208,208,
+209,209,209,210,210,210,210,211,211,211,212,212,212,213,213,213,213,214,214,214,215,215,215,215,216,
+216,216,217,217,217,217,218,218,218,218,219,219,219,220,220,220,220,221,221,221,221,222,222,222,222,
+223,223,223,224,224,224,224,225,225,225,225,226,226,226,226,227,227,227,227,228,228,228,228,228,229,
+229,229,229,230,230,230,230,231,231,231,231,232,232,232,232,232,233,233,233,233,234,234,234,234,234,
+235,235,235,235,235,236,236,236,236,236,237,237,237,237,237,238,238,238,238,238,239,239,239,239,239,
+240,240,240,240,240,240,241,241,241,241,241,242,242,242,242,242,242,243,243,243,243,243,243,244,244,
+244,244,244,244,245,245,245,245,245,245,245,246,246,246,246,246,246,246,247,247,247,247,247,247,247,
+248,248,248,248,248,248,248,248,249,249,249,249,249,249,249,249,250,250,250,250,250,250,250,250,250,
+250,251,251,251,251,251,251,251,251,251,251,252,252,252,252,252,252,252,252,252,252,252,252,253,253,
+253,253,253,253,253,253,253,253,253,253,253,253,254,254,254,254,254,254,254,254,254,254,254,254,254,
+254,254,254,254,254,254,254,254,254,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,254,254,254,254,254,254,254,254,254,
+254,254,254,254,254,254,254,254,254,254,254,254,254,253,253,253,253,253,253,253,253,253,253,253,253,
+253,253,252,252,252,252,252,252,252,252,252,252,252,252,251,251,251,251,251,251,251,251,251,251,250,
+250,250,250,250,250,250,250,250,250,249,249,249,249,249,249,249,249,248,248,248,248,248,248,248,248,
+247,247,247,247,247,247,247,246,246,246,246,246,246,246,245,245,245,245,245,245,245,244,244,244,244,
+244,244,243,243,243,243,243,243,242,242,242,242,242,242,241,241,241,241,241,240,240,240,240,240,240,
+239,239,239,239,239,238,238,238,238,238,237,237,237,237,237,236,236,236,236,236,235,235,235,235,235,
+234,234,234,234,234,233,233,233,233,232,232,232,232,232,231,231,231,231,230,230,230,230,229,229,229,
+229,228,228,228,228,228,227,227,227,227,226,226,226,226,225,225,225,225,224,224,224,224,223,223,223,
+222,222,222,222,221,221,221,221,220,220,220,220,219,219,219,218,218,218,218,217,217,217,217,216,216,
+216,215,215,215,215,214,214,214,213,213,213,213,212,212,212,211,211,211,210,210,210,210,209,209,209,
+208,208,208,207,207,207,207,206,206,206,205,205,205,204,204,204,203,203,203,203,202,202,202,201,201,
+201,200,200,200,199,199,199,198,198,198,197,197,197,196,196,196,195,195,195,194,194,194,193,193,193,
+192,192,192,191,191,191,190,190,190,189,189,189,188,188,188,187,187,187,186,186,186,185,185,184,184,
+184,183,183,183,182,182,182,181,181,181,180,180,180,179,179,178,178,178,177,177,177,176,176,176,175,
+175,174,174,174,173,173,173,172,172,172,171,171,170,170,170,169,169,169,168,168,167,167,167,166,166,
+166,165,165,165,164,164,163,163,163,162,162,162,161,161,160,160,160,159,159,158,158,158,157,157,157,
+156,156,155,155,155,154,154,154,153,153,152,152,152,151,151,150,150,150,149,149,149,148,148,147,147,
+147,146,146,145,145,145,144,144,143,143,143,142,142,142,141,141,140,140,140,139,139,138,138,138,137,
+137,136,136,136,135,135,135,134,134,133,133,133,132,132,131,131,131,130,130,129,129,129,128,128,128,
+127,127,126,126,126,125,125,124,124,124,123,123,122,122,122,121,121,120,120,120,119,119,119,118,118,
+117,117,117,116,116,115,115,115,114,114,113,113,113,112,112,112,111,111,110,110,110,109,109,108,108,
+108,107,107,106,106,106,105,105,105,104,104,103,103,103,102,102,101,101,101,100,100,100,99,99,98,
+98,98,97,97,97,96,96,95,95,95,94,94,93,93,93,92,92,92,91,91,90,90,90,89,89,
+89,88,88,88,87,87,86,86,86,85,85,85,84,84,83,83,83,82,82,82,81,81,81,80,80,
+79,79,79,78,78,78,77,77,77,76,76,75,75,75,74,74,74,73,73,73,72,72,72,71,71,
+71,70,70,69,69,69,68,68,68,67,67,67,66,66,66,65,65,65,64,64,64,63,63,63,62,
+62,62,61,61,61,60,60,60,59,59,59,58,58,58,57,57,57,56,56,56,55,55,55,54,54,
+54,53,53,53,52,52,52,52,51,51,51,50,50,50,49,49,49,48,48,48,48,47,47,47,46,
+46,46,45,45,45,45,44,44,44,43,43,43,42,42,42,42,41,41,41,40,40,40,40,39,39,
+39,38,38,38,38,37,37,37,37,36,36,36,35,35,35,35,34,34,34,34,33,33,33,33,32,
+32,32,31,31,31,31,30,30,30,30,29,29,29,29,28,28,28,28,27,27,27,27,27,26,26,
+26,26,25,25,25,25,24,24,24,24,23,23,23,23,23,22,22,22,22,21,21,21,21,21,20,
+20,20,20,20,19,19,19,19,19,18,18,18,18,18,17,17,17,17,17,16,16,16,16,16,15,
+15,15,15,15,15,14,14,14,14,14,13,13,13,13,13,13,12,12,12,12,12,12,11,11,11,
+11,11,11,10,10,10,10,10,10,10,9,9,9,9,9,9,9,8,8,8,8,8,8,8,7,
+7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,
+4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,
+2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,
+2,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,
+5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,8,
+8,8,8,8,8,8,9,9,9,9,9,9,9,10,10,10,10,10,10,10,11,11,11,11,11,
+11,12,12,12,12,12,12,13,13,13,13,13,13,14,14,14,14,14,15,15,15,15,15,15,16,
+16,16,16,16,17,17,17,17,17,18,18,18,18,18,19,19,19,19,19,20,20,20,20,20,21,
+21,21,21,21,22,22,22,22,23,23,23,23,23,24,24,24,24,25,25,25,25,26,26,26,26,
+27,27,27,27,27,28,28,28,28,29,29,29,29,30,30,30,30,31,31,31,31,32,32,32,33,
+33,33,33,34,34,34,34,35,35,35,35,36,36,36,37,37,37,37,38,38,38,38,39,39,39,
+40,40,40,40,41,41,41,42,42,42,42,43,43,43,44,44,44,45,45,45,45,46,46,46,47,
+47,47,48,48,48,48,49,49,49,50,50,50,51,51,51,52,52,52,52,53,53,53,54,54,54,
+55,55,55,56,56,56,57,57,57,58,58,58,59,59,59,60,60,60,61,61,61,62,62,62,63,
+63,63,64,64,64,65,65,65,66,66,66,67,67,67,68,68,68,69,69,69,70,70,71,71,71,
+72,72,72,73,73,73,74,74,74,75,75,75,76,76,77,77,77,78,78,78,79,79,79,80,80,
+81,81,81,82,82,82,83,83,83,84,84,85,85,85,86,86,86,87,87,88,88,88,89,89,89,
+90,90,90,91,91,92,92,92,93,93,93,94,94,95,95,95,96,96,97,97,97,98,98,98,99,
+99,100,100,100,101,101,101,102,102,103,103,103,104,104,105,105,105,106,106,106,107,107,108,108,108,
+109,109,110,110,110,111,111,112,112,112,113,113,113,114,114,115,115,115,116,116,117,117,117,118,118,
+119,119,119,120,120,120,121,121,122,122,122,123,123,124,124,124,125,125,126,126,126,127,127,128,
 };
 
 const uint32_t sample_rate = 62500;
+
 // Parameters to create "chirp" output (rising or falling frequency sine wave):
 // The 1st variable (sample_x65536) represents time along the sine wave (i.e. generates argument to the "sine" function)
 // The 2nd variable (sample_incr_x65536) is how much to increment the first variable after each sample is generated.  Directly proportional to generated frequency
 // The 3rd variable (sample_incr_incr_x65536) is how much to increment the second variable after each sample.  Causes frequency to slowly change (chirp)
 // The 4th variable is the length of the total chirp in samples
 // The 5th variable is the number of samples remaining before we are done generating this chirp (used by interrupt routine to know when to stop)
-uint32_t sample_x65536;				// Sample position (i.e. "time") in ticks in sine wave, multiplied by 65536 (to create 16 fraction bits)
-uint32_t sample_incr_x65536;		// Number of table positions to increase "sample" each tick, mult. by 65536 (for 16 fraction bits)
-int32_t  sample_incr_incr_x65536;	// Amount to change (+/-) sample_incr_x65536 each tick (2nd derivitive of "sample" position), causes chirp
-uint32_t sample_count_max;			// Number of samples in complete ping (at sample_rate)
-uint32_t sample_count;				// Number of samples remaining in current chirp (at sample_rate)
+static float sin_index = 0;
+static float sample_incr = 0;		// Number of table positions to increase "sample" each tick, mult. by 65536 (for 16 fraction bits)
+static float  sample_incr_incr = 0;	// Amount to change (+/-) sample_incr_x65536 each tick (2nd derivitive of "sample" position), causes chirp
+uint32_t sample_count_max = 0;			// Number of samples in complete ping (at sample_rate)
+uint32_t sample_count = 0;				// Number of samples remaining in current chirp (at sample_rate)
 
 // Parameters describing the physical chirp (starting frequency, ending frequency, length in time, and volume level):
 uint16_t f0 = 10000;				// Starting frequency of chirp in Hz
 uint16_t f1 = 20000;				// Ending frequency of chirp in Hz
 uint32_t length = 1000;				// Length of timed operations in milliseconds (e.g. beep)
 
-	
+
 // Transmit definitions
 char msg[] = "Hello World  !";	// Message to be transmitted on radio (note space for sequence digit)
 
@@ -109,22 +164,22 @@ int main()
 	uint8_t buf[15];						// Buffer for received messages
     uint8_t buflen = sizeof(buf);
     buf[buflen-1] = 0;						// Place null terminator into receive buffer
-	
+
 	msg[sizeof(msg)-1] = 0;					// Put null terminator char into transmit msg buffer
-	
+
 	BitTime_StartEx(BitTimeISR);			// Set up the 16 kHz timer interrupt
 	ChirpSample_StartEx(ChirpSampleISR);	// Set up the 60 kHz audio sample interrupt
-	
+
 	// Init the Amplitude Shift Keying (ASK) radio interface for Cypress PSoC
 	// Configure the radio interface:
 	//		(2000 b/s, rcv pin read func, tx pin write func, ptt pin write func):
 	// Note: rx pin 65 is port 2.3; tx pin 66 is port 2.4; and ptt pin 68 is port 2.5 on CY8CKIT-059
 	//		led pin 63 is port 2.1, used for debugging display
 	CYASK(2000, radioRxPin_Read, radioTxPin_Write, radioPttPin_Write);
-	
+
     // Enable global interrupts
     CyGlobalIntEnable;
-	
+
 	// Startup built-in hardware devices
 	VDAC8_P_Start();
 	VDAC8_M_Start();
@@ -133,17 +188,17 @@ int main()
 	TransducerDrive_P_Start();
 	TransducerDrive_M_Start();
 	PseudoRandom_Start();
-	
+
 	USBUART_Start(0, USBUART_DWR_POWER_OPERATION);	// Debug-interface (to host computer)
 	while(USBUART_GetConfiguration()==0);			// Wait for USB to enumerate us
 	USBUART_CDC_Init();								// Initialize the Host-to-PSoC connection
-	
-	USBPutString("Starting up!\n");
+
+	USBPutString("Starting up!\r");
     if (CYASKinit())								// Init the radio routines
         USBPutString("Init success");
     else
         USBPutString("Init failed");
-	
+
 	mode = Idle;									// Begin in idle mode
 
     for(;;)
@@ -152,19 +207,19 @@ int main()
 			c = USBGetUpperCaseChar();
 			if (c == 'T')							// "Transmit"
 			{
-				USBPutString("\nTransmit Mode:\n");
+				USBPutString("\rTransmit Mode:\r");
 				CYASKsend((uint8_t *)"Xmt starting", 13);	// Send startup message on radio
 				digit = '0';
 				mode = Tx;
 			}
 			else if (c == 'R')						// "Receive"
 			{
-				USBPutString("\nReceive Mode:\n");
+				USBPutString("\rReceive Mode:\r");
 				mode = Rx;
 			}
 			else if (c == 'I')						// "Idle"
 			{
-				USBPutString("\nIdle Mode\n");
+				USBPutString("\rIdle Mode\r");
 				mode = Idle;
 			}
 			else if (c == 'B')						// "Beep"
@@ -172,16 +227,16 @@ int main()
 				temp = USBGetNum(0);				// Get requested frequency in Hz
 				PseudoRandom_WriteSeed(temp);		// Also use parameter to set PRS seed (temp code)
 				while (temp < 100 || temp > 31000) {
-					USBPutString("\nBeep:\nEnter frequency in Hz [100..31000]: ");
+					USBPutString("\rBeep:\rEnter frequency in Hz [100..31000]: ");
 					temp = USBGetNum(0);
 				};
-				uprintf("\nBeep (%d Hz)\n", temp);
+				uprintf("\rBeep (%d Hz)\r", temp);
 				chirp((uint16_t)temp, (uint16_t)temp, length);	// Generate beep (freq. in Hz, length in millis)
 				mode = Idle;
 			}
 			else if (c == 'C')						// "Chirp"
 			{
-				uprintf("\nChirp (%d Hz to %d Hz)\n", f0, f1);
+				uprintf("\rChirp (%d Hz to %d Hz)\r", f0, f1);
 				chirp(f0, f1, length);				// Generate beep (freq. in Hz, length in millis)
 				mode = Idle;
 			}
@@ -189,18 +244,18 @@ int main()
 			{
 				c = USBGetUpperCaseChar();
 				if (c != 'A' && c != 'B') {
-					uprintf("\n'F' command must specify 'A' or 'B' frequency to set.  Try again.\n\n");
-					while (c != '\n') c = USBGetUpperCaseChar();	// Flush line input
+					uprintf("\r'F' command must specify 'A' or 'B' frequency to set.  Try again.\r\r");
+					while (c != '\r') c = USBGetUpperCaseChar();	// Flush line input
 				} else {
 					temp = USBGetNum(0);
 					if (temp == 0) {
-						uprintf("\nFA = %d\nFB = %d\n\n", f0, f1);
+						uprintf("\rFA = %d\rFB = %d\r\r", f0, f1);
 					} else {
 						if (c == 'A')
 							f0 = temp;
 						else // (c == 'B')
 							f1 = temp;
-						uprintf("\nFrequency %c set to %d Hz.\n", c, temp);
+						uprintf("\rFrequency %c set to %d Hz.\r", c, temp);
 					}
 				}
 			}
@@ -209,48 +264,48 @@ int main()
 				uint32_t oldLength = length;
 				length = USBGetNum(0);
 				if (length == 0) length = oldLength;
-				uprintf("\nLength set to %d milliseconds.\n", length);
+				uprintf("\rLength set to %d milliseconds.\r", length);
 			}
 			else if (c == 'X')						// "Tests"
 			{
 				// Pseudo Random Generator test
 				temp = USBGetNum(0);				// Get requested seed
-				PseudoRandom_WriteSeed(temp);		// Use parameter to set PRS seed 
-				uprintf("\n%6d", (prs()-32768) / (1<<7));
-				uprintf("\n%6d", (prs()-32768) / (1<<7));
-				uprintf("\n%6d", (prs()-32768) / (1<<7));
-				uprintf("\n%6d", (prs()-32768) / (1<<7));
-				uprintf("\n%6d\n", (prs()-32768) / (1<<7));
+				PseudoRandom_WriteSeed(temp);		// Use parameter to set PRS seed
+				uprintf("\r%6d", (prs()-32768) / (1<<7));
+				uprintf("\r%6d", (prs()-32768) / (1<<7));
+				uprintf("\r%6d", (prs()-32768) / (1<<7));
+				uprintf("\r%6d", (prs()-32768) / (1<<7));
+				uprintf("\r%6d\r", (prs()-32768) / (1<<7));
 			}
 			else if (c == 'Q')						// "Quit"
 			{
-				USBPutString("\nQuitting\n");
+				USBPutString("\rQuitting\r");
 				return 0;
 			}
 			else if (c == 'V')						// "Voltage"
 			{
 				temp = USBGetNum(0);
 				while (temp > 5000) {
-					USBPutString("\nVoltage:\nEnter Voltage in mV [0..4000]: ");
+					USBPutString("\rVoltage:\rEnter Voltage in mV [0..4000]: ");
 					temp = USBGetNum(0);
 				};
-				uprintf("\nVoltage set to %d.%03dV\n", temp/1000, temp%1000);
+				uprintf("\rVoltage set to %d.%03dV\r", temp/1000, temp%1000);
 				temp = temp/16;					// Convert to 0..250 range
 				if (temp>255) temp = 255;		// Limit for VDACs is 255
 				VDAC8_P_SetValue(temp);			// Set plus-side voltage (0-1.020V)
 				VDAC8_M_SetValue(temp);			// Set minus-side voltage
 			}
-			else if(c==' ' || c=='\n')			// Ignore 
+			else if(c==' ' || c=='\r')			// Ignore
 			{
 			}
-			else USBPutString("\nUnknown command ignored.\n\n");
+			else USBPutString("\rUnknown command ignored.\r\r");
 		}
 		if(mode == Tx) {
 			msg[12] = digit++;					// Create rotating digit 0 to 9
 			if (digit > '9') digit = '0';
 			CYASKsend((uint8_t *)msg, strlen(msg));
 			CYASKwaitPacketSent();
-			uprintf("%s\n", msg);
+			uprintf("%s\r", msg);
 			CyDelay(500);
 		}
 		else if(mode == Rx) {
@@ -258,7 +313,7 @@ int main()
 		    if(badCnt != lastBadCnt)
 		    {
 				lastBadCnt = badCnt;
-				uprintf("* * * * * * * BAD RCV COUNT * * * * * * *   --->  %d\n", badCnt);
+				uprintf("* * * * * * * BAD RCV COUNT * * * * * * *   --->  %d\r", badCnt);
 				for (i=0; i<4; i++) {
 					led = !led;
 					ledPin_Write(led);			// Double blink the LED
@@ -268,10 +323,10 @@ int main()
 		    if (CYASKrecv(buf, &buflen)) 		// Non-blocking: Get message from radio if available
 		    {
 				// Message with a good checksum received, report it.
-				uprintf("Message: %s\n", (char*)buf);
+				uprintf("Message: %s\r", (char*)buf);
 				led = !led;
 				ledPin_Write(led);				// Toggle the LED
-		    }			
+		    }
 		}
     }
 }
@@ -281,15 +336,12 @@ int main()
 // Produce sine signal and send it to the transducer DACs as 10-bit values
 void chirp(const uint16_t f0, const uint16_t f1, const uint32_t len)	// Generate a test beep frequency f and len milliseconds
 {
-	sample_count_max = sample_rate * len / 1000;	// Total number of samples in beep
-	sample_x65536 = 0;
-	// Do the following 2 lines of arithmetic carefully to avoid overflows while maintaining significant bits:
-	sample_incr_x65536 = ((65536*f0) / sample_rate) * 2048;
-	sample_incr_incr_x65536 = ((((65536*f1) / sample_rate) * 2048) - sample_incr_x65536) / sample_count_max;
-	uprintf("\nsample_count_max = %lu\nsample_incr_x65536 = %lu (/65536 = %lu)\n"\
-		"sample_incr_incr_x65536 = %ld (/65536 = %ld)\n\n", sample_count_max, sample_incr_x65536,
-		sample_incr_x65536 / 65536, sample_incr_incr_x65536, sample_incr_incr_x65536 / 65536);
-	sample_count = sample_count_max;				// Begin producing samples in interrupt routine
+	sin_index = 0;
+    sample_incr = 60;
+    sample_incr_incr = 0.1;
+
+    sample_count_max = 10 * 2048; // 10 for number of waves, 2048 samples per wave
+    sample_count = sample_count_max;
 }
 
 // Function to update pseudo-random number generator
@@ -303,7 +355,7 @@ uint16 prs() {
 // Argument x is in units of 1/2048 of a cycle (i.e. x=2048 corresponds to 2*Pi);
 // Thus, this sine(x) function calculates int(1023 * sin(2*pi*x/2048))
 // This function looks only at bits 0 thru 10 (i.e. 11 bits) of the x argument and ignores the rest,
-// because the sinewave repeats: (time: 0 <= mod(x,2048) < 2048) 
+// because the sinewave repeats: (time: 0 <= mod(x,2048) < 2048)
 // This function returns a signed value ranging from -1023 to 1023, where
 // "0" represents zero volts, "-1023" is max negative voltage, and "+1023" is max positive voltage
 int16_t sine(const uint16_t x) {
@@ -322,17 +374,22 @@ int16_t sine(const uint16_t x) {
 // Interrupt to generate each audio sample (62.5 kHz sample rate)
 CY_ISR(ChirpSampleISR)
 {
-	int16_t sin, s;
 	if (sample_count > 0) {				// Any samples to produce?
 		sample_count--;					// Count this sample
-//		sin = sine((uint16_t)(sample_x65536 >> 16))/4;	// Compute 9-bit sine wave value for this sample (-255..255)
-		sin = (prs()-32768) / (1<<7);	// Compute 9-bit pseudo-random audio sample 	(temp)
-		s = (sin/2) + 128;				// "128" is middle voltage = "0 Volts" ("Offset binary") (N.B. s>=0)
-		if (s==1) s = 0;				// Special case when 8-bit sine == -255
-		VDAC8_P_SetValue(s);			// Set plus-side voltage (0-1.020V)
-		VDAC8_M_SetValue(s - sin);		// Set minus-side voltage (diff P-M is instantaneous value of sine)
-		sample_x65536 += sample_incr_x65536;			// Use sample increment to compute next position in sine table
-		sample_incr_x65536 += sample_incr_incr_x65536;	// Use sample increment increment (2nd deriv.) to create chirp
+
+        uint8_t sin_value = sineTbl[(uint16_t)sin_index];
+		VDAC8_P_SetValue(sin_value);			// Set plus-side voltage (0-1.020V)
+		VDAC8_M_SetValue(255 - sin_value);		// Set minus-side voltage (diff P-M is instantaneous value of sine)
+
+        if (sin_index + sample_incr > 2047) {
+            sin_index = sin_index + sample_incr - 2048;
+        }
+        else {
+            sin_index += sample_incr;			// Use sample increment to compute next position in sine table
+        }
+
+		sample_incr += sample_incr_incr;	// Use sample increment increment (2nd deriv.) to create chirp
+
 	} else {
 		VDAC8_P_SetValue(128);			// Set plus-side voltage to "zero"
 		VDAC8_M_SetValue(128);			// Set minus-side voltage to "zero" (diff P-M is value of output)
@@ -342,7 +399,7 @@ CY_ISR(ChirpSampleISR)
 
 // Timer Interrupt
 //
-// Definitions to generate bit sample timer (16 kHz for 2 kbps @ 8 samples/bit) and 
+// Definitions to generate bit sample timer (16 kHz for 2 kbps @ 8 samples/bit) and
 // millisecond timer (counts milliseconds since starting)
 //
 
@@ -358,7 +415,7 @@ uint32_t millis()
 CY_ISR(BitTimeISR)
 {
 	CYASKhandleTimerInterrupt();
-	
+
 	if (--downCounter == 0)
 	{
 		downCounter = milliDivisor;
