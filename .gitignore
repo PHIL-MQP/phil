@@ -37,4 +37,6 @@ out/
 Generated_Source
 *.cycdx
 *.cyprj.*
+*.cywrk.*
 ARM_GCC_541
+
