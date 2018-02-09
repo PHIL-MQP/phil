@@ -12,8 +12,6 @@
 # The control inputs are the wheel accelerations (which we assume are a function of motor.set() values, such as those from a joystick
 # 
 # $$ u = \begin{bmatrix}
-# w_l \\
-# w_r \\
 # \alpha_l \\
 # \alpha_r \\
 # \end{bmatrix} $$
@@ -148,11 +146,15 @@
 # a_x \\
 # a_y \\
 # \theta \\
+# w_l \\
+# w_r \\
 # \end{bmatrix} -
 # \begin{bmatrix}
 # 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
 # 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 # 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 # \end{bmatrix}
 # \begin{bmatrix}
 # x \\
