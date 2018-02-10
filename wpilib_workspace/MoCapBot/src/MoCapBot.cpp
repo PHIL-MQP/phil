@@ -7,6 +7,7 @@
 #include <Buttons/JoystickButton.h>
 #include <Timer.h>
 #include <Commands/Scheduler.h>
+#include <LiveWindow/LiveWindow.h>
 #include <opencv2/imgproc.hpp>
 #include <phil/phil_rio/phil_rio.h>
 #include <SmartDashboard/SmartDashboard.h>
@@ -86,6 +87,7 @@ void Robot::TeleopInit() {
 	phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 	std::cout << "Starting PI" << std::endl;
 	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0);
+	system("trigger.sh");
 
 	// tell the motion capture to start
 	std::cout << "Triggering Motion Capture" << std::endl;
@@ -171,11 +173,9 @@ void Robot::TeleopPeriodic() {
 }
 
 void Robot::TestPeriodic() {
-	LiveWindow::GetInstance()->AddActuator("drive base", "left pid",
-			drive_base->left_pid);
-	LiveWindow::GetInstance()->AddActuator("drive base", "right pid",
-			drive_base->right_pid);
-	LiveWindow::GetInstance()->Run();
+//	LiveWindow::GetInstance()->AddActuator("drive base", "left pid", drive_base->left_pid);
+//	LiveWindow::GetInstance()->AddActuator("drive base", "right pid", drive_base->right_pid);
+//	LiveWindow::GetInstance()->Run();
 }
 
 START_ROBOT_CLASS(Robot)

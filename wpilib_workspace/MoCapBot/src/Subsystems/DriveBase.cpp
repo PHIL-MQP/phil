@@ -2,6 +2,8 @@
 #include <RobotMap.h>
 #include <SPI.h>
 #include <Subsystems/DriveBase.h>
+#include <SmartDashboard/SmartDashboard.h>
+#include <LiveWindow/LiveWindow.h>
 #include <Victor.h>
 #include <RobotBase.h>
 
@@ -10,7 +12,8 @@ Wheel::Wheel(const std::string& name, int motor_port, int encoder_port_a, int en
   encoder = new frc::Encoder(encoder_port_a, encoder_port_b);
   SetPIDSourceType(frc::PIDSourceType::kRate);
   SmartDashboard::PutData(name, GetPIDController().get());
-  LiveWindow::GetInstance()->AddActuator(name, "pid", GetPIDController());
+  GetPIDController()->SetName(name);
+//  LiveWindow::GetInstance()->AddActuator(name, "base pid", GetPIDController());
   encoder->SetDistancePerPulse(0.000357);
   Enable();
 }

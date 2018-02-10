@@ -82,6 +82,8 @@ if (${RIO})
     # install
     install(TARGETS phil_rio DESTINATION ${WPILIB_DIR}/user/cpp/lib)
     install(DIRECTORY include/phil DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/include/
+            DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
 endif ()
 
 if (NOT ${RIO})
