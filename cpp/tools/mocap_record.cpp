@@ -17,6 +17,8 @@ int main(int argc, const char **argv) {
   args::Positional<int> width(parser, "width", "width in pixels", args::Options::Required);
   args::Positional<int> height(parser, "height", "height in pixels", args::Options::Required);
   args::Positional<int> frames_per_second(parser, "fps", "frames per second", args::Options::Required);
+  args::Positional<int> http_port_(parser, "http", "port for http stream", args::Options::Required);
+  args::Positional<uint16_t> udp_port_(parser, "udp port", "port for start/stop msg", args::Options::Required);
 
   try {
     parser.ParseCLI(argc, argv);
@@ -34,8 +36,11 @@ int main(int argc, const char **argv) {
   const int w = args::get(width);
   const int h = args::get(height);
   const int fps = args::get(frames_per_second);
+  const uint16_t udp_port = args::get(udp_port_);
+  const int http_port = args::get(http_port_);
+
   camera.SetVideoMode(cs::VideoMode::kYUYV, w, h, fps);
-  cs::MjpegServer mjpegServer{"httpserver", 8081};
+  cs::MjpegServer mjpegServer{"httpserver", http_port};
   mjpegServer.SetSource(camera);
   cs::CvSink sink{"sink"};
   sink.SetSource(camera);
@@ -59,7 +64,7 @@ int main(int argc, const char **argv) {
   }
 
   // wait for UDP message to start
-  phil::UDPServer udp_server;
+  phil::UDPServer udp_server(udp_port);
   uint8_t message = 0;
   udp_server.Read(&message, 1);
 

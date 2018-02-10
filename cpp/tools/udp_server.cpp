@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(kPort);
+  addr.sin_port = htons(kPort); //6789
 
   if (bind(socket_fd, (struct sockaddr *) &addr, sockaddr_size) < 0) {
     std::cerr << "bind failed: [" << strerror(errno) << "]" << std::endl;

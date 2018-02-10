@@ -15,12 +15,13 @@ void show_help();
 using namespace phil;
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
+  if (argc != 3) {
     show_help();
     return EXIT_FAILURE;
   }
+  char *p;
   char *hostname = argv[1];
-
+  int udp_port = strtol(argv[2], &p, 10);
   int socket_fd;
   if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     std::cerr << "socket failed: [" << strerror(errno) << "]" << std::endl;
@@ -57,7 +58,8 @@ int main(int argc, char *argv[]) {
 
   struct sockaddr_in server_addr = {0};
   server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(kPort);
+  // server_addr.sin_port = htons(kPort);
+  server_addr.sin_port = htons(udp_port);
   memcpy((void *) &server_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 
   struct sockaddr_in response_addr = {0};

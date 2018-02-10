@@ -8,7 +8,7 @@ namespace phil {
 
 socklen_t sockaddr_size = sizeof(struct sockaddr_in);
 
-UDPServer::UDPServer() {
+UDPServer::UDPServer(uint16_t port_num) {
   if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     std::cerr << "socket failed: [" << strerror(errno) << "]" << std::endl;
     return;
@@ -17,7 +17,8 @@ UDPServer::UDPServer() {
   struct sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(kPort);
+  // addr.sin_port = htons(kPort);
+  addr.sin_port = htons(port_num);
 
   if (bind(socket_fd, (struct sockaddr *) &addr, sockaddr_size) < 0) {
     std::cerr << "bind failed: [" << strerror(errno) << "]" << std::endl;
@@ -39,7 +40,7 @@ void UDPServer::SetTimeout(struct timeval timeout) {
   }
 }
 
-UDPClient::UDPClient(const std::string &server_hostname) : server_hostname(server_hostname) {
+UDPClient::UDPClient(const std::string &server_hostname, int port_num) : server_hostname(server_hostname) {
 
   if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     std::cerr << "socket failed: [" << strerror(errno) << "]" << std::endl;
@@ -70,7 +71,8 @@ UDPClient::UDPClient(const std::string &server_hostname) : server_hostname(serve
 
   server_addr = {0};
   server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(kPort);
+  // server_addr.sin_port = htons(kPort);
+  server_addr.sin_port = htons(port_num);
   memcpy((void *) &server_addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 }
 
