@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   tracker.setParams(camera_params, mmap);
 
   // comms with the roborio
-  phil::UDPServer server;
+  phil::UDPServer server(phil::kPort);
   struct timeval timeout{0};
   timeout.tv_sec = 0;
   timeout.tv_usec = 1000;

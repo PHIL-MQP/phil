@@ -12,7 +12,7 @@ Phil *Phil::instance = nullptr;
 
 // TODO: don't hard code main hostname
 Phil::Phil() :
-    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1.local"), tk1_time_offset(0) {
+    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1.local", phil::kPort), tk1_time_offset(0) {
   auto inst = nt::NetworkTableInstance::GetDefault();
   table = inst.GetTable(phil::kTableName);
 
@@ -107,7 +107,7 @@ void Phil::SendUDPTo(std::string hostname,
                      size_t request_size,
                      uint8_t *response,
                      size_t response_size) {
-  UDPClient temp_udp_client(hostname);
+  UDPClient temp_udp_client(hostname, phil::kPort);
   temp_udp_client.RawTransaction(request, request_size, response, response_size);
 }
 
