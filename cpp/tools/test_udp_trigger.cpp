@@ -22,9 +22,13 @@ int main(int argc, const char **argv) {
     std::cout << parser;
     return 0;
   }
-  // std::string hostname = "phil-tk1.local";
+
+  std::string hostname = "phil-tk1.local";
   if (server_hostname_flag) {
     hostname = args::get(server_hostname_flag);
+  }
+  else {
+    std::cout << "defaulting to phil-tk1.local";
   }
 
   const uint16_t udp_port = args::get(udp_port_);
