@@ -53,5 +53,8 @@ if (NOT ${RIO})
     target_link_libraries(record_tag_positions ${phil_opencv_libs} aruco cscore )
     target_include_directories(record_tag_positions PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
+    add_executable(localize_from_mm localize_from_mm.cpp ${common_src})
+    target_link_libraries(localize_from_mm ${phil_opencv_libs} aruco cscore)
+    target_include_directories(localize_from_mm PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 endif ()
 

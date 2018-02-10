@@ -48,7 +48,7 @@ extern socklen_t sockaddr_size;
 
 class UDPServer {
  public:
-  UDPServer();
+  UDPServer(uint16_t port_num);
 
   /**
    * Blocks until the next packet is received
@@ -70,7 +70,7 @@ class UDPServer {
 
 class UDPClient {
  public:
-  explicit UDPClient(const std::string &server_hostname);
+  explicit UDPClient(const std::string &server_hostname, int port_num);
 
   /**
    * Sends data to TK1. This assumes data has been filled and stamped. This function may block for up to 1 second.
