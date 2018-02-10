@@ -17,6 +17,7 @@ int main(int argc, const char **argv) {
   args::Positional<int> width(parser, "width", "width in pixels", args::Options::Required);
   args::Positional<int> height(parser, "height", "height in pixels", args::Options::Required);
   args::Positional<int> frames_per_second(parser, "fps", "frames per second", args::Options::Required);
+  args::Positional<std::string> encoding(parser, "encoding", "Either MJPG or YUYV", args::Options::Required);
 
   try {
     parser.ParseCLI(argc, argv);
@@ -34,7 +35,19 @@ int main(int argc, const char **argv) {
   const int w = args::get(width);
   const int h = args::get(height);
   const int fps = args::get(frames_per_second);
-  camera.SetVideoMode(cs::VideoMode::kYUYV, w, h, fps);
+  std::string enc = args::get(encoding);
+
+  if (enc == "MJPG") {
+    camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
+  }
+  else if (enc == "YUYV") {
+    camera.SetVideoMode(cs::VideoMode::kYUYV, w, h, fps);
+  }
+  else {
+    camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
+    std::cerr << "Invalid format [" << enc << "]. Defaulting to MJPG" << std::endl;
+  }
+
   cs::MjpegServer mjpegServer{"httpserver", 8081};
   mjpegServer.SetSource(camera);
   cs::CvSink sink{"sink"};
@@ -72,7 +85,6 @@ int main(int argc, const char **argv) {
 
   while (true) {
     uint64_t time = sink.GrabFrame(frame);
-    std::cout << time << std::endl;
 
     if (time == 0) {
       std::cout << "error: " << sink.GetError() << std::endl;
