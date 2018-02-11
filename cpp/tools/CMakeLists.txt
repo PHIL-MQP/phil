@@ -14,11 +14,6 @@ if (NOT ${RIO})
     target_include_directories(ntcore_main PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR})
     target_link_libraries(ntcore_main ntcore)
 
-    add_executable(algorithm algorithm.cpp csvReader.cpp)
-    target_include_directories(algorithm PRIVATE ${phil_include_dir}/eigen3)
-
-    add_executable(test_csv_reader test_csv_reader.cpp csvReader.cpp)
-
     add_executable(detect_markers detect_markers.cpp)
     target_link_libraries(detect_markers aruco ${phil_opencv_libs})
     target_include_directories(detect_markers PRIVATE ${OpenCV_INCLUDE_DIRS})
