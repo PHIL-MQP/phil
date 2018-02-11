@@ -3,10 +3,11 @@
 
 # # Practice Field Data Analysis
 
-# In[1]:
+# In[34]:
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from matplotlib import animation
 from IPython.display import HTML
 import csv
@@ -16,9 +17,9 @@ import csv
 # 
 # this was one of the trials that actually recorded properly
 
-# In[2]:
+# In[11]:
 
-reader = csv.reader(open("./recorded_sensor_data/field_data_1/5x4_teleop/mocap_data-839.451.csv", 'r'))  # not actually mocap data
+reader = csv.reader(open("./recorded_sensor_data/field_data_2/auto/mocap_data-175.173.csv", 'r'))  # not actually mocap data
 headers = next(reader)
 sensor_data = []
 for row in reader:
@@ -35,7 +36,7 @@ for i, h in enumerate(headers):
 
 # ## Integrate gyro Z to get yaw
 
-# In[3]:
+# In[13]:
 
 yaws = []
 yaw = 0
@@ -45,7 +46,7 @@ for data in sensor_data:
     yaws.append(yaw)
 
 
-# In[4]:
+# In[19]:
 
 fig, ax = plt.subplots(figsize=(8,5))
 ax.set_title("Yaw of robot")
@@ -76,9 +77,9 @@ HTML(html)
 # 
 # The data recorded in these tests is different from the data recorded in the first test.
 
-# In[19]:
+# In[21]:
 
-reader = csv.reader(open("./recorded_sensor_data/field_data_2/drive_3/mocap_data-57.122.csv", 'r'))  # not actually mocap data
+reader = csv.reader(open("./recorded_sensor_data/field_data_2/auto/mocap_data-175.173.csv", 'r'))  # not actually mocap data
 headers = next(reader)
 sensor_data = []
 for idx, row in enumerate(reader):
@@ -96,9 +97,64 @@ for i, h in enumerate(headers):
     print(i, h)
 
 
+# ## Encoders
+
+# In[32]:
+
+plt.figure()
+plt.plot(sensor_data[:,10], label='vl')
+plt.plot(sensor_data[:,11], label='vr')
+plt.legend()
+plt.ylabel("m/s")
+plt.show()
+
+
+# In[65]:
+
+encoder_xs = []
+encoder_ys = []
+encoder_yaws = []
+encoder_x = 0
+encoder_y = 0
+encoder_yaw = 0
+alpha = 0.13
+wheel_radius_m = 0.074
+track_width_m = 0.9
+dt_s = 0.05
+for data in sensor_data:
+    wl = data[10] * 0.000357
+    wr = data[11] * 0.000357
+    
+    B = alpha * track_width_m
+    T = wheel_radius_m / B * np.array([[B / 2.0, B / 2.0], [-1, 1]])
+    dydt, dpdt = T @ np.array([wl, wr])
+    encoder_x = encoder_x + np.cos(encoder_yaw) * dydt * dt_s
+    encoder_y = encoder_y + np.sin(encoder_yaw) * dydt * dt_s
+    encoder_yaw += dpdt * dt_s
+    
+    encoder_xs.append(encoder_x)
+    encoder_ys.append(encoder_y)
+    encoder_yaws.append(encoder_yaw)
+
+
+# In[66]:
+
+plt.figure()
+plt.plot(encoder_yaws)
+plt.ylabel("degrees")
+plt.show()
+
+plt.figure(figsize=(10,10))
+colors = cm.rainbow(np.linspace(0, 1, len(encoder_xs)))
+plt.scatter(encoder_xs, encoder_ys, s=1, color=colors)
+plt.title("robot position based just on encoders")
+plt.axis("equal")
+plt.show()
+
+
 # ## Plot the Yaw() versus FusedHeading()
 
-# In[30]:
+# In[25]:
 
 plt.figure(figsize=(15,15))
 plt.plot(sensor_data[:,6], label="FusedHeading")
@@ -114,7 +170,7 @@ plt.show()
 
 # ## Plot acceleration & double integrate
 
-# In[46]:
+# In[26]:
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     """
@@ -156,7 +212,7 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     return xs, ys, vxs, vys, axs, ays
 
 
-# In[47]:
+# In[27]:
 
 pva = PositionFromIMU(sensor_data[:, 3:6], dt_s=0.02, x0=0, y0=0, yaw0=0)
 

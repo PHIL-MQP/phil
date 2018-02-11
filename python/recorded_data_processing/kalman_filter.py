@@ -24,13 +24,24 @@ def main():
         return
 
     data_filename = os.path.join(args.data_directory, "sensor_data.csv")
-    data_file = open(data_filename, 'r')
-    reader = csv.reader(data_file)
+    data = np.genfromtxt(data_filename, delimiter=',')
+    # 0 accel_x, (g's)
+    # 1 accel_y, (g's)
+    # 2 accel_z, (g's)
+    # 3 gyro_x, (deg/s)
+    # 4 gyro_y, (deg/s)
+    # 5 gyro_z (deg/s),
+    # 6 x, (m)
+    # 7 y, (m)
+    # 8 z, (m)
+    # 9 left_encoder_rate, (m/s)
+    # 10 right_encoder_rate, (m/s)
+    # 11 left_input, (-1 to 1)
+    # 12 right_input (-1 to 1)
 
     alpha = 1.0
-    wheel_radius_m = 0.038
-    track_width_m = 0.23
-    acc_scale = 2  # just a guess
+    wheel_radius_m = 0.074
+    track_width_m = 0.9
     dt_s = 0.02  # the rate of the interpolation
 
     N = 9
@@ -41,93 +52,26 @@ def main():
     encoder_ys = []
     filtered_xs = []
     filtered_ys = []
-    ks = []
     priori_xs = []
     priori_ys = []
-    wls = []
-    wrs = []
     estimate_covariances = []
     posterior_estimate = np.zeros((N, 1), dtype=np.float32)
     # do the Q matrix thingy
     process_covariance = np.eye(N) * 1e-3
     measurement_variance = np.eye(L) * 1e-3
     estimate_covariance = np.eye(N) * 1e-3
-    next(reader)  # skip header
-    first_row = next(reader)
-    wls.append(float(first_row[0]))
-    wrs.append(float(first_row[1]))
 
-    just_gyro = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 1, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 0, 0, 0, 0]]).T
-    just_acc = np.array([[0, 0, 0, 0, 0, 0, 1, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 1, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0]]).T
-    just_encoders = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [1, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 1, 0, 0, 0, 0, 0, 0]]).T
+    for row in data:
+        u = np.array([[row[11]], [row[12]]], dtype=np.float32)
 
-    i = 0
-
-    data = []
-    for row in reader:
-        data.append([float(d) for d in row])
-    data = np.array(data)
-
-    smoothed_ws = np.zeros((data.shape[0], 2))
-    S = 50
-    for idx in range(0, data.shape[0]):
-        min = idx - S // 2
-        max = idx + S // 2
-
-        if min < 0:
-            min = 0
-        if max >= data.shape[0]:
-            max = data.shape[0] - 1
-
-        wl = data[min: max, 0]
-        wr = data[min: max, 1]
-        smoothed_ws[idx][0] = np.mean(wl)
-        smoothed_ws[idx][1] = np.mean(wr)
-
-    approx_acc = np.zeros((data.shape[0], 2))
-    for idx in range(S, data.shape[0] - S):
-        approx_acc[idx][0] = 1 / (2 * S) * (smoothed_ws[idx + S][0] - smoothed_ws[idx - S][0]) / dt_s
-        approx_acc[idx][1] = 1 / (2 * S) * (smoothed_ws[idx + S][1] - smoothed_ws[idx - S][1]) / dt_s
-        approx_acc[idx][0] = 0.1
-        approx_acc[idx][1] = -0.3
-
-    # sample 20 points and fit 5th order polynomial with least squares
-    for idx, row in enumerate(data):
-        wl = row[0]
-        wr = row[1]
-
-        wls.append(wl)
-        wrs.append(wr)
-        linear_al = approx_acc[idx][0] * wheel_radius_m
-        linear_ar = approx_acc[idx][1] * wheel_radius_m
-        u = np.array([[linear_al], [linear_ar]], dtype=np.float32)
         T = wheel_radius_m / (alpha * track_width_m) * np.array(
             [[(alpha * track_width_m) / 2.0, (alpha * track_width_m) / 2.0], [-1, 1]])
-        dydt, dpdt = T @ np.array([wl, wr])
+        dydt, dpdt = T @ np.array([row[], wr])
         encoder_state[0] = encoder_state[0] + np.cos(encoder_state[2]) * dydt * dt_s
         encoder_state[1] = encoder_state[1] + np.sin(encoder_state[2]) * dydt * dt_s
         encoder_state[2] = encoder_state[2] + dpdt * dt_s
         encoder_xs.append(encoder_state[0].copy())
         encoder_ys.append(encoder_state[1].copy())
-
-        # double integrate accelerometer data
-        acc_x = (row[2] - -0.0094) * acc_scale
-        acc_y = (row[3] - 0.0047) * acc_scale
 
         # kalman filter
         A = np.array([[1, 0, 0, dt_s, 0, 0, 0.5 * dt_s * dt_s, 0, 0],
@@ -184,26 +128,8 @@ def main():
         priori_xs.append(priori_estimate[0].copy())
         priori_ys.append(priori_estimate[1].copy())
 
-        # if i > 100:
-        #     break
-        # i += 1
-
-    estimate_covariances = np.array(estimate_covariances)
-    ks = np.array(ks)
-
-    # plt.figure()
-    # plt.plot(wls)
-    # plt.plot(wrs)
-    # plt.plot(smoothed_ws[:, 0])
-    # plt.plot(smoothed_ws[:, 1])
-    #
-    # plt.figure()
-    # plt.plot(approx_acc[:, 0])
-    # plt.plot(approx_acc[:, 1])
-
     plt.figure()
     plt.plot(filtered_xs, filtered_ys, linestyle='--', label='filtered')
-    plt.plot(encoder_xs, encoder_ys, linestyle='-', label='encoders')
     plt.scatter(0, 0, marker='o', s=50, c='red')  # show starting point
     plt.legend()
     plt.axis("equal")

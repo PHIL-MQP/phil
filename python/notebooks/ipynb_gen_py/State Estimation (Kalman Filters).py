@@ -18,6 +18,7 @@
 # 
 # Our measurement vectors
 # 
+# We assume m/s^2 for acceleration, radians for theta, and m/s (linear speed) for encoder speeds
 # $$ y_{navx} = \begin{bmatrix} a_x \\ a_y \\ \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$
 # 
 # $$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$

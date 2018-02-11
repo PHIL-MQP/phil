@@ -11793,7 +11793,9 @@ $$ u = \begin{bmatrix}
 \alpha_l \\
 \alpha_r \\
 \end{bmatrix} $$<p>Our measurement vectors</p>
-$$ y_{navx} = \begin{bmatrix} a_x \\ a_y \\ \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$$$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$$$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$<p>Key prediction &amp; update equations</p>
+<p>We assume m/s^2 for acceleration, radians for theta, and m/s (linear speed) for encoder speeds
+$$ y_{navx} = \begin{bmatrix} a_x \\ a_y \\ \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$</p>
+$$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$$$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$<p>Key prediction &amp; update equations</p>
 $$ \hat{x}_{t} = Ax_t + Bu_t $$$$ P_{t+1} = AP_tA^T + Q $$$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$$$ P_t = (I - K_tC)P_t $$$$ y_t = Hx_t $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
 \begin{align}
 x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\

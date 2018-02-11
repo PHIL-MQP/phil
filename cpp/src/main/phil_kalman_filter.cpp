@@ -106,11 +106,11 @@ int main(int argc, const char **argv) {
   rio_measurement_mean = 0;
   MatrixWrapper::SymmetricMatrix rio_measurement_covariance(5);
   rio_measurement_covariance = 0;
-  rio_measurement_covariance(1, 1) = 0.0001;
-  rio_measurement_covariance(2, 2) = 0.0001;
-  rio_measurement_covariance(3, 3) = 0.0001;
-  rio_measurement_covariance(4, 4) = 0.0001;
-  rio_measurement_covariance(5, 5) = 0.0001;
+  rio_measurement_covariance(1, 1) = 0.001;
+  rio_measurement_covariance(2, 2) = 0.001;
+  rio_measurement_covariance(3, 3) = 0.00001;
+  rio_measurement_covariance(4, 4) = 0.00001;
+  rio_measurement_covariance(5, 5) = 0.00001;
   BFL::Gaussian rio_measurement_uncertainty(rio_measurement_mean, rio_measurement_covariance);
   BFL::LinearAnalyticConditionalGaussian rio_measurement_pdf(rio_H, rio_measurement_uncertainty);
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty rio_measurement_model(&rio_measurement_pdf);
@@ -122,13 +122,13 @@ int main(int argc, const char **argv) {
   prior_covariance = 0;
   prior_covariance(1, 1) = 0.001;
   prior_covariance(2, 2) = 0.001;
-  prior_covariance(3, 3) = 0.001;
+  prior_covariance(3, 3) = 0.00001;
   prior_covariance(4, 4) = 0.001;
   prior_covariance(5, 5) = 0.001;
-  prior_covariance(6, 6) = 0.001;
+  prior_covariance(6, 6) = 0.00001;
   prior_covariance(7, 7) = 0.001;
   prior_covariance(8, 8) = 0.001;
-  prior_covariance(9, 9) = 0.001;
+  prior_covariance(9, 9) = 0.00001;
   BFL::Gaussian prior(prior_mean, prior_covariance);
 
   BFL::ExtendedKalmanFilter filter(&prior);
@@ -155,12 +155,12 @@ int main(int argc, const char **argv) {
 
     MatrixWrapper::ColumnVector rio_measurement(5);
     // FIXME: units are probably wong for wl/wr
-    rio_measurement << 9.8 * ax, 9.8 * ay, yaw * 2 * M_PI, wl, wr;
+    rio_measurement << 9.8 * ax, 9.8 * ay, yaw, wl*0.000357, wr*0.000357;
 
     filter.Update(&system_model, input, &rio_measurement_model, rio_measurement);
 
     // If you want to run just the prediction update, you can run just not pass in measurements
-    // filter.Update(&system_model, input);
+//     filter.Update(&system_model, input);
   }
 
   return EXIT_SUCCESS;
