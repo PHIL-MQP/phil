@@ -72,10 +72,10 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-  cerr << "==================================================" << endl
-       << "Test of kalman filter" << endl
-       << "Mobile robot localisation example" << endl
-       << "==================================================" << endl;
+//  cerr << "==================================================" << endl
+//       << "Test of kalman filter" << endl
+//       << "Mobile robot localisation example" << endl
+//       << "==================================================" << endl;
 
 
   /****************************
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
   /*******************
    * ESTIMATION LOOP *
    *******************/
-  cout << "MAIN: Starting estimation" << endl;
+//  cout << "MAIN: Starting estimation" << endl;
   unsigned int time_step;
   for (time_step = 0; time_step < NUM_TIME_STEPS-1; time_step++)
     {
@@ -181,23 +181,31 @@ int main(int argc, char** argv)
       ColumnVector measurement = mobile_robot.Measure();
 
       // UPDATE FILTER
-      filter.Update(&sys_model,input,&meas_model,measurement);
-      //filter.Update(&sys_model,input);
+//      filter.Update(&sys_model,input,&meas_model,measurement);
+      filter.Update(&sys_model,input);
+      std::cout << mobile_robot.GetState()(1)
+                << ","
+                << mobile_robot.GetState()(2)
+                << ","
+                << filter.PostGet()->CovarianceGet().diagonal()(1)
+                << ","
+                << filter.PostGet()->CovarianceGet().diagonal()(2)
+                << std::endl;
 
     } // estimation loop
 
 
 
   Pdf<ColumnVector> * posterior = filter.PostGet();
-  cout << "After " << time_step+1 << " timesteps " << endl;
-  cout << " Posterior Mean = " << endl << posterior->ExpectedValueGet() << endl
-       << " Covariance = " << endl << posterior->CovarianceGet() << "" << endl;
+//  cout << "After " << time_step+1 << " timesteps " << endl;
+//  cout << " Posterior Mean = " << endl << posterior->ExpectedValueGet() << endl
+//       << " Covariance = " << endl << posterior->CovarianceGet() << "" << endl;
 
 
-  cout << "======================================================" << endl
-       << "End of the Kalman filter for mobile robot localisation" << endl
-       << "======================================================"
-       << endl;
+//  cout << "======================================================" << endl
+//       << "End of the Kalman filter for mobile robot localisation" << endl
+//       << "======================================================"
+//       << endl;
 
 
   return 0;

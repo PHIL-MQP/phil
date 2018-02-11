@@ -111,6 +111,7 @@ if (NOT ${RIO})
             ${CMAKE_SOURCE_DIR}/include/eigen3
             ${orocos-bfl_INCLUDE_DIRS})
     target_link_libraries(kf_test ${orocos-bfl_LIBRARIES})
+    target_compile_options(kf_test PRIVATE -Wall -Wextra)
 
     add_executable(ekf_test src/main/test_nonlinear_kalman.cpp ${localization_src})
     target_include_directories(ekf_test PRIVATE
