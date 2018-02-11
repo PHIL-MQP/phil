@@ -75,6 +75,7 @@ int main(int argc, const char **argv) {
   const bool no_camera = args::get(no_camera_flag);
   const bool print_current_estimate = args::get(print_estimate_flag);
 
+  const auto threshold_power = yaml_get<double>(config, {"threshold_power"});
   const auto w = yaml_get<int>(config, {"camera", "w"});
   const auto h = yaml_get<int>(config, {"camera", "h"});
   const auto fps = yaml_get<int>(config, {"camera", "fps"});
@@ -226,7 +227,7 @@ int main(int argc, const char **argv) {
   Eigen::Matrix<double, 1, 3> initial_static_means = initial_samples.colwise().mean();
   Eigen::MatrixX3d centered = initial_samples.rowwise() - initial_static_means;
   double variance_norm = centered.array().square().matrix().colwise().mean().norm();
-  double static_threshold = std::pow(variance_norm, 1.2);
+  double static_threshold = std::pow(variance_norm, threshold_power);
 
   if (verbose) {
     std::cout << "Using static threshold [" << static_threshold << "]\n";
@@ -262,7 +263,7 @@ int main(int argc, const char **argv) {
   bool done = false;
   static double accumulated_yaw_rad = 0;
   static double last_yaw_rad = 0;
-  constexpr size_t window_size = 60;
+  constexpr size_t window_size = 20;
   phil::math::Window<window_size, 3> window;
   Eigen::Vector3d &latest_static_bias_estimate = calibrated_mean;
   const static Eigen::IOFormat csv_format(3, Eigen::DontAlignCols, ", ", "\n");
