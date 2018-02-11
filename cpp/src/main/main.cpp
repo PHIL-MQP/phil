@@ -401,9 +401,13 @@ int main(int argc, const char **argv) {
           MatrixWrapper::ColumnVector camera_measurement(3);
           const auto camera_pose = phil::MatrixTo3Pose(rt_matrix);
           camera_measurement << camera_pose.x, camera_pose.y, camera_pose.theta;
+          std::cout << phil::green << camera_pose.x << phil::reset << "\n";
 
           // perform camera EKF update
           ekf.filter->Update(ekf.camera_measurement_model.get(), camera_measurement);
+        }
+        else {
+          std::cout << phil::cyan << "no pose estimate from marker mapper" << phil::reset << "\n";
         }
 
         // annotate the video feed
