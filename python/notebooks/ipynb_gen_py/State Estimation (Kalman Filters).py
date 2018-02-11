@@ -31,6 +31,7 @@
 # $$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$
 # $$ x = \hat{x} + K(z_t - C\hat{x}_t) $$
 # $$ P_t = (I - K_tC)P_t $$
+# $$ y_t = Hx_t $$
 # 
 # We must describe our dynamics. How do we compute our next state given our current state and the control inputs?
 # 

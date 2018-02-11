@@ -112,6 +112,7 @@ if (NOT ${RIO})
             ${orocos-bfl_INCLUDE_DIRS})
     target_link_libraries(kf_test ${orocos-bfl_LIBRARIES})
     target_compile_options(kf_test PRIVATE -Wall -Wextra)
+    target_compile_definitions(kf_test PRIVATE CSV_IO_NO_THREAD)
 
     add_executable(ekf_test src/main/test_nonlinear_kalman.cpp ${localization_src})
     target_include_directories(ekf_test PRIVATE
