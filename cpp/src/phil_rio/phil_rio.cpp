@@ -70,7 +70,7 @@ void Phil::ReadSensorsAndProcessLocally() {
   table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
 }
 
-void Phil::ReadSensorsAndProcessOnTK1() {
+void Phil::ReadSensorsAndProcessRemotely() {
   data_t data;
   struct timeval t0 = {};
   gettimeofday(&t0, nullptr);
@@ -106,12 +106,13 @@ void Phil::SendUDPTo(std::string hostname,
                      uint8_t *request,
                      size_t request_size,
                      uint8_t *response,
-                     size_t response_size) {
-  UDPClient temp_udp_client(hostname, phil::kPort);
+                     size_t response_size,
+                     uint16_t udp_port) {
+  UDPClient temp_udp_client(hostname, udp_port);
   temp_udp_client.RawTransaction(request, request_size, response, response_size);
 }
 
-void Phil::SendUDPToTK1(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size) {
+void Phil::SendUDPToPI(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size) {
   udp_client.RawTransaction(request, request_size, response, response_size);
 }
 

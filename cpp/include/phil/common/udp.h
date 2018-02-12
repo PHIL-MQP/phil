@@ -48,7 +48,7 @@ extern socklen_t sockaddr_size;
 
 class UDPServer {
  public:
-  UDPServer(uint16_t port_num);
+  UDPServer(uint16_t port_num = kPort);
 
   /**
    * Blocks until the next packet is received

@@ -25,6 +25,9 @@ if (NOT ${RIO})
         add_library(linux_navx_driver ${LINUX_NAVX_DRIVER_SRC})
         target_include_directories(linux_navx_driver PRIVATE linux_navx_driver)
     endif ()
+
+    set(YAML_CPP_BUILD_TESTS OFF)
+    add_subdirectory(yaml-cpp)
 endif ()
 
 if (${RIO})

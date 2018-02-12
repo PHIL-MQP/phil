@@ -66,14 +66,13 @@ set(phil_include_dir ${CMAKE_SOURCE_DIR}/include)
 file(GLOB common_src src/common/*.cpp)
 file(GLOB localization_src src/localization/*.cpp)
 file(GLOB phil_rio_src src/phil_rio/*.cpp)
-file(GLOB main_src src/main/*.cpp)
 
 add_subdirectory(tools)
 
 
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
-    add_library(phil_rio ${phil_rio_src} ${common_src} ${localization_src})
+    add_library(phil_rio ${phil_rio_src} ${common_src} src/localization/localization.cpp)
     target_include_directories(phil_rio PRIVATE ${phil_include_dir} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
 
     # Test program
@@ -91,15 +90,16 @@ endif ()
 message(">> ${orocos-bfl_INCLUDE_DIRS}")
 
 if (NOT ${RIO})
-    add_executable(phil_main ${main_src} ${common_src} ${localization_src})
+    add_executable(phil_main src/main/main.cpp ${common_src} ${localization_src})
     target_include_directories(phil_main PRIVATE
         ${phil_include_dir}
         ${OpenCV_INCLUDE_DIRS}
         ${WPIUTIL_INCLUDE_DIR}
         ${NTCORE_INCLUDE_DIR}
         ${CSCORE_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/include/eigen3
         ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco)
+    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco ${orocos-bfl_LIBRARIES})
 
     add_executable(kf_test src/main/phil_kalman_filter.cpp ${localization_src})
     target_include_directories(kf_test PRIVATE

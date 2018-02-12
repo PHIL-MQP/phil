@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cscore.h>
 #include <opencv2/highgui.hpp>
+#include <yaml-cpp/yaml.h>
 
 #include <phil/common/udp.h>
 #include <phil/common/args.h>
@@ -13,13 +14,15 @@ int main(int argc, const char **argv) {
                                   "However, it is general purpose and could also be used on a laptop."
                                   "It cannot be built for the RoboRIO.");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-  args::Positional<int> device(parser, "device_number", "0 refers to /dev/video0", args::Options::Required);
-  args::Positional<int> width(parser, "width", "width in pixels", args::Options::Required);
-  args::Positional<int> height(parser, "height", "height in pixels", args::Options::Required);
-  args::Positional<int> frames_per_second(parser, "fps", "frames per second", args::Options::Required);
-  args::Positional<std::string> encoding(parser, "encoding", "Either MJPG or YUYV", args::Options::Required);
-  args::Positional<int> http_port_(parser, "http", "port for http stream", args::Options::Required);
-  args::Positional<uint16_t> udp_port_(parser, "udp port", "port for start/stop msg", args::Options::Required);
+  args::Positional<std::string> config_filename(parser, "config_filename", "yaml file of configuration", args::Options::Required);
+
+//  args::Positional<int> device(parser, "device_number", "0 refers to /dev/video0", args::Options::Required);
+//  args::Positional<int> width(parser, "width", "width in pixels", args::Options::Required);
+//  args::Positional<int> height(parser, "height", "height in pixels", args::Options::Required);
+//  args::Positional<int> frames_per_second(parser, "fps", "frames per second", args::Options::Required);
+//  args::Positional<std::string> encoding(parser, "encoding", "Either MJPG or YUYV", args::Options::Required);
+//  args::Positional<int> http_port_(parser, "http", "port for http stream", args::Options::Required);
+//  args::Positional<uint16_t> udp_port_(parser, "udp port", "port for start/stop msg", args::Options::Required);
 
   try {
     parser.ParseCLI(argc, argv);
@@ -33,11 +36,15 @@ int main(int argc, const char **argv) {
     return 0;
   }
 
-  cs::UsbCamera camera{"usbcam", args::get(device)};
-  const int w = args::get(width);
-  const int h = args::get(height);
-  const int fps = args::get(frames_per_second);
-  std::string enc = args::get(encoding);
+  std::ifstream fin(args::get(config_filename));
+  YAML::Parser config_parser(fin);
+
+  // FIXME: args
+  cs::UsbCamera camera{"usbcam", 0};
+  const int w = 0;
+  const int h = 0;
+  const int fps = 0;
+  std::string enc = 0;
 
   if (enc == "MJPG") {
     camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
@@ -50,10 +57,8 @@ int main(int argc, const char **argv) {
     std::cerr << "Invalid format [" << enc << "]. Defaulting to MJPG" << std::endl;
   }
 
-  const uint16_t udp_port = args::get(udp_port_);
-  const int http_port = args::get(http_port_);
-
-  cs::MjpegServer mjpegServer{"httpserver", http_port};
+  // FIXME: args
+  cs::MjpegServer mjpegServer{"httpserver", 0};
   mjpegServer.SetSource(camera);
   cs::CvSink sink{"sink"};
   sink.SetSource(camera);
@@ -77,7 +82,7 @@ int main(int argc, const char **argv) {
   }
 
   // wait for UDP message to start
-  phil::UDPServer udp_server(udp_port);
+  phil::UDPServer udp_server;
   uint8_t message = 0;
   udp_server.Read(&message, 1);
 

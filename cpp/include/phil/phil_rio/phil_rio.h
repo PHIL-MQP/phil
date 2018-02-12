@@ -41,7 +41,7 @@ class Phil {
   /**
    * For when we have a camera being processed on a co-processor
    */
-  void ReadSensorsAndProcessOnTK1();
+  void ReadSensorsAndProcessRemotely();
 
   /**
    * Literally just reads the value of network tables and returns it
@@ -51,12 +51,17 @@ class Phil {
   /**
    * Send an arbitrary UDP message to any host on the network.
    */
-  void SendUDPTo(std::string hostname, uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
+  void SendUDPTo(std::string hostname,
+                 uint8_t *request,
+                 size_t request_size,
+                 uint8_t *response,
+                 size_t response_size,
+                 uint16_t udp_port);
 
   /**
    * Send an arbitrary UDP message to the TK1.
    */
-  void SendUDPToTK1(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
+  void SendUDPToPI(uint8_t *request, size_t request_size, uint8_t *response, size_t response_size);
 
   /**
    * For communicating with the TK1

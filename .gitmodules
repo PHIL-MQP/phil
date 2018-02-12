@@ -13,3 +13,6 @@
 [submodule "cpp/libraries/linux_navx_driver"]
 	path = cpp/libraries/linux_navx_driver
 	url = https://github.com/PHIL-MQP/linux_navx_driver.git
+[submodule "cpp/libraries/yaml-cpp"]
+	path = cpp/libraries/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
