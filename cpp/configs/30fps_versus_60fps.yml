@@ -1,0 +1,10 @@
+- device: 2
+  width: 640
+  height: 480
+  fps: 30
+  encoding: YUYV
+- device: 3
+  width: 640
+  height: 480
+  fps: 60
+  encoding: YUYV
