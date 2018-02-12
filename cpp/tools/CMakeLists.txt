@@ -26,7 +26,7 @@ if (NOT ${RIO})
     target_link_libraries(fisheye ${phil_opencv_libs})
     target_include_directories(fisheye PRIVATE ${OpenCV_INCLUDE_DIRS})
 
-    add_executable(mocap_record mocap_record.cpp ${common_src})
+    add_executable(mocap_record record_cameras_on_udp_trigger.cpp ${common_src})
     target_link_libraries(mocap_record aruco cscore ${phil_opencv_libs} yaml-cpp)
     target_include_directories(mocap_record PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
 
