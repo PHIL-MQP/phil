@@ -70,7 +70,7 @@ class UDPServer {
 
 class UDPClient {
  public:
-  explicit UDPClient(const std::string &server_hostname, int port_num);
+  explicit UDPClient(const std::string &server_hostname, int port_num = kPort);
 
   /**
    * Sends data to TK1. This assumes data has been filled and stamped. This function may block for up to 1 second.

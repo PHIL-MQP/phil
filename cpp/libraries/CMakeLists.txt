@@ -27,6 +27,8 @@ if (NOT ${RIO})
     endif ()
 
     set(YAML_CPP_BUILD_TESTS OFF)
+    set(YAML_CPP_BUILD_TOOLS OFF)
+    set(YAML_CPP_BUILD_CONTRIB OFF)
     add_subdirectory(yaml-cpp)
 endif ()
 

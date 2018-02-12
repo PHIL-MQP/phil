@@ -56,7 +56,7 @@ class Phil {
                  size_t request_size,
                  uint8_t *response,
                  size_t response_size,
-                 uint16_t udp_port);
+                 uint16_t udp_port=kPort);
 
   /**
    * Send an arbitrary UDP message to the TK1.

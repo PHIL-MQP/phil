@@ -11,7 +11,6 @@ int main(int argc, const char **argv) {
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
   args::ValueFlag<std::string>
       server_hostname_flag(parser, "hostname", "hostname of the client to send to", {'o'});
-  args::Positional<uint16_t> udp_port_(parser, "udp port", "port for start/stop msg", args::Options::Required);
 
   try
   {
@@ -31,9 +30,7 @@ int main(int argc, const char **argv) {
     std::cout << "defaulting to phil-tk1.local";
   }
 
-  const uint16_t udp_port = args::get(udp_port_);
-
-  phil::UDPClient client(hostname, udp_port);
+  phil::UDPClient client(hostname);
   uint8_t request = 1;
   client.RawTransaction(&request, 1, nullptr, 1);
 

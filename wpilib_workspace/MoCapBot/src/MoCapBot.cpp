@@ -83,8 +83,6 @@ void Robot::TeleopInit() {
 
 	// tell the TK1 to start recording data
 	uint8_t data = 1;
-	std::cout << "Starting TK1" << std::endl;
-	phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 	std::cout << "Starting PI" << std::endl;
 	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0);
 	system("trigger.sh");
@@ -116,8 +114,6 @@ void Robot::DisabledInit() {
 
 //   tell the TK1 to stop recording data
 	uint8_t data = 0;
-	std::cout << "Stopping TK1" << std::endl;
-	phil::Phil::GetInstance()->SendUDPToTK1(&data, 1, nullptr, 0);
 	std::cout << "Stopping PI" << std::endl;
 	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0);
 }

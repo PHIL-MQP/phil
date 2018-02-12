@@ -47,6 +47,7 @@ set(CSCORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/cscore/src/main/native/incl
 set(NAVX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/include
         ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
 set(LINUX_NAVX_DRIVER_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/linux_navx_driver)
+set(YAML_CPP_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libraries/yaml-cpp/include)
 if (CMAKE_HOST_WIN32)
     set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include "C:/frc/usr/include")
 else ()
@@ -86,8 +87,6 @@ if (${RIO})
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/include/
             DESTINATION ${WPILIB_DIR}/user/cpp/include FILES_MATCHING PATTERN "*.h")
 endif ()
-
-message(">> ${orocos-bfl_INCLUDE_DIRS}")
 
 if (NOT ${RIO})
     add_executable(phil_main src/main/main.cpp ${common_src} ${localization_src})
