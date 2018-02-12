@@ -21,7 +21,8 @@ int main(int argc, const char **argv) {
                                   "However, it is general purpose and could also be used on a laptop."
                                   "It cannot be built for the RoboRIO.");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-  args::Positional<std::string> config_filename(parser, "config_filename", "yaml file of configuration", args::Options::Required);
+  args::Positional<std::string>
+      config_filename(parser, "config_filename", "yaml file of configuration", args::Options::Required);
 
   try {
     parser.ParseCLI(argc, argv);
@@ -62,11 +63,9 @@ int main(int argc, const char **argv) {
 
     if (enc == "MJPG") {
       cam.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
-    }
-    else if (enc == "YUYV") {
+    } else if (enc == "YUYV") {
       cam.SetVideoMode(cs::VideoMode::kYUYV, w, h, fps);
-    }
-    else {
+    } else {
       cam.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
       std::cerr << "Invalid format [" << enc << "]. Defaulting to MJPG" << std::endl;
     }
@@ -76,10 +75,11 @@ int main(int argc, const char **argv) {
 
     char video_filename[50];
     strftime(video_filename, 50, "out_%m_%d_%H-%M-%S.avi", ltm);
+    std::stringstream full_filename;
+    full_filename << "video" << device << "_" << video_filename;
+    cv::VideoWriter video(full_filename.str(), CV_FOURCC('M', 'J', 'P', 'G'), fps, cv::Size(w, h));
 
-    cv::VideoWriter video(video_filename, CV_FOURCC('M', 'J', 'P', 'G'), fps, cv::Size(w, h));
-
-    cameras.push_back({device, cam, sink});
+    cameras.push_back({device, cam, sink, video});
   }
 
   // wait for UDP message to start
@@ -96,15 +96,25 @@ int main(int argc, const char **argv) {
 
   cv::Mat frame;
   while (true) {
+    size_t i = 0;
+    bool any_errors = false;
     for (camera_t camera : cameras) {
       uint64_t time = camera.sink.GrabFrame(frame);
       if (time == 0) {
         std::cout << "error on camera " << camera.id << " [" << camera.sink.GetError() << "]\n";
-        continue;
+        any_errors = true;
+        time_stamps_file << "-1";
+      }
+      else {
+        time_stamps_file << time;
+        camera.video.write(frame);
       }
 
-      time_stamps_file << time << std::endl;
-      camera.video.write(frame);
+      // so as to not have trailing comma
+      if (i < cameras.size()) {
+        time_stamps_file << ",";
+      }
+      ++i;
     }
 
     time_stamps_file << "\n";

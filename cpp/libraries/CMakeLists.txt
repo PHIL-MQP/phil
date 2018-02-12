@@ -26,9 +26,9 @@ if (NOT ${RIO})
         target_include_directories(linux_navx_driver PRIVATE linux_navx_driver)
     endif ()
 
-    set(YAML_CPP_BUILD_TESTS OFF)
-    set(YAML_CPP_BUILD_TOOLS OFF)
-    set(YAML_CPP_BUILD_CONTRIB OFF)
+    option(YAML_CPP_BUILD_TESTS OFF)
+    option(YAML_CPP_BUILD_TOOLS OFF)
+    option(YAML_CPP_BUILD_CONTRIB OFF)
     add_subdirectory(yaml-cpp)
 endif ()
 
