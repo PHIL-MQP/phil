@@ -11,5 +11,11 @@ if __name__ == "__main__":
 
     timestamps = np.genfromtxt(args.timestamps)
     dt = timestamps[1:] - timestamps[0:-1]
-    fps = 1000000 / np.mean(dt)
-    print("Average FPS:", fps)
+    mean_fps = 1000000 / np.mean(dt)
+    median_fps = 1000000 / np.median(dt)
+    min_fps = 1000000 / np.max(dt)
+    max_fps = 1000000 / np.min(dt)
+    print("Mean FPS:", mean_fps)
+    print("Median FPS:", median_fps)
+    print("Min FPS:", min_fps)
+    print("Max FPS:", max_fps)
