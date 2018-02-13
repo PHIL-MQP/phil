@@ -13,6 +13,7 @@ struct camera_t {
   cs::UsbCamera usb_camera;
   cs::CvSink sink;
   cv::VideoWriter video;
+  cs::MjpegServer mjpeg_server;
 };
 
 int main(int argc, const char **argv) {
@@ -72,6 +73,8 @@ int main(int argc, const char **argv) {
 
     cs::CvSink sink{"sink"};
     sink.SetSource(cam);
+    cs::MjpegServer mjpeg_server{"httpserver_" + std::to_string(device), 8080 + device};
+    mjpeg_server.SetSource(cam);
 
     char video_filename[50];
     strftime(video_filename, 50, "out_%m_%d_%H-%M-%S.avi", ltm);
@@ -79,7 +82,7 @@ int main(int argc, const char **argv) {
     full_filename << "video" << device << "_" << video_filename;
     cv::VideoWriter video(full_filename.str(), CV_FOURCC('M', 'J', 'P', 'G'), fps, cv::Size(w, h));
 
-    cameras.push_back({device, cam, sink, video});
+    cameras.push_back({device, cam, sink, video, mjpeg_server});
   }
 
   // wait for UDP message to start
