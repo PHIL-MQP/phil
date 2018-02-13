@@ -1,0 +1,6 @@
+device: 3
+fps: 60
+width: 640
+height: 480
+encoding: YUYV
+udp_port: 6783

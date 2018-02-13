@@ -4,26 +4,17 @@
 #include <cscore.h>
 #include <opencv2/highgui.hpp>
 #include <yaml-cpp/yaml.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <phil/common/udp.h>
 #include <phil/common/args.h>
 
-struct camera_t {
-  int id;
-  cs::UsbCamera usb_camera;
-  cs::CvSink sink;
-  cv::VideoWriter video;
-  cs::MjpegServer mjpeg_server;
-};
-
 int main(int argc, const char **argv) {
-  args::ArgumentParser parser("This program records camera frames and their timestamps",
-                              "This program is meant to run on TK1 during Motion Capture recording tests."
-                                  "However, it is general purpose and could also be used on a laptop."
-                                  "It cannot be built for the RoboRIO.");
+  args::ArgumentParser parser("This program records camera frames and their timestamps");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-  args::Positional<std::string>
-      config_filename(parser, "config_filename", "yaml file of configuration", args::Options::Required);
+  // FIXME: add more helpful details
+  args::Positional<std::string> config_filename(parser, "config_filename", "yaml file of configuration.", args::Options::Required);
 
   try {
     parser.ParseCLI(argc, argv);
@@ -36,57 +27,57 @@ int main(int argc, const char **argv) {
     std::cout << parser;
     return 0;
   }
+  // Read all the camera configs and open cs core streams
+  YAML::Node config = YAML::LoadFile(args::get(config_filename));
 
-  // Create timestamps file (one column per camera
+  const auto device = config["device"].as<int>();
+  cs::UsbCamera camera{"usbcam", device};
+  const auto w = config["width"].as<int>();
+  const auto h = config["height"].as<int>();
+  const auto fps = config["fps"].as<int>();
+  const auto udp_port = config["udp_port"].as<int16_t>();
+  std::string enc = config["encoding"].as<std::string>();
+
+  if (enc == "MJPG") {
+    camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
+  } else if (enc == "YUYV") {
+    camera.SetVideoMode(cs::VideoMode::kYUYV, w, h, fps);
+  } else {
+    camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
+    std::cerr << "Invalid format [" << enc << "]. Defaulting to MJPG" << std::endl;
+  }
+
+  cs::CvSink sink{"sink"};
+  sink.SetSource(camera);
+  cs::MjpegServer mjpeg_server{"httpserver_" + std::to_string(device), 8080 + device};
+  mjpeg_server.SetSource(camera);
+
+  // create output folder
+  char out_dir[50];
   time_t now = time(nullptr);
   tm *ltm = localtime(&now);
+  std::stringstream fmt_ss;
+  fmt_ss << "video" << device << "_%m_%d_%H-%M-%S";
+  strftime(out_dir, 50, fmt_ss.str().c_str(), ltm);
+  mkdir(out_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+
+  // Create timestamps file
   std::ofstream time_stamps_file;
-  char timestamp_filename[50];
-  strftime(timestamp_filename, 50, "timestamps_%m_%d_%H-%M-%S.csv", ltm);
-  time_stamps_file.open(timestamp_filename);
+  std::stringstream timestamp_ss;
+  timestamp_ss << out_dir << "/" << "timestamps.csv";
+  time_stamps_file.open(timestamp_ss.str());
 
   if (!time_stamps_file.good()) {
     std::cerr << "Time stamp file failed to open: " << strerror(errno) << std::endl;
     return EXIT_FAILURE;
   }
 
-  // Read all the camera configs and open cs core streams
-  YAML::Node config = YAML::LoadFile(args::get(config_filename));
-
-  std::vector<camera_t> cameras;
-  for (auto cam_config : config) {
-    const auto device = cam_config["device"].as<int>();
-    cs::UsbCamera cam{"usbcam", device};
-    const auto w = cam_config["width"].as<int>();
-    const auto h = cam_config["height"].as<int>();
-    const auto fps = cam_config["fps"].as<int>();
-    std::string enc = cam_config["encoding"].as<std::string>();
-
-    if (enc == "MJPG") {
-      cam.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
-    } else if (enc == "YUYV") {
-      cam.SetVideoMode(cs::VideoMode::kYUYV, w, h, fps);
-    } else {
-      cam.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
-      std::cerr << "Invalid format [" << enc << "]. Defaulting to MJPG" << std::endl;
-    }
-
-    cs::CvSink sink{"sink"};
-    sink.SetSource(cam);
-    cs::MjpegServer mjpeg_server{"httpserver_" + std::to_string(device), 8080 + device};
-    mjpeg_server.SetSource(cam);
-
-    char video_filename[50];
-    strftime(video_filename, 50, "out_%m_%d_%H-%M-%S.avi", ltm);
-    std::stringstream full_filename;
-    full_filename << "video" << device << "_" << video_filename;
-    cv::VideoWriter video(full_filename.str(), CV_FOURCC('M', 'J', 'P', 'G'), fps, cv::Size(w, h));
-
-    cameras.push_back({device, cam, sink, video, mjpeg_server});
-  }
+  std::stringstream video_ss;
+  video_ss << out_dir << "/" << "out.avi";
+  cv::VideoWriter video(video_ss.str(), CV_FOURCC('M', 'J', 'P', 'G'), fps, cv::Size(w, h));
 
   // wait for UDP message to start
-  phil::UDPServer udp_server;
+  phil::UDPServer udp_server(udp_port);
   uint8_t message = 0;
   udp_server.Read(&message, 1);
 
@@ -98,29 +89,22 @@ int main(int argc, const char **argv) {
   udp_server.SetTimeout(timeout);
 
   cv::Mat frame;
+  unsigned long frame_idx = 0;
   while (true) {
-    size_t i = 0;
-    bool any_errors = false;
-    for (camera_t camera : cameras) {
-      uint64_t time = camera.sink.GrabFrame(frame);
-      if (time == 0) {
-        std::cout << "error on camera " << camera.id << " [" << camera.sink.GetError() << "]\n";
-        any_errors = true;
-        time_stamps_file << "-1";
-      }
-      else {
-        time_stamps_file << time;
-        camera.video.write(frame);
-      }
-
-      // so as to not have trailing comma
-      if (i < cameras.size()) {
-        time_stamps_file << ",";
-      }
-      ++i;
+    uint64_t time = sink.GrabFrame(frame);
+    if (time == 0) {
+      std::cout << "error grabbing frame [" << sink.GetError() << "]\n";
+      continue;
     }
+    else {
+      time_stamps_file << time << "\n";
 
-    time_stamps_file << "\n";
+//      std::stringstream image_ss;
+//      image_ss << out_dir << "/" << frame_idx << ".png";
+//      cv::imwrite(image_ss.str(), frame);
+      video.write(frame);
+      ++frame_idx;
+    }
 
     // check for UDP message to stop
     ssize_t bytes_received = udp_server.Read(&message, 1);

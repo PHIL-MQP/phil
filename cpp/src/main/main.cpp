@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   std::cout << "Go to localhost:8082 to see annotated camera stream" << std::endl;
   cs::CvSink cvsink{"cvsink"};
   cvsink.SetSource(camera);
-  cs::CvSource cvsource{"cvsource", cs::VideoMode::kMJPEG, w, h ,fps};
+  cs::CvSource cvsource{"cvsource", cs::VideoMode::kMJPEG, w, h, fps};
   cs::MjpegServer cvMjpegServer{"cvhttpserver", 8082};
   cvMjpegServer.SetSource(cvsource);
 

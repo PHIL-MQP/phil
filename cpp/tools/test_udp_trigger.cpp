@@ -9,8 +9,8 @@ int main(int argc, const char **argv) {
                                   " It literally just sends the value 1, and it's a 1 byte message."
                                   "It can be built for the RoboRIO.");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-  args::ValueFlag<std::string>
-      server_hostname_flag(parser, "hostname", "hostname of the client to send to", {'o'});
+  args::ValueFlag<std::string> server_hostname_flag(parser, "hostname", "hostname of the client to send to", {'o'});
+  args::ValueFlag<int16_t> udp_port_flag(parser, "udp port", "port to send udp message to", {'p'});
 
   try
   {
@@ -22,15 +22,20 @@ int main(int argc, const char **argv) {
     return 0;
   }
 
-  std::string hostname = "phil-tk1.local";
+  std::string hostname = "raspberrypi.local";
+  int16_t port = phil::kPort;
   if (server_hostname_flag) {
     hostname = args::get(server_hostname_flag);
   }
   else {
-    std::cout << "defaulting to phil-tk1.local";
+    std::cout << "defaulting to phil-tk1.local\n";
   }
 
-  phil::UDPClient client(hostname);
+  if (udp_port_flag) {
+    port = args::get(udp_port_flag);
+  }
+
+  phil::UDPClient client(hostname, port);
   uint8_t request = 1;
   client.RawTransaction(&request, 1, nullptr, 1);
 
