@@ -93,15 +93,12 @@ int main(int argc, const char **argv) {
   while (true) {
     uint64_t time = sink.GrabFrame(frame);
     if (time == 0) {
-      std::cout << "error grabbing frame [" << sink.GetError() << "]\n";
+      std::cout << "error grabbing frame " << sink.GetError() << "]\n";
       continue;
     }
     else {
       time_stamps_file << time << "\n";
 
-//      std::stringstream image_ss;
-//      image_ss << out_dir << "/" << frame_idx << ".png";
-//      cv::imwrite(image_ss.str(), frame);
       video.write(frame);
       ++frame_idx;
     }
