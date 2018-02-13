@@ -1,0 +1,6 @@
+device: 1
+fps: 30
+width: 1280
+height: 720
+encoding: MJPG
+udp_port: 6781
