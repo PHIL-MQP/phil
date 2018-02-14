@@ -17,7 +17,6 @@ UDPServer::UDPServer(uint16_t port_num) {
   struct sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  // addr.sin_port = htons(kPort);
   addr.sin_port = htons(port_num);
 
   if (bind(socket_fd, (struct sockaddr *) &addr, sockaddr_size) < 0) {
