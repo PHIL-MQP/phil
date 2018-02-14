@@ -49,6 +49,7 @@ set(NAVX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_
         ${CMAKE_SOURCE_DIR}/libraries/navxmxp/roborio/c++/navx_frc_cpp/src)
 set(LINUX_NAVX_DRIVER_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/libraries/linux_navx_driver)
 set(YAML_CPP_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libraries/yaml-cpp/include)
+set(orocos-bfl-INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libraries/orocos-bayesian-filtering/orocos-bfl/include)
 if (CMAKE_HOST_WIN32)
     set(WPILIB_INCLUDE_DIR ${WPILIB_CPP_DIR}/include "C:/frc/usr/include")
 else ()
@@ -99,7 +100,7 @@ if (NOT ${RIO})
         ${CSCORE_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/include/eigen3
         ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco ${orocos-bfl_LIBRARIES})
+    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
 
     add_executable(kf_test src/main/phil_kalman_filter.cpp ${localization_src})
     target_include_directories(kf_test PRIVATE
