@@ -12,6 +12,7 @@ struct data_t {
   double raw_accel_x;
   double raw_accel_y;
   double raw_accel_z;
+  double temp;
   double world_accel_y;
   double world_accel_x;
   double yaw;

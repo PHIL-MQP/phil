@@ -79,15 +79,15 @@ void Robot::TeleopInit() {
 	log << "raw_accel_x,raw_accel_y,raw_accel_z,"
 			<< "world_accel_x,world_accel_y," << "yaw,fused_heading," << "x,y,z,"
 			<< "left_encoder_rate,right_encoder_rate,"
-			<< "left_input,right_input," << "fpga time,navx time" << std::endl;
+			<< "left_input,right_input,temp," << "fpga time,navx time" << std::endl;
 
 	// tell the TK1 to start recording data
 	uint8_t data = 1;
 	std::cout << "Starting Cameras" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo("raspberrypi.local", &data, 1, nullptr, 0, 6783);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6780);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6781);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6782);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6783);
 	system("trigger.sh");
 
 	// tell the motion capture to start
@@ -118,10 +118,10 @@ void Robot::DisabledInit() {
 //   tell the TK1 to stop recording data
 	uint8_t data = 0;
 	std::cout << "Stopping PI" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("kacper.local", &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo("kacper.local", &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo("kacper.local", &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo("kacper.local", &data, 1, nullptr, 0, 6783);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6780);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6781);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6782);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6783);
 }
 
 void Robot::TeleopPeriodic() {
@@ -146,6 +146,7 @@ void Robot::TeleopPeriodic() {
 	sample.navx_t = ahrs->GetLastSensorTimestamp();
 	sample.left_motor = drive_base->left_motor->Get();
 	sample.right_motor = drive_base->right_motor->GetInverted();
+	sample.temp = ahrs->GetTempC();
 
 	SmartDashboard::PutBoolean("ready", true);
 	SmartDashboard::PutData("left pid", drive_base->left_pid);
@@ -161,7 +162,7 @@ void Robot::TeleopPeriodic() {
 			<< sample.fused_heading << "," << "," << sample.x << "," << sample.y
 			<< "," << sample.z << "," << sample.left_encoder_rate << ","
 			<< sample.right_encoder_rate << "," << sample.left_input << ","
-			<< sample.right_input << "," << sample.fpga_t << ","
+			<< sample.right_input << "," << sample.temp << "," << sample.fpga_t << ","
 			<< sample.navx_t << std::endl;
 
 	log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y
@@ -170,7 +171,7 @@ void Robot::TeleopPeriodic() {
 			<< sample.fused_heading << "," << sample.x << "," << sample.y << ","
 			<< sample.z << "," << sample.left_encoder_rate << ","
 			<< sample.right_encoder_rate << "," << sample.left_input << ","
-			<< sample.right_input << "," << sample.fpga_t << ","
+			<< sample.right_input << "," << sample.temp << "," << sample.fpga_t << ","
 			<< sample.navx_t << std::endl;
 }
 
