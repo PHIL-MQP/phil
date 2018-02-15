@@ -13,7 +13,7 @@
 #include <SmartDashboard/SmartDashboard.h>
 
 #include <Commands/Forward.h>
-#include <Commands/DriftTest.h>
+//#include <Commands/DriftTest.h>
 #include <Commands/Turn.h>
 #include <Commands/Circle.h>
 #include <Commands/Square.h>
@@ -53,8 +53,8 @@ void Robot::RobotInit() {
 	fwd->WhenReleased(new Forward(1));
 	turn = new frc::JoystickButton(gamepad, 4);
 	turn->WhenReleased(new Turn(90));
-	drift = new frc::JoystickButton(gamepad, 5);
-	drift->WhenReleased(new DriftTest(5));
+//	drift = new frc::JoystickButton(gamepad, 5);
+//	drift->WhenReleased(new DriftTest(5));
 
 }
 
@@ -64,8 +64,7 @@ void Robot::TeleopInit() {
 	std::cout << "TeleopInit" << std::endl;
 
 	std::ostringstream filename;
-	filename << "/home/lvuser/mocap_data-" << frc::Timer::GetFPGATimestamp()
-			<< ".csv";
+	filename << "/home/lvuser/rio-data-" << frc::Timer::GetFPGATimestamp() << ".csv";
 	log.open(filename.str());
 
 	if (!log) {
@@ -84,11 +83,10 @@ void Robot::TeleopInit() {
 	// tell the TK1 to start recording data
 	uint8_t data = 1;
 	std::cout << "Starting Cameras" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6783);
-	system("trigger.sh");
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6780);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6781);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6782);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6783);
 
 	// tell the motion capture to start
 	std::cout << "Triggering Motion Capture" << std::endl;
@@ -117,11 +115,11 @@ void Robot::DisabledInit() {
 
 //   tell the TK1 to stop recording data
 	uint8_t data = 0;
-	std::cout << "Stopping PI" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6783);
+	std::cout << "Stopping Cameras" << std::endl;
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6780);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6781);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6782);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6783);
 }
 
 void Robot::TeleopPeriodic() {
