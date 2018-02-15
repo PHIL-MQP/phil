@@ -84,10 +84,10 @@ void Robot::TeleopInit() {
 	// tell the TK1 to start recording data
 	uint8_t data = 1;
 	std::cout << "Starting Cameras" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6783);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6780);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6781);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6782);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6783);
 	system("trigger.sh");
 
 	// tell the motion capture to start
@@ -118,10 +118,10 @@ void Robot::DisabledInit() {
 //   tell the TK1 to stop recording data
 	uint8_t data = 0;
 	std::cout << "Stopping PI" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo("kacper-5VX6.local", &data, 1, nullptr, 0, 6783);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6780);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6781);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6782);
+	phil::Phil::GetInstance()->SendUDPTo("kacper-X5V6.local", &data, 1, nullptr, 0, 6783);
 }
 
 void Robot::TeleopPeriodic() {
