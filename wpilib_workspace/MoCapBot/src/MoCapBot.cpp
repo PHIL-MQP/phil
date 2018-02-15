@@ -79,7 +79,7 @@ void Robot::TeleopInit() {
 	log << "raw_accel_x,raw_accel_y,raw_accel_z,"
 			<< "world_accel_x,world_accel_y," << "yaw,fused_heading," << "x,y,z,"
 			<< "left_encoder_rate,right_encoder_rate,"
-			<< "left_input,right_input,temp," << "fpga time,navx time" << std::endl;
+			<< "left_motor,right_motor,temp," << "fpga time,navx time" << std::endl;
 
 	// tell the TK1 to start recording data
 	uint8_t data = 1;
@@ -140,8 +140,6 @@ void Robot::TeleopPeriodic() {
 	sample.z = ahrs->GetDisplacementZ();
 	sample.left_encoder_rate = drive_base->left_encoder->GetRate();
 	sample.right_encoder_rate = drive_base->right_encoder->GetRate();
-	sample.left_input = gamepad->GetRawAxis(1);
-	sample.right_input = -gamepad->GetRawAxis(5);
 	sample.fpga_t = frc::Timer::GetFPGATimestamp();
 	sample.navx_t = ahrs->GetLastSensorTimestamp();
 	sample.left_motor = drive_base->left_motor->Get();
@@ -161,8 +159,8 @@ void Robot::TeleopPeriodic() {
 			<< sample.world_accel_y << "," << sample.yaw << ","
 			<< sample.fused_heading << "," << "," << sample.x << "," << sample.y
 			<< "," << sample.z << "," << sample.left_encoder_rate << ","
-			<< sample.right_encoder_rate << "," << sample.left_input << ","
-			<< sample.right_input << "," << sample.temp << "," << sample.fpga_t << ","
+			<< sample.right_encoder_rate << "," << sample.left_motor<< ","
+			<< sample.right_motor<< "," << sample.temp << "," << sample.fpga_t << ","
 			<< sample.navx_t << std::endl;
 
 	log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y
@@ -170,8 +168,8 @@ void Robot::TeleopPeriodic() {
 			<< sample.world_accel_y << "," << sample.yaw << ","
 			<< sample.fused_heading << "," << sample.x << "," << sample.y << ","
 			<< sample.z << "," << sample.left_encoder_rate << ","
-			<< sample.right_encoder_rate << "," << sample.left_input << ","
-			<< sample.right_input << "," << sample.temp << "," << sample.fpga_t << ","
+			<< sample.right_encoder_rate << "," << sample.left_motor<< ","
+			<< sample.right_motor<< "," << sample.temp << "," << sample.fpga_t << ","
 			<< sample.navx_t << std::endl;
 }
 
