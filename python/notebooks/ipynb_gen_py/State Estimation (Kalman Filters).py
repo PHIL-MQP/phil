@@ -48,21 +48,41 @@
 # The other values in x are not a function of x, but some are a function of u.
 # 
 # \begin{align}
-# \Delta x_{t+1} &= \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \cos(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
-# \Delta y_{t+1} &= \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_l + \sin(\theta)\frac{1}{4}\Delta t^2*\alpha_r \\
-# \Delta\theta_{t+1} &= \frac{R\Delta t^2}{W2}\alpha_l + \frac{-R\Delta t^2}{W2}\alpha_r\\
-# \Delta\dot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
-# \Delta\dot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
-# \Delta\dot{\theta}_{t+1} &= \frac{R\Delta t}{W}\alpha_l + \frac{-R\Delta t}{W}\alpha_r \\
+# \ddot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
+# \ddot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
+# \ddot{\theta}_{t+1} &= \frac{\alpha_r - \alpha_l}{W}\Delta t \\
+#                    &= \frac{-\Delta t}{W}\alpha_l + \frac{\Delta t}{W}\alpha_l \\
 # \end{align}
+
+# To add encoders to our state space equations we use our simple model
 # 
-# The equations derived above come from these simpler facts:
+# \begin{align*}
+# r &= \text{wheel radius} \\
+# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix}
+# &=
+# \frac{r}{\alpha W} \begin{bmatrix} \frac{\alpha W}{2} & \frac{\alpha W}{2} \\ -1 & 1 \\ \end{bmatrix}
+# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
+# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
+# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix}
+# &=
+# \begin{bmatrix} \frac{r}{2} & \frac{r}{2} \\ \frac{-r}{\alpha W} & \frac{r}{\alpha W} \\ \end{bmatrix}
+# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix} \\
+# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
+# &=
+# \begin{bmatrix} \frac{r}{2} & \frac{r}{2} \\ \frac{-r}{\alpha W} & \frac{r}{\alpha W} \\ \end{bmatrix}^{-1}
+# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
+# \text{det} &= \frac{r^2}{2\alpha W} - \frac{-r^2}{2\alpha W} \\
+#            &= \frac{r^2}{\alpha W} \\
+# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
+# &=
+# \frac{\alpha W}{r^2}\begin{bmatrix} \frac{r}{\alpha W} & \frac{r}{\alpha W} \\ \frac{-r}{2} & \frac{r}{2} \\ \end{bmatrix}
+# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
+# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
+# &=
+# \begin{bmatrix} \frac{1}{r} & \frac{1}{r} \\ \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} \\ \end{bmatrix}
+# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
+# \end{align*}
 # 
-# \begin{align}
-# \ddot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2} \\
-# \ddot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2} \\
-# \ddot{\theta}_{t+1} &= \frac{R}{W} * \alpha_l + \frac{-R}{W} * \alpha_r \\
-# \end{align}
 
 # ## The State-Space Equations
 # 
@@ -79,9 +99,9 @@
 # \ddot{\theta}_{t+1} \\
 # \end{bmatrix} =
 # \begin{bmatrix}
-# 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 & 0 \\
-# 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 \\
-# 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t \\
+# 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t^2& 0 & 0 \\
+# 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t^2& 0 \\
+# 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t^2 \\
 # 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
 # 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
 # 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
@@ -101,12 +121,12 @@
 # \ddot{\theta}_t \\
 # \end{bmatrix} +
 # \begin{bmatrix}
-# \cos(\theta_t)\frac{1}{4}\Delta t^2 & \cos(\theta_t)\frac{1}{4}\Delta t^2 \\
-# \sin(\theta_t)\frac{1}{4}\Delta t^2 & \sin(\theta_t)\frac{1}{4}\Delta t^2 \\
-# \frac{R\Delta t^2}{2W} & \frac{-R\Delta t^2}{2W} \\
+# 0 & 0 \\
+# 0 & 0 \\
+# 0 & 0 \\
 # \cos(\theta_t)\frac{1}{2}\Delta t & \cos(\theta_t)\frac{1}{2}\Delta t \\
 # \sin(\theta_t)\frac{1}{2}\Delta t & \sin(\theta_t)\frac{1}{2}\Delta t \\
-# \frac{R\Delta t}{W} & \frac{-R\Delta t}{W}\\
+# \frac{-\Delta t}{W} & \frac{\Delta t}{W}\\
 # 0 & 0 \\
 # 0 & 0 \\
 # 0 & 0 \\
@@ -148,15 +168,15 @@
 # a_x \\
 # a_y \\
 # \theta \\
-# w_l \\
-# w_r \\
+# \text{Encoder}_l \\
+# \text{Encoder}_r \\
 # \end{bmatrix} -
 # \begin{bmatrix}
 # 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
 # 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 # 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & \frac{1}{r} & \frac{1}{r} & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} & 0 & 0 & 0 \\
 # \end{bmatrix}
 # \begin{bmatrix}
 # x \\

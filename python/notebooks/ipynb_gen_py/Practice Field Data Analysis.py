@@ -3,7 +3,7 @@
 
 # # Practice Field Data Analysis
 
-# In[34]:
+# In[2]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -77,16 +77,18 @@ HTML(html)
 # 
 # The data recorded in these tests is different from the data recorded in the first test.
 
-# In[21]:
+# In[8]:
 
 reader = csv.reader(open("./recorded_sensor_data/field_data_2/auto/mocap_data-175.173.csv", 'r'))  # not actually mocap data
 headers = next(reader)
 sensor_data = []
 for idx, row in enumerate(reader):
     data = [float(d) for d in row]
-    # wrap fused heading to match Yaw range
+#   wrap fused heading to match yaw range
     if data[6] > 180:
         data[6] = -360 + data[6]
+#   unwrap both to get continuous yaw
+
     sensor_data.append(data)
     
 # sensor data is a Nx15 array. N is the number of data points
@@ -99,7 +101,7 @@ for i, h in enumerate(headers):
 
 # ## Encoders
 
-# In[32]:
+# In[9]:
 
 plt.figure()
 plt.plot(sensor_data[:,10], label='vl')
@@ -109,7 +111,7 @@ plt.ylabel("m/s")
 plt.show()
 
 
-# In[65]:
+# In[5]:
 
 encoder_xs = []
 encoder_ys = []
@@ -137,7 +139,7 @@ for data in sensor_data:
     encoder_yaws.append(encoder_yaw)
 
 
-# In[66]:
+# In[6]:
 
 plt.figure()
 plt.plot(encoder_yaws)
@@ -154,7 +156,7 @@ plt.show()
 
 # ## Plot the Yaw() versus FusedHeading()
 
-# In[25]:
+# In[7]:
 
 plt.figure(figsize=(15,15))
 plt.plot(sensor_data[:,6], label="FusedHeading")
@@ -167,6 +169,17 @@ plt.show()
 
 
 # The moral of the story is they are basically the same so it doesn't matter which we use.
+
+# ## Plot Control Input
+
+# In[17]:
+
+plt.plot(sensor_data[:,12])
+plt.plot(sensor_data[:,13])
+plt.ylabel("Motor Set Value (-1 to 1)")
+plt.xlabel("time (samples)")
+plt.show()
+
 
 # ## Plot acceleration & double integrate
 

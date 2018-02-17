@@ -102,8 +102,8 @@ if (NOT ${RIO})
         ${orocos-bfl_INCLUDE_DIRS})
     target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
 
-    add_executable(kf_test src/main/phil_kalman_filter.cpp ${localization_src})
-    target_include_directories(kf_test PRIVATE
+    add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${localization_src})
+    target_include_directories(phil_kalman_filter PRIVATE
             ${phil_include_dir}
             ${OpenCV_INCLUDE_DIRS}
             ${WPIUTIL_INCLUDE_DIR}
@@ -111,12 +111,12 @@ if (NOT ${RIO})
             ${CSCORE_INCLUDE_DIR}
             ${CMAKE_SOURCE_DIR}/include/eigen3
             ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(kf_test ${orocos-bfl_LIBRARIES})
-    target_compile_options(kf_test PRIVATE -Wall -Wextra)
-    target_compile_definitions(kf_test PRIVATE CSV_IO_NO_THREAD)
+    target_link_libraries(phil_kalman_filter ${orocos-bfl_LIBRARIES})
+    target_compile_options(phil_kalman_filter PRIVATE -Wall -Wextra)
+    target_compile_definitions(phil_kalman_filter PRIVATE CSV_IO_NO_THREAD)
 
-    add_executable(ekf_test src/main/test_nonlinear_kalman.cpp ${localization_src})
-    target_include_directories(ekf_test PRIVATE
+    add_executable(test_nonlinear_kalman src/main/test_nonlinear_kalman.cpp ${localization_src})
+    target_include_directories(test_nonlinear_kalman PRIVATE
         ${phil_include_dir}
         ${OpenCV_INCLUDE_DIRS}
         ${WPIUTIL_INCLUDE_DIR}
@@ -124,7 +124,7 @@ if (NOT ${RIO})
         ${CSCORE_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/include/eigen3
         ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(ekf_test ${orocos-bfl_LIBRARIES})
+    target_link_libraries(test_nonlinear_kalman ${orocos-bfl_LIBRARIES})
 
     # custom target to scp the program to the TK1 and run it?
 endif ()
