@@ -13,7 +13,7 @@
 #include <SmartDashboard/SmartDashboard.h>
 
 #include <Commands/Forward.h>
-//#include <Commands/DriftTest.h>
+#include <Commands/DriftTest.h>
 #include <Commands/Turn.h>
 #include <Commands/Circle.h>
 #include <Commands/Square.h>
@@ -31,7 +31,7 @@ DriveBase *Robot::drive_base = nullptr;
 AHRS *Robot::ahrs = nullptr;
 frc::AnalogOutput *Robot::mocap_start_trigger = nullptr;
 frc::AnalogOutput *Robot::mocap_stop_trigger = nullptr;
-std::string udp_hostname = "einstein.local"; // "kacper-X5V6.local";
+std::string udp_hostname = "kacper-V5X6.local";
 
 void Robot::RobotInit() {
 	std::cout << "RobotInit" << std::endl;
@@ -54,8 +54,8 @@ void Robot::RobotInit() {
 	fwd->WhenReleased(new Forward(1));
 	turn = new frc::JoystickButton(gamepad, 4);
 	turn->WhenReleased(new Turn(90));
-//	drift = new frc::JoystickButton(gamepad, 5);
-//	drift->WhenReleased(new DriftTest(5));
+	drift = new frc::JoystickButton(gamepad, 5);
+	drift->WhenReleased(new DriftTest(5));
 
 }
 
@@ -81,7 +81,15 @@ void Robot::TeleopInit() {
 			<< "left_encoder_rate,right_encoder_rate,"
 			<< "left_motor,right_motor,temp," << "fpga time,navx time" << std::endl;
 
-	// tell the TK1 to start recording data
+
+	// load file to get the name of who to trigger
+	std::ifstream hostname_file;
+	hostname_file.open("/home/lvuser/trigger.name");
+	hostname_file >> udp_hostname;
+	std::cout << "hostname: " << udp_hostname << "\n";
+
+
+	// start recording data
 	uint8_t data = 1;
 	std::cout << "Starting Cameras" << std::endl;
 	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6780);
