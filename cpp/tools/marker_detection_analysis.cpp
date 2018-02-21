@@ -155,7 +155,9 @@ void show_help() {
             << std::endl
             << std::endl
             << "This program will print detected tag info to standard out."
+            << std::endl
             << "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py"
+            << std::endl
             << "-v will show the video, -s will show and step through each frame (press enter)"
             << std::endl
             << std::endl

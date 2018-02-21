@@ -114,17 +114,4 @@ if (NOT ${RIO})
     target_link_libraries(phil_kalman_filter ${orocos-bfl_LIBRARIES})
     target_compile_options(phil_kalman_filter PRIVATE -Wall -Wextra)
     target_compile_definitions(phil_kalman_filter PRIVATE CSV_IO_NO_THREAD)
-
-    add_executable(test_nonlinear_kalman src/main/test_nonlinear_kalman.cpp ${localization_src})
-    target_include_directories(test_nonlinear_kalman PRIVATE
-        ${phil_include_dir}
-        ${OpenCV_INCLUDE_DIRS}
-        ${WPIUTIL_INCLUDE_DIR}
-        ${NTCORE_INCLUDE_DIR}
-        ${CSCORE_INCLUDE_DIR}
-        ${CMAKE_SOURCE_DIR}/include/eigen3
-        ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(test_nonlinear_kalman ${orocos-bfl_LIBRARIES})
-
-    # custom target to scp the program to the TK1 and run it?
 endif ()

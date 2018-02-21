@@ -31,7 +31,7 @@ def main():
     last_distinct_idx = 0
     for idx in range(1, data.shape[0]):
         if data[idx, 0] != data[last_distinct_idx, 0]:
-            dt_s = (data[idx, 0] - data[last_distinct_idx, 0]) / 1e7
+            dt_s = (data[idx, 0] - data[last_distinct_idx, 0]) / 1e6
             distinct_times.append(dt_s)
             last_distinct_idx = idx
     distinct_times = np.array(distinct_times)
