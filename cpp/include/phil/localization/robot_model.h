@@ -15,11 +15,10 @@ class RobotModel : public BFL::AnalyticConditionalGaussianAdditiveNoise {
   static constexpr double dt_s = 0.02;
 
 // Params of the robot
-  static constexpr double r = 0.0762;  // wheel radius in meters
   static constexpr double W = 0.9;  // track width in meters
 
 // kinematics model parameters
-  static constexpr double alpha = 0.75;
+  static constexpr double alpha = 1;
 
 // Number of state variables
   static constexpr unsigned int N = 9;
