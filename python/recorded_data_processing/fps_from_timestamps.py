@@ -15,6 +15,7 @@ if __name__ == "__main__":
     median_fps = 1000000 / np.median(dt)
     min_fps = 1000000 / np.max(dt)
     max_fps = 1000000 / np.min(dt)
+    print("Parsing for:", args.timestamps);
     print("Mean FPS:", mean_fps)
     print("Median FPS:", median_fps)
     print("Min FPS:", min_fps)
