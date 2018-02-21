@@ -13,12 +13,22 @@ MatrixWrapper::ColumnVector RobotModel::ExpectedValueGet() const {
   state(1) = state(1) + state(4) * dt_s + 0.5 * state(7) * dt_s * dt_s;
   state(2) = state(2) + state(5) * dt_s + 0.5 * state(8) * dt_s * dt_s;
   state(3) = state(3) + state(6) * dt_s + 0.5 * state(9) * dt_s * dt_s;
+
   state(4) = v*cos(state(3));
   state(5) = v*sin(state(3));
   state(6) = (control(2) - control(1)) / (alpha * W);
   state(7) = state(7);
   state(8) = state(8);
   state(9) = state(9);
+
+  // handle wrapping of theta into -pi,pi
+  if (state(3) > M_PI) {
+    state(3) -= 2*M_PI;
+  }
+  else if (state(3) < -M_PI) {
+    state(3) += 2*M_PI;
+  }
+
   return state + AdditiveNoiseMuGet();
 }
 

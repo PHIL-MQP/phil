@@ -11781,7 +11781,7 @@ div#notebook {
 
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -11808,30 +11808,31 @@ a_x \\
 a_y \\
 \end{bmatrix} $$<p>Our measurement vectors</p>
 <p>We assume m/s^2 for acceleration, radians for theta, and m/s (linear speed) for encoder speeds
-$$ y_{navx} = \begin{bmatrix} \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$</p>
+$$ y_{navx} = \begin{bmatrix} \theta \\ \omega_r \\ \omega_l \\ \end{bmatrix} $$</p>
 $$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$$$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$<p>Key prediction &amp; update equations</p>
 $$ \hat{x}_{t} = f(x_t , u_t) $$$$ P_{t+1} = AP_tA^T + Q $$$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$$$ P_t = (I - K_tC)P_t $$$$ y_t = Hx_t $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
 \begin{align}
+v &= \frac{\omega_l + \omega_r}{2} \\
 x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
 y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
 \theta_{t+1} &= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
-\dot{x}_{t+1} &= \dot{x}_t + \ddot{x}_t\Delta t \\
-\dot{y}_{t+1} &= \dot{y}_t + \ddot{y}_t\Delta t \\
-\dot{\theta}_{t+1} &= \dot{\theta}_t+\ddot{\theta}_t\Delta t \\
-\ddot{x}_{t+1} &= a_x \\
-\ddot{y}_{t+1} &= a_y \\
-\ddot{\theta}_{t+1 &= \tan^{-1}(a_y, a_x) \\
+\dot{x}_{t+1} &= v\cos(\theta_t) \\
+\dot{y}_{t+1} &= v\sin(\theta_t) \\
+\dot{\theta}_{t+1} &= \frac{\omega_r - \omega_l}{\alpha W} \\
+\ddot{x}_{t+1} &=  \ddot{\theta}_{t+1} \\
+\ddot{y}_{t+1} &=  \ddot{\theta}_{t+1} \\
+\ddot{\theta}_{t+1} &= \ddot{\theta}_{t+1} \\
 \end{align}<p>In order to use en EKF, we need all the partial derivatives of these equations with respect to each of the state variables. We represent these partials as the Jacobian, so it's in a matrix. Each row contains all the partials for each state variable equation (in the same order as above).</p>
 $$\begin{bmatrix}
 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 & 0 \\
 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 \\
-0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 \\
-0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
-0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
-0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & -v\sin(\theta_t) & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & v\cos(\theta_t) & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
 \end{bmatrix}$$
 </div>
 </div>
@@ -11841,33 +11842,75 @@ $$\begin{bmatrix}
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>To add encoders to our state space equations we use our simple model</p>
-\begin{align*}
-r &= \text{wheel radius} \\
-\begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix}
-&=
-\frac{r}{\alpha W} \begin{bmatrix} \frac{\alpha W}{2} & \frac{\alpha W}{2} \\ -1 & 1 \\ \end{bmatrix}
-\begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-\begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-\begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix}
-&=
-\begin{bmatrix} \frac{r}{2} & \frac{r}{2} \\ \frac{-r}{\alpha W} & \frac{r}{\alpha W} \\ \end{bmatrix}
-\begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix} \\
-\begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-&=
-\begin{bmatrix} \frac{r}{2} & \frac{r}{2} \\ \frac{-r}{\alpha W} & \frac{r}{\alpha W} \\ \end{bmatrix}^{-1}
-\begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-\text{det} &= \frac{r^2}{2\alpha W} - \frac{-r^2}{2\alpha W} \\
-           &= \frac{r^2}{\alpha W} \\
-\begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-&=
-\frac{\alpha W}{r^2}\begin{bmatrix} \frac{r}{\alpha W} & \frac{r}{\alpha W} \\ \frac{-r}{2} & \frac{r}{2} \\ \end{bmatrix}
-\begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-\begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-&=
-\begin{bmatrix} \frac{1}{r} & \frac{1}{r} \\ \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} \\ \end{bmatrix}
-\begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-\end{align*}
+<h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>The KF update step for the sensor data coming from the RoboRIO</p>
+$$
+\begin{bmatrix}
+a_x \\
+a_y \\
+\theta \\
+\end{bmatrix} -
+\begin{bmatrix}
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+\theta \\
+\dot{x} \\
+\dot{y} \\
+\dot{\theta} \\
+\ddot{x} \\
+\ddot{y} \\
+\ddot{\theta} \\
+\end{bmatrix}
+$$<p>update step for the beacons</p>
+$$
+\begin{bmatrix}
+\text{Beacons}_x \\
+\text{Beacons}_y \\
+\end{bmatrix} -
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+\theta \\
+\dot{x} \\
+\dot{y} \\
+\dot{\theta} \\
+\ddot{x} \\
+\ddot{y} \\
+\ddot{\theta} \\
+\end{bmatrix}
+$$<p>update step for the camera</p>
+$$
+\begin{bmatrix}
+\text{Camera}_x \\
+\text{Camera}_y \\
+\text{Camera}_\theta \\
+\end{bmatrix} -
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+\theta \\
+\dot{x} \\
+\dot{y} \\
+\dot{\theta} \\
+\ddot{x} \\
+\ddot{y} \\
+\ddot{\theta} \\
+\end{bmatrix}
+$$<p>Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.</p>
+
 </div>
 </div>
 </div>
@@ -11939,82 +11982,6 @@ r &= \text{wheel radius} \\
 </tr>
 </tbody>
 </table>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>The KF update step for the sensor data coming from the RoboRIO</p>
-$$
-\begin{bmatrix}
-\theta \\
-\text{Encoder}_l \\
-\text{Encoder}_r \\
-\end{bmatrix} -
-\begin{bmatrix}
-0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & \frac{1}{r} & \frac{1}{r} & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} & 0 & 0 & 0\\
-\end{bmatrix}
-\begin{bmatrix}
-x \\
-y \\
-\theta \\
-\dot{x} \\
-\dot{y} \\
-\dot{\theta} \\
-\ddot{x} \\
-\ddot{y} \\
-\ddot{\theta} \\
-\end{bmatrix}
-$$<p>update step for the beacons</p>
-$$
-\begin{bmatrix}
-\text{Beacons}_x \\
-\text{Beacons}_y \\
-\end{bmatrix} -
-\begin{bmatrix}
-1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-\end{bmatrix}
-\begin{bmatrix}
-x \\
-y \\
-\theta \\
-\dot{x} \\
-\dot{y} \\
-\dot{\theta} \\
-\ddot{x} \\
-\ddot{y} \\
-\ddot{\theta} \\
-\end{bmatrix}
-$$<p>update step for the camera</p>
-$$
-\begin{bmatrix}
-\text{Camera}_x \\
-\text{Camera}_y \\
-\text{Camera}_\theta \\
-\end{bmatrix} -
-\begin{bmatrix}
-1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-\end{bmatrix}
-\begin{bmatrix}
-x \\
-y \\
-\theta \\
-\dot{x} \\
-\dot{y} \\
-\dot{\theta} \\
-\ddot{x} \\
-\ddot{y} \\
-\ddot{\theta} \\
-\end{bmatrix}
-$$<p>Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.</p>
 
 </div>
 </div>

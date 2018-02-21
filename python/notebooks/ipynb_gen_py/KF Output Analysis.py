@@ -5,7 +5,8 @@
 # 
 # Doing the plotting in C++ would be hard and annoying
 
-# In[135]:
+# In[97]:
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,9 +15,10 @@ from matplotlib.patches import Ellipse, Circle
 import os
 
 
-# In[144]:
+# In[98]:
 
-filename = "./recorded_sensor_data/field_data_2/auto/kf_out.csv"
+
+filename = "./recorded_sensor_data/field_data_3/auto/kf_out.csv"
 print(os.stat(filename).st_mtime)
 data = np.genfromtxt(filename, delimiter=",", dtype=np.float64)
 
@@ -41,16 +43,19 @@ cov_ddy = data[:,79]
 cov_ddyaw = data[:,89]
 
 
-# In[145]:
+# In[99]:
 
-plt.plot(yaw)
+
+plt.figure(figsize=(15,15))
+plt.plot(yaw[200:600])
 plt.show()
 
 
-# In[156]:
+# In[100]:
+
 
 T_begin = 0
-T_end = 650 # x.shape[0]
+T_end = x.shape[0]
 skip=1
 
 print("approximate circle radius:", np.max(y[T_begin:T_end]) - np.min(y[T_begin:T_end]))
@@ -66,7 +71,8 @@ plt.axis("equal")
 plt.show()
 
 
-# In[147]:
+# In[101]:
+
 
 fig, ax = plt.subplots(3,2,figsize=(15,15))
 ax[0,0].plot(cov_x, label='cov x')
@@ -94,9 +100,4 @@ ax[2,1].set_title("Covariance in Yaw rotational acceleration")
 
 plt.tight_layout()
 plt.show()
-
-
-# In[ ]:
-
-
 

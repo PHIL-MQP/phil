@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[2]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 # Our measurement vectors
 # 
 # We assume m/s^2 for acceleration, radians for theta, and m/s (linear speed) for encoder speeds
-# $$ y_{navx} = \begin{bmatrix} \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$
+# $$ y_{navx} = \begin{bmatrix} \theta \\ \omega_r \\ \omega_l \\ \end{bmatrix} $$
 # 
 # $$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$
 # 
@@ -43,15 +43,16 @@ import matplotlib.pyplot as plt
 # We must describe our dynamics. How do we compute our next state given our current state and the control inputs?
 # 
 # \begin{align}
+# v &= \frac{\omega_l + \omega_r}{2} \\
 # x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
 # y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
 # \theta_{t+1} &= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
-# \dot{x}_{t+1} &= \dot{x}_t + \ddot{x}_t\Delta t \\
-# \dot{y}_{t+1} &= \dot{y}_t + \ddot{y}_t\Delta t \\
-# \dot{\theta}_{t+1} &= \dot{\theta}_t+\ddot{\theta}_t\Delta t \\
-# \ddot{x}_{t+1} &= a_x \\
-# \ddot{y}_{t+1} &= a_y \\
-# \ddot{\theta}_{t+1 &= \tan^{-1}(a_y, a_x) \\
+# \dot{x}_{t+1} &= v\cos(\theta_t) \\
+# \dot{y}_{t+1} &= v\sin(\theta_t) \\
+# \dot{\theta}_{t+1} &= \frac{\omega_r - \omega_l}{\alpha W} \\
+# \ddot{x}_{t+1} &=  \ddot{\theta}_{t+1} \\
+# \ddot{y}_{t+1} &=  \ddot{\theta}_{t+1} \\
+# \ddot{\theta}_{t+1} &= \ddot{\theta}_{t+1} \\
 # \end{align}
 # 
 # In order to use en EKF, we need all the partial derivatives of these equations with respect to each of the state variables. We represent these partials as the Jacobian, so it's in a matrix. Each row contains all the partials for each state variable equation (in the same order as above).
@@ -59,66 +60,14 @@ import matplotlib.pyplot as plt
 # $$\begin{bmatrix}
 # 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 & 0 \\
 # 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 \\
-# 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 \\
-# 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
-# 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
+# 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & -v\sin(\theta_t) & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & v\cos(\theta_t) & 0 & 0 & 0 & 0 & 0 & 0 \\
 # 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
 # \end{bmatrix}$$
-
-# To add encoders to our state space equations we use our simple model
-# 
-# \begin{align*}
-# r &= \text{wheel radius} \\
-# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix}
-# &=
-# \frac{r}{\alpha W} \begin{bmatrix} \frac{\alpha W}{2} & \frac{\alpha W}{2} \\ -1 & 1 \\ \end{bmatrix}
-# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix}
-# &=
-# \begin{bmatrix} \frac{r}{2} & \frac{r}{2} \\ \frac{-r}{\alpha W} & \frac{r}{\alpha W} \\ \end{bmatrix}
-# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix} \\
-# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-# &=
-# \begin{bmatrix} \frac{r}{2} & \frac{r}{2} \\ \frac{-r}{\alpha W} & \frac{r}{\alpha W} \\ \end{bmatrix}^{-1}
-# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-# \text{det} &= \frac{r^2}{2\alpha W} - \frac{-r^2}{2\alpha W} \\
-#            &= \frac{r^2}{\alpha W} \\
-# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-# &=
-# \frac{\alpha W}{r^2}\begin{bmatrix} \frac{r}{\alpha W} & \frac{r}{\alpha W} \\ \frac{-r}{2} & \frac{r}{2} \\ \end{bmatrix}
-# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-# \begin{bmatrix}\text{Encoder}_l \\ \text{Encoder}_r \\ \end{bmatrix}
-# &=
-# \begin{bmatrix} \frac{1}{r} & \frac{1}{r} \\ \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} \\ \end{bmatrix}
-# \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
-# \end{align*}
-# 
-
-# ## General matrix dimensions for multi-sensor multi-state stuffs
-# 
-# N = number of state variables
-# 
-# M = number of control variables
-# 
-# L = number of measurements from all sensors
-# 
-# 
-# |matrix|variable name|size|
-# |------|-----------|----|
-# | A | A | NxN |
-# | B | B | NxM |
-# | C | C | LxN |
-# | K | K | NxL |
-# | z | measurement | Lx1 |
-# | x | priori/posterior_estimate | Nx1 |
-# | u | control input | Mx1 |
-# | P | estimate_covariance | NxN |
-# | Q | process_covariance  | NxN |
-# | R | measurement_covariance | LxL |
 
 # ### The measurement Vector + Update bit
 # 
@@ -126,14 +75,14 @@ import matplotlib.pyplot as plt
 # 
 # $$
 # \begin{bmatrix}
+# a_x \\
+# a_y \\
 # \theta \\
-# \text{Encoder}_l \\
-# \text{Encoder}_r \\
 # \end{bmatrix} -
 # \begin{bmatrix}
+# 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 # 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 & \frac{1}{r} & \frac{1}{r} & 0 & 0 & 0 \\
-# 0 & 0 & 0 & 0 & \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} & 0 & 0 & 0\\
 # \end{bmatrix}
 # \begin{bmatrix}
 # x \\
@@ -183,6 +132,7 @@ import matplotlib.pyplot as plt
 # \begin{bmatrix}
 # 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 # 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
 # \end{bmatrix}
 # \begin{bmatrix}
 # x \\
@@ -198,6 +148,28 @@ import matplotlib.pyplot as plt
 # $$
 # 
 # Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.
+
+# ## General matrix dimensions for multi-sensor multi-state stuffs
+# 
+# N = number of state variables
+# 
+# M = number of control variables
+# 
+# L = number of measurements from all sensors
+# 
+# 
+# |matrix|variable name|size|
+# |------|-----------|----|
+# | A | A | NxN |
+# | B | B | NxM |
+# | C | C | LxN |
+# | K | K | NxL |
+# | z | measurement | Lx1 |
+# | x | priori/posterior_estimate | Nx1 |
+# | u | control input | Mx1 |
+# | P | estimate_covariance | NxN |
+# | Q | process_covariance  | NxN |
+# | R | measurement_covariance | LxL |
 
 # ### The process covariance matrix
 # 
