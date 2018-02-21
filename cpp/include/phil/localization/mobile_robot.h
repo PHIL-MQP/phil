@@ -27,7 +27,7 @@
 #include <bfl/wrappers/matrix/vector_wrapper.h>
 
 #include <phil/localization/mobile_robot_wall_cts.h>
-#include <phil/localization/nonlinearanalyticconditionalgaussianmobile.h>
+#include <phil/localization/robot_model.h>
 
 
 namespace BFL{
@@ -57,7 +57,7 @@ namespace BFL{
 
     private:
       Gaussian* _system_Uncertainty;
-      NonLinearAnalyticConditionalGaussianMobile* _sys_pdf;
+      RobotModel* _sys_pdf;
       AnalyticSystemModelGaussianUncertainty* _sys_model;
       Gaussian* _measurement_Uncertainty;
       LinearAnalyticConditionalGaussian* _meas_pdf;

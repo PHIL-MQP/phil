@@ -11779,38 +11779,60 @@ div#notebook {
   <div tabindex="-1" id="notebook" class="border-box-sizing">
     <div class="container" id="notebook-container">
 
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Kalman-Filter">Kalman Filter<a class="anchor-link" href="#Kalman-Filter">&#182;</a></h1><p>A linear kalman filter. First we define our state variables x</p>
+<h1 id="Extended-Kalman-Filter">Extended Kalman Filter<a class="anchor-link" href="#Extended-Kalman-Filter">&#182;</a></h1><p>A non-linear extended kalman filter. First we define our state variables x</p>
 $$ x = \begin{bmatrix}
 x & y & \theta &
 \dot{x} & \dot{y} & \dot{\theta} &
-\ddot{x} & \ddot{y} & \ddot{\theta} \end{bmatrix}^T $$<p>The control inputs are the wheel accelerations (which we assume are a function of motor.set() values, such as those from a joystick</p>
+\ddot{x} & \ddot{y} & \ddot{\theta} \end{bmatrix}^T$$<p>On possible choice is to use the measured accelerations as the control inputs. We get these accelerations from the NavX by calling <code>GetWorldLinearX/Y()</code></p>
 $$ u = \begin{bmatrix}
-\alpha_l \\
-\alpha_r \\
+a_x \\
+a_y \\
 \end{bmatrix} $$<p>Our measurement vectors</p>
 <p>We assume m/s^2 for acceleration, radians for theta, and m/s (linear speed) for encoder speeds
-$$ y_{navx} = \begin{bmatrix} a_x \\ a_y \\ \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$</p>
+$$ y_{navx} = \begin{bmatrix} \theta \\ \text{Encoder}_r \\ \text{Encoder}_l \\ \end{bmatrix} $$</p>
 $$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$$$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$<p>Key prediction &amp; update equations</p>
-$$ \hat{x}_{t} = Ax_t + Bu_t $$$$ P_{t+1} = AP_tA^T + Q $$$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$$$ P_t = (I - K_tC)P_t $$$$ y_t = Hx_t $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
+$$ \hat{x}_{t} = f(x_t , u_t) $$$$ P_{t+1} = AP_tA^T + Q $$$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$$$ P_t = (I - K_tC)P_t $$$$ y_t = Hx_t $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
 \begin{align}
 x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
 y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
-\theta_{t+1} &= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2 \\
+\theta_{t+1} &= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
 \dot{x}_{t+1} &= \dot{x}_t + \ddot{x}_t\Delta t \\
 \dot{y}_{t+1} &= \dot{y}_t + \ddot{y}_t\Delta t \\
-\dot{\theta}_{t+1} &= \dot{\theta}_t + \ddot{\theta}_t\Delta t \\
-\end{align}<p>The other values in x are not a function of x, but some are a function of u.</p>
-\begin{align}
-\ddot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
-\ddot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
-\ddot{\theta}_{t+1} &= \frac{\alpha_r - \alpha_l}{W}\Delta t \\
-                   &= \frac{-\Delta t}{W}\alpha_l + \frac{\Delta t}{W}\alpha_l \\
-\end{align}
+\dot{\theta}_{t+1} &= \dot{\theta}_t+\ddot{\theta}_t\Delta t \\
+\ddot{x}_{t+1} &= a_x \\
+\ddot{y}_{t+1} &= a_y \\
+\ddot{\theta}_{t+1 &= \tan^{-1}(a_y, a_x) \\
+\end{align}<p>In order to use en EKF, we need all the partial derivatives of these equations with respect to each of the state variables. We represent these partials as the Jacobian, so it's in a matrix. Each row contains all the partials for each state variable equation (in the same order as above).</p>
+$$\begin{bmatrix}
+1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 & 0 \\
+0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 \\
+0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 \\
+0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+\end{bmatrix}$$
 </div>
 </div>
 </div>
@@ -11846,64 +11868,6 @@ r &= \text{wheel radius} \\
 \begin{bmatrix} \frac{1}{r} & \frac{1}{r} \\ \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} \\ \end{bmatrix}
 \begin{bmatrix} \dot{y} \\ \dot{\theta} \\ \end{bmatrix} \\
 \end{align*}
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="The-State-Space-Equations">The State-Space Equations<a class="anchor-link" href="#The-State-Space-Equations">&#182;</a></h2>$$
-\begin{bmatrix}
-x_{t+1} \\
-y_{t+1} \\
-\theta_{t+1} \\
-\dot{x}_{t+1} \\
-\dot{y}_{t+1} \\
-\dot{\theta}_{t+1} \\
-\ddot{x}_{t+1} \\
-\ddot{y}_{t+1} \\
-\ddot{\theta}_{t+1} \\
-\end{bmatrix} =
-\begin{bmatrix}
-1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t^2& 0 & 0 \\
-0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t^2& 0 \\
-0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t^2 \\
-0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
-0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
-0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
-0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
-\end{bmatrix}
-\begin{bmatrix}
-x_t \\
-y_t \\
-\theta_t \\
-\dot{x}_t \\
-\dot{y}_t \\
-\dot{\theta}_t \\
-\ddot{x}_t \\
-\ddot{y}_t \\
-\ddot{\theta}_t \\
-\end{bmatrix} +
-\begin{bmatrix}
-0 & 0 \\
-0 & 0 \\
-0 & 0 \\
-\cos(\theta_t)\frac{1}{2}\Delta t & \cos(\theta_t)\frac{1}{2}\Delta t \\
-\sin(\theta_t)\frac{1}{2}\Delta t & \sin(\theta_t)\frac{1}{2}\Delta t \\
-\frac{-\Delta t}{W} & \frac{\Delta t}{W}\\
-0 & 0 \\
-0 & 0 \\
-0 & 0 \\
-\end{bmatrix}
-\begin{bmatrix}
-\alpha_{l,t} \\
-\alpha_{r,t} \\
-\end{bmatrix}
-$$
 </div>
 </div>
 </div>
@@ -11987,18 +11951,14 @@ $$
 <h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>The KF update step for the sensor data coming from the RoboRIO</p>
 $$
 \begin{bmatrix}
-a_x \\
-a_y \\
 \theta \\
 \text{Encoder}_l \\
 \text{Encoder}_r \\
 \end{bmatrix} -
 \begin{bmatrix}
-0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & \frac{1}{r} & \frac{1}{r} & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & \frac{-\alpha W}{2r} & \frac{\alpha W}{2r} & 0 & 0 & 0\\
 \end{bmatrix}
 \begin{bmatrix}
 x \\
@@ -12077,38 +12037,6 @@ W_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & W_9 \\
 \end{bmatrix}
 $$
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-$$ K_t = (P_tC^T)(CP_tC^T + R)^{-1} $$$$ K_t(CP_tC^T + R) = (P_tC^T)(CP_tC^T + R)^{-1}(CP_tC^T + R) $$$$ K_t(CP_tC^T + R) = (P_tC^T) $$$$ (CP_tC^T + R)^TK_t^T = (P_tC^T)^T $$<p>Now we have it in the form  $Ax=b$ where $A = (CP_tC^T + R)^T$, $x=k^T$ and $B=(P_tC^T)^T$ so we can now use <code>np.linalg.solve()</code></p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<hr>
-<h1 id="Particle-Filter">Particle Filter<a class="anchor-link" href="#Particle-Filter">&#182;</a></h1><ul>
-<li>Take the current pose estimate of the robot</li>
-<li>Sample points $X=[x^0_t, \dots, x^m_t]$ around it (guess positions near your current estimate)</li>
-<li>Take measurement of various sensors $z_t = [z^0_t, \dots, z^n_t]$</li>
-<li>For each sample:<ul>
-<li>Compute the likelihood of your sensor readings given that guess of position  $w^i_t = p(z_t \mid x^i_t)$</li>
-<li>This is done using your sensor models</li>
-</ul>
-</li>
-<li>Keep each sample with a probability equal to w</li>
-<li>To get one number, take a weighted average of all particles (weighted by their probabilities)</li>
-</ul>
-
 </div>
 </div>
 </div>

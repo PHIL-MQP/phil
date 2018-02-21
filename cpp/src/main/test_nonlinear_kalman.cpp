@@ -28,7 +28,7 @@
 #include <bfl/pdf/analyticconditionalgaussian.h>
 #include <bfl/pdf/linearanalyticconditionalgaussian.h>
 
-#include <phil/localization/nonlinearanalyticconditionalgaussianmobile.h>
+#include <phil/localization/robot_model.h>
 #include <phil/localization/mobile_robot.h>
 
 #include <iostream>
@@ -103,7 +103,7 @@ int main(int argc, char** argv)
   Gaussian system_Uncertainty(sys_noise_Mu, sys_noise_Cov);
 
   // create the model
-  NonLinearAnalyticConditionalGaussianMobile sys_pdf(system_Uncertainty);
+  RobotModel sys_pdf(system_Uncertainty);
   AnalyticSystemModelGaussianUncertainty sys_model(&sys_pdf);
 
   /*********************************
