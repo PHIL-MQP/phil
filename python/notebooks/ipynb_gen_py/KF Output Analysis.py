@@ -5,7 +5,7 @@
 # 
 # Doing the plotting in C++ would be hard and annoying
 
-# In[97]:
+# In[115]:
 
 
 import numpy as np
@@ -15,10 +15,10 @@ from matplotlib.patches import Ellipse, Circle
 import os
 
 
-# In[98]:
+# In[120]:
 
 
-filename = "./recorded_sensor_data/field_data_3/auto/kf_out.csv"
+filename = "./recorded_sensor_data/field_data_2/auto/kf_out.csv"
 print(os.stat(filename).st_mtime)
 data = np.genfromtxt(filename, delimiter=",", dtype=np.float64)
 
@@ -43,7 +43,7 @@ cov_ddy = data[:,79]
 cov_ddyaw = data[:,89]
 
 
-# In[99]:
+# In[121]:
 
 
 plt.figure(figsize=(15,15))
@@ -51,7 +51,7 @@ plt.plot(yaw[200:600])
 plt.show()
 
 
-# In[100]:
+# In[122]:
 
 
 T_begin = 0
@@ -71,7 +71,7 @@ plt.axis("equal")
 plt.show()
 
 
-# In[101]:
+# In[123]:
 
 
 fig, ax = plt.subplots(3,2,figsize=(15,15))

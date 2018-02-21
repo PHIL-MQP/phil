@@ -42,10 +42,13 @@ MatrixWrapper::Matrix RobotModel::dfGet(unsigned int i) const {
     df = 0;
     df(1, 1) = 1;
     df(1, 4) = dt_s;
+    df(1, 7) = 0.5*dt_s*dt_s;
     df(2, 2) = 1;
     df(2, 5) = dt_s;
+    df(2, 8) = 0.5*dt_s*dt_s;
     df(3, 3) = 1;
     df(3, 6) = dt_s;
+    df(3, 9) = 0.5*dt_s*dt_s;
     df(4, 3) = -v*sin(state(3));
     df(5, 3) = v*cos(state(3));
     df(7, 7) = 1;

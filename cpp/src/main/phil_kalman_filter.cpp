@@ -101,10 +101,10 @@ int main(int argc, const char **argv) {
     MatrixWrapper::ColumnVector rio_measurement(rio_H_dim);
     rio_measurement << ax, ay, -yaw * M_PI / 180.f;
 
-    filter.Update(&system_model, input, &rio_measurement_model, rio_measurement);
+    //filter.Update(&system_model, input, &rio_measurement_model, rio_measurement);
 
     // If you want to run just the prediction update, you can run just not pass in measurements
-    //filter.Update(&system_model, input);
+    filter.Update(&system_model, input);
   }
 
   return EXIT_SUCCESS;
