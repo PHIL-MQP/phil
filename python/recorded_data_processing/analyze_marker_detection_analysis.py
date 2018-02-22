@@ -3,12 +3,14 @@ import argparse
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', help='output of marker_detection_analysis program')
     parser.add_argument('ids', help='file of ids that you want to allow (filters out others)')
+    parser.add_argument('--no-plot', '-p', action="store_true", help='show the plots')
     args = parser.parse_args()
 
     ids = np.genfromtxt(args.ids, delimiter=',', dtype=np.int32)
@@ -19,34 +21,39 @@ def main():
             data.append([int(d) for d in line[:2]])
     data = np.array(data)
 
-    plt.figure()
-    max_id = np.max(ids)
-    plt.hist(data[:, 1], bins=max_id)
-    plt.xticks(range(0, max_id, 2))
-    plt.ylabel("Number of detections")
-    plt.xlabel("Tag ID #")
-    plt.title("Tags Detected")
-
-    distinct_times = [0]
+    times_between_detections = [0]
     last_distinct_idx = 0
     for idx in range(1, data.shape[0]):
         if data[idx, 0] != data[last_distinct_idx, 0]:
             dt_s = (data[idx, 0] - data[last_distinct_idx, 0]) / 1e6
-            distinct_times.append(dt_s)
+            times_between_detections.append(dt_s)
             last_distinct_idx = idx
-    distinct_times = np.array(distinct_times)
+    times_between_detections = np.array(times_between_detections)
 
-    plt.figure()
-    plt.plot(distinct_times)
-    plt.ylabel("time since last detected tag")
-    plt.xlabel("instances of detected tags")
-    plt.title("time between detected tags")
+    mean = np.mean(times_between_detections)
+    median = np.median(times_between_detections)
+    maximum = np.max(times_between_detections)
+    mode = stats.mode(times_between_detections)[0][0]
+    percentile = np.percentile(times_between_detections, 95)
+    print("worst_case,percentile,mean,median,mode")
+    print("{:0.3f},{:0.3f},{:0.3f},{:0.3f},{:0.3f}".format(maximum, percentile, mean, median, mode))
 
-    print(np.mean(distinct_times))
-    print(np.median(distinct_times))
-    print(np.max(distinct_times))
+    if not args.no_plot:
+        plt.figure()
+        max_id = np.max(ids)
+        plt.hist(data[:, 1], bins=max_id)
+        plt.xticks(range(0, max_id, 2))
+        plt.ylabel("Number of detections")
+        plt.xlabel("Tag ID #")
+        plt.title("Tags Detected")
 
-    plt.show()
+        plt.figure()
+        plt.plot(times_between_detections)
+        plt.ylabel("time since last detected tag")
+        plt.xlabel("instances of detected tags")
+        plt.title("time between detected tags")
+
+        plt.show()
 
 
 if __name__ == '__main__':

@@ -11732,9 +11732,7 @@ body {
 div#notebook {
   overflow: visible;
   border-top: none;
-}
-
-@media print {
+}@media print {
   div.cell {
     display: block;
     page-break-inside: avoid;
@@ -11755,7 +11753,7 @@ div#notebook {
 
 <!-- Loading mathjax macro -->
 <!-- Load mathjax -->
-    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
     <!-- MathJax configuration -->
     <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
@@ -11793,66 +11791,78 @@ div#notebook {
 </div>
 
 </div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Extended-Kalman-Filter">Extended Kalman Filter<a class="anchor-link" href="#Extended-Kalman-Filter">&#182;</a></h1><p>A non-linear extended kalman filter. First we define our state variables x</p>
-$$ x = \begin{bmatrix}
-x & y & \theta &
-\dot{x} & \dot{y} & \dot{\theta} &
-\ddot{x} & \ddot{y} & \ddot{\theta} \end{bmatrix}^T$$<p>On possible choice is to use the measured accelerations as the control inputs. We get these accelerations from the NavX by calling <code>GetWorldLinearX/Y()</code></p>
-$$ u = \begin{bmatrix}
+<p>$$ x = \begin{bmatrix}
+x &amp; y &amp; \theta &amp;
+\dot{x} &amp; \dot{y} &amp; \dot{\theta} &amp;
+\ddot{x} &amp; \ddot{y} &amp; \ddot{\theta} \end{bmatrix}^T$$</p>
+<p>On possible choice is to use the measured accelerations as the control inputs. We get these accelerations from the NavX by calling <code>GetWorldLinearX/Y()</code></p>
+<p>$$ u = \begin{bmatrix}
 a_x \\
 a_y \\
-\end{bmatrix} $$<p>Our measurement vectors</p>
+\end{bmatrix} $$</p>
+<p>Our measurement vectors</p>
 <p>We assume m/s^2 for acceleration, radians for theta, and m/s (linear speed) for encoder speeds
-$$ y_{navx} = \begin{bmatrix} \theta \\ \omega_r \\ \omega_l \\ \end{bmatrix} $$</p>
-$$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$$$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$<p>Key prediction &amp; update equations</p>
-$$ \hat{x}_{t} = f(x_t , u_t) $$$$ P_{t+1} = AP_tA^T + Q $$$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$$$ P_t = (I - K_tC)P_t $$$$ y_t = Hx_t $$<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs?</p>
-\begin{align}
-v &= \frac{\omega_l + \omega_r}{2} \\
-x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
-y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
-\theta_{t+1} &= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
-\dot{x}_{t+1} &= v\cos(\theta_t) \\
-\dot{y}_{t+1} &= v\sin(\theta_t) \\
-\dot{\theta}_{t+1} &= \frac{\omega_r - \omega_l}{\alpha W} \\
-\ddot{x}_{t+1} &=  \ddot{\theta}_{t+1} \\
-\ddot{y}_{t+1} &=  \ddot{\theta}_{t+1} \\
-\ddot{\theta}_{t+1} &= \ddot{\theta}_{t+1} \\
-\end{align}<p>In order to use en EKF, we need all the partial derivatives of these equations with respect to each of the state variables. We represent these partials as the Jacobian, so it's in a matrix. Each row contains all the partials for each state variable equation (in the same order as above).</p>
-$$\begin{bmatrix}
-1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 & 0 \\
-0 & 1 & 0 & 0 & \Delta t & 0 & 0 & 0.5\Delta t^2 & 0 \\
-0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & -v\sin(\theta_t) & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & v\cos(\theta_t) & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
-\end{bmatrix}$$
+$$ y_{navx} = \begin{bmatrix} \theta \\ v_r \\ v_l \\ \end{bmatrix} $$</p>
+<p>$$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$</p>
+<p>$$ y_{camera} = \begin{bmatrix} \text{Camera}_x \\ \text{Camera}_y \\ \text{Camera}_\theta \\ \end{bmatrix} $$</p>
+<p>Key prediction &amp; update equations</p>
+<p>$$ \hat{x}_{t} = f(x_t , u_t) $$
+$$ P_{t+1} = AP_tA^T + Q $$
+$$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$
+$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$
+$$ P_t = (I - K_tC)P_t $$
+$$ y_t = Hx_t $$</p>
+<p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs? Here we have $W$ which is the track with and $\alpha$ which is a slip factor. This comes from Yu et. al 2011 (Dynamic modeling and power modeling of robotic skid-steered wheeled vehicles). $\alpha\in[1,\infty]$. where $1$ means no slip, and greater than one means more slip.</p>
+<p>Overall were are trying to come up with the equations that make up this:
+$$ \hat{x}_{t+1} = f(x_t, u_t) $$</p>
+<p>\begin{align}
+v &amp;= \frac{v_l + v_r}{2} \\
+x_{t+1} &amp;= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
+y_{t+1} &amp;= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
+\theta_{t+1} &amp;= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
+\dot{x}_{t+1} &amp;= v\cos(\theta_t) \\
+\dot{y}_{t+1} &amp;= v\sin(\theta_t) \\
+\dot{\theta}_{t+1} &amp;= \frac{v_r - v_l}{\alpha W} \\
+\ddot{x}_{t+1} &amp;=  \ddot{\theta}_{t+1} \\
+\ddot{y}_{t+1} &amp;=  \ddot{\theta}_{t+1} \\
+\ddot{\theta}_{t+1} &amp;= \ddot{\theta}_{t+1} \\
+\end{align}</p>
+<p>In order to use en EKF, we need all the partial derivatives of these equations with respect to each of the state variables. We represent these partials as the Jacobian, so it's in a matrix. Each row contains all the partials for each state variable equation (in the same order as above).</p>
+<p>$$\begin{bmatrix}
+1 &amp; 0 &amp; 0 &amp; \Delta t &amp; 0 &amp; 0 &amp; 0.5\Delta t^2 &amp; 0 &amp; 0 \\
+0 &amp; 1 &amp; 0 &amp; 0 &amp; \Delta t &amp; 0 &amp; 0 &amp; 0.5\Delta t^2 &amp; 0 \\
+0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; -v\sin(\theta_t) &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; v\cos(\theta_t) &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 \\
+\end{bmatrix}$$</p>
+
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>The KF update step for the sensor data coming from the RoboRIO</p>
-$$
+<p>$$
 \begin{bmatrix}
 a_x \\
 a_y \\
 \theta \\
 \end{bmatrix} -
 \begin{bmatrix}
-0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 \\
+0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 \end{bmatrix}
 \begin{bmatrix}
 x \\
@@ -11865,15 +11875,16 @@ y \\
 \ddot{y} \\
 \ddot{\theta} \\
 \end{bmatrix}
-$$<p>update step for the beacons</p>
-$$
+$$</p>
+<p>update step for the beacons</p>
+<p>$$
 \begin{bmatrix}
 \text{Beacons}_x \\
 \text{Beacons}_y \\
 \end{bmatrix} -
 \begin{bmatrix}
-1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 \end{bmatrix}
 \begin{bmatrix}
 x \\
@@ -11886,17 +11897,18 @@ y \\
 \ddot{y} \\
 \ddot{\theta} \\
 \end{bmatrix}
-$$<p>update step for the camera</p>
-$$
+$$</p>
+<p>update step for the camera</p>
+<p>$$
 \begin{bmatrix}
 \text{Camera}_x \\
 \text{Camera}_y \\
 \text{Camera}_\theta \\
 \end{bmatrix} -
 \begin{bmatrix}
-1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 \end{bmatrix}
 \begin{bmatrix}
 x \\
@@ -11909,13 +11921,13 @@ y \\
 \ddot{y} \\
 \ddot{\theta} \\
 \end{bmatrix}
-$$<p>Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.</p>
+$$</p>
+<p>Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.</p>
 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
@@ -11986,29 +11998,28 @@ $$<p>Because we are receiving our sensor updates asynchronously, we will just ru
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="The-process-covariance-matrix">The process covariance matrix<a class="anchor-link" href="#The-process-covariance-matrix">&#182;</a></h3>$$
+<h3 id="The-process-covariance-matrix">The process covariance matrix<a class="anchor-link" href="#The-process-covariance-matrix">&#182;</a></h3><p>$$
 \begin{bmatrix}
-W_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & W_2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & W_3 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & W_4 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & W_5 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & W_6 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & W_7 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & W_8 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & W_9 \\
+W_1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; W_2 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; W_3 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; W_4 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; W_5 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_6 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_7 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_8 &amp; 0 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_9 \\
 \end{bmatrix}
-$$
+$$</p>
+
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">

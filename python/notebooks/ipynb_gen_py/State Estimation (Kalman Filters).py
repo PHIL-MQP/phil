@@ -3,6 +3,7 @@
 
 # In[2]:
 
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -25,7 +26,7 @@ import matplotlib.pyplot as plt
 # Our measurement vectors
 # 
 # We assume m/s^2 for acceleration, radians for theta, and m/s (linear speed) for encoder speeds
-# $$ y_{navx} = \begin{bmatrix} \theta \\ \omega_r \\ \omega_l \\ \end{bmatrix} $$
+# $$ y_{navx} = \begin{bmatrix} \theta \\ v_r \\ v_l \\ \end{bmatrix} $$
 # 
 # $$ y_{beacon} = \begin{bmatrix} \text{Beacon}_x \\ \text{Beacon}_y \\ \end{bmatrix} $$
 # 
@@ -40,16 +41,19 @@ import matplotlib.pyplot as plt
 # $$ P_t = (I - K_tC)P_t $$
 # $$ y_t = Hx_t $$
 # 
-# We must describe our dynamics. How do we compute our next state given our current state and the control inputs?
+# We must describe our dynamics. How do we compute our next state given our current state and the control inputs? Here we have $W$ which is the track with and $\alpha$ which is a slip factor. This comes from Yu et. al 2011 (Dynamic modeling and power modeling of robotic skid-steered wheeled vehicles). $\alpha\in[1,\infty]$. where $1$ means no slip, and greater than one means more slip.
+# 
+# Overall were are trying to come up with the equations that make up this:
+# $$ \hat{x}_{t+1} = f(x_t, u_t) $$
 # 
 # \begin{align}
-# v &= \frac{\omega_l + \omega_r}{2} \\
+# v &= \frac{v_l + v_r}{2} \\
 # x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
 # y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
 # \theta_{t+1} &= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
 # \dot{x}_{t+1} &= v\cos(\theta_t) \\
 # \dot{y}_{t+1} &= v\sin(\theta_t) \\
-# \dot{\theta}_{t+1} &= \frac{\omega_r - \omega_l}{\alpha W} \\
+# \dot{\theta}_{t+1} &= \frac{v_r - v_l}{\alpha W} \\
 # \ddot{x}_{t+1} &=  \ddot{\theta}_{t+1} \\
 # \ddot{y}_{t+1} &=  \ddot{\theta}_{t+1} \\
 # \ddot{\theta}_{t+1} &= \ddot{\theta}_{t+1} \\

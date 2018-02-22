@@ -57,9 +57,9 @@ int main(int argc, const char **argv) {
   rio_measurement_mean = 0;
   MatrixWrapper::SymmetricMatrix rio_measurement_covariance(rio_H_dim);
   rio_measurement_covariance = 0;
-  rio_measurement_covariance(1, 1) = 0.0001;
-  rio_measurement_covariance(2, 2) = 0.0001;
-  rio_measurement_covariance(3, 3) = 0.01;
+  rio_measurement_covariance(1, 1) = 0.000001;
+  rio_measurement_covariance(2, 2) = 0.000001;
+  rio_measurement_covariance(3, 3) = 1;
   BFL::Gaussian rio_measurement_uncertainty(rio_measurement_mean, rio_measurement_covariance);
   BFL::LinearAnalyticConditionalGaussian rio_measurement_pdf(rio_H, rio_measurement_uncertainty);
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty rio_measurement_model(&rio_measurement_pdf);
@@ -101,10 +101,10 @@ int main(int argc, const char **argv) {
     MatrixWrapper::ColumnVector rio_measurement(rio_H_dim);
     rio_measurement << ax, ay, -yaw * M_PI / 180.f;
 
-    //filter.Update(&system_model, input, &rio_measurement_model, rio_measurement);
+    filter.Update(&system_model, input, &rio_measurement_model, rio_measurement);
 
     // If you want to run just the prediction update, you can run just not pass in measurements
-    filter.Update(&system_model, input);
+    //filter.Update(&system_model, input);
   }
 
   return EXIT_SUCCESS;
