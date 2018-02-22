@@ -82,8 +82,8 @@ int main(int argc, const char **argv) {
   args::Positional<std::string> video_param(parser, "video_filename", "video file to process", args::Options::Required);
   args::Positional<std::string> timestamps_param(parser, "timestamps_filename", "timestamps.csv file", args::Options::Required);
   args::Positional<std::string> params_param(parser, "params_filename", "camera parameters yaml file", args::Options::Required);
-  args::Flag show_flag(parser, "show", "show the video", {"show"});
-  args::Flag step_flag(parser, "step", "step the video frame-by-frame", {"step"});
+  args::Flag show_flag(parser, "show", "show the video", {'s', "show"});
+  args::Flag step_flag(parser, "step", "step the video frame-by-frame", {'p', "step"});
 
   try {
     parser.ParseCLI(argc, argv);

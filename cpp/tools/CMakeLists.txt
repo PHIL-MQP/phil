@@ -1,10 +1,4 @@
 if (NOT WIN32)
-    add_executable(udp_server udp_server.cpp ${common_src})
-    target_include_directories(udp_server PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
-
-    add_executable(udp_client udp_client.cpp ${common_src})
-    target_include_directories(udp_client PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
-
     add_executable(test_udp_trigger test_udp_trigger.cpp ${common_src})
     target_include_directories(test_udp_trigger PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 endif ()
@@ -14,9 +8,9 @@ if (NOT ${RIO})
     target_include_directories(ntcore_main PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR})
     target_link_libraries(ntcore_main ntcore)
 
-    add_executable(detect_markers detect_markers.cpp)
-    target_link_libraries(detect_markers aruco ${phil_opencv_libs})
-    target_include_directories(detect_markers PRIVATE ${OpenCV_INCLUDE_DIRS})
+    add_executable(annotate_video annotate_video.cpp)
+    target_link_libraries(annotate_video aruco ${phil_opencv_libs})
+    target_include_directories(annotate_video PRIVATE ${phil_include_dir} ${OpenCV_INCLUDE_DIRS})
 
     add_executable(marker_detection_analysis marker_detection_analysis.cpp)
     target_link_libraries(marker_detection_analysis aruco ${phil_opencv_libs})
