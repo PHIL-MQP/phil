@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <Commands/Scheduler.h>
-#include <phil/phil.h>
+#include <phil/phil_rio/phil_rio.h>
 
 #include <DemoBot.h>
 
@@ -22,8 +22,7 @@ void Robot::TeleopInit() {
 void Robot::TeleopPeriodic() {
   frc::Scheduler::GetInstance()->Run();
 
-  phil::Phil::GetInstance()->ReadSensorsAndProcessLocally();
-//  phil::Phil::GetInstance()->ReadSensorsAndProcessOnTK1();
+  phil::Phil::GetInstance()->ReadSensorsAndProcessRemotely();
 
   phil::pose_t pose = phil::Phil::GetInstance()->GetPosition();
 }
