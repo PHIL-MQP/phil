@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <aruco/aruco.h>
 #include <unordered_set>
+#include <phil/common/args.h>
 
 void detectMarkers(cv::VideoCapture capture,
                    const std::vector<unsigned long> &timestamps,
@@ -71,17 +72,34 @@ void detectMarkers(cv::VideoCapture capture,
   }
 }
 
-void show_help();
+int main(int argc, const char **argv) {
+  args::ArgumentParser parser("Creates a CSV for time-stamps tag and their detected poses."
+      "This program will print detected tag info to standard out.\n"
+      "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py\n"
+      "-v will show the video, -s will show and step through each frame (press enter)\n\n"
+      "you can use -s to step through frame by frame\n");
+  args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+  args::Positional<std::string> video_param(parser, "video_filename", "video file to process", args::Options::Required);
+  args::Positional<std::string> timestamps_param(parser, "timestamps_filename", "timestamps.csv file", args::Options::Required);
+  args::Positional<std::string> params_param(parser, "params_filename", "camera parameters yaml file", args::Options::Required);
+  args::Flag show_flag(parser, "show", "show the video", {"show"});
+  args::Flag step_flag(parser, "step", "step the video frame-by-frame", {"step"});
 
-int main(int argc, char **argv) {
-  if (argc < 4) {
-    show_help();
-    return EXIT_FAILURE;
+  try {
+    parser.ParseCLI(argc, argv);
+  }
+  catch (args::Help &e) {
+    std::cout << parser;
+    return 0;
+  }
+  catch (args::RequiredError &e) {
+    std::cout << parser;
+    return 0;
   }
 
-  char *video_filename = argv[1];
-  char *timestamps_filename = argv[2];
-  char *params_filename = argv[3];
+  std::string video_filename = args::get(video_param);
+  std::string timestamps_filename = args::get(timestamps_param);
+  std::string params_filename = args::get(params_param);
 
   cv::VideoCapture cap(video_filename);
   auto w = static_cast<const int>(cap.get(CV_CAP_PROP_FRAME_WIDTH));
@@ -138,33 +156,14 @@ int main(int argc, char **argv) {
   bool show = false;
   bool step = false;
   if (argc == 5) {
-    if (strncmp(argv[4], "-s", 2) == 0) {
+    if (args::get(step_flag)) {
       step = true;
       show = true;
       std::cout << "Stepping (press enter for next frame)" << std::endl;
-    } else if (strncmp(argv[4], "-v", 2) == 0) {
+    } else if (args::get(show_flag)) {
       show = true;
     }
   }
 
   detectMarkers(cap, timestamps, params, step, show);
-}
-
-void show_help() {
-  std::cout << "USAGE: ./marker_detection_analysis video_file timer_stamps camera_params [-s|-v]"
-            << std::endl
-            << std::endl
-            << "This program will print detected tag info to standard out."
-            << std::endl
-            << "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py"
-            << std::endl
-            << "-v will show the video, -s will show and step through each frame (press enter)"
-            << std::endl
-            << std::endl
-            << "you can use -s to step through frame by frame"
-            << std::endl
-            << "Example: ./marker_detection_analysis input.avi timestamps.csv camera_params.yml"
-            << std::endl
-            << "         ./marker_detection_analysis input.avi timestamps.csv camera_params.yml -v"
-            << std::endl;
 }

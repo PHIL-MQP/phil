@@ -86,9 +86,11 @@ int main(int argc, char **argv) {
   std::string outfile;
   if (argc == 4) {
     if (strncmp(argv[3], "-s", 2) == 0) {
+      std::cout << "will step frame-by-frame\n";
       step = true;
     }
     else if (strncmp(argv[3], "-q", 2) == 0) {
+      std::cout << "quiet\n";
       quiet = true;
     }
     else {
@@ -99,9 +101,11 @@ int main(int argc, char **argv) {
   else if (argc == 5) {
     if (strncmp(argv[3], "-s", 2) == 0) {
       step = true;
+      std::cout << "will step frame-by-frame\n";
     }
     else if (strncmp(argv[3], "-q", 2) == 0) {
       quiet = true;
+      std::cout << "quiet\n";
     }
     // for output file
     out_video = cv::VideoWriter(argv[4], CV_FOURCC('M', 'J', 'P', 'G'), fps, input_size);

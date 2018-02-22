@@ -20,7 +20,7 @@ if (NOT ${RIO})
 
     add_executable(marker_detection_analysis marker_detection_analysis.cpp)
     target_link_libraries(marker_detection_analysis aruco ${phil_opencv_libs})
-    target_include_directories(marker_detection_analysis PRIVATE ${OpenCV_INCLUDE_DIRS})
+    target_include_directories(marker_detection_analysis PRIVATE ${phil_include_dir} ${OpenCV_INCLUDE_DIRS})
 
     add_executable(fisheye unwarp_fisheye.cpp)
     target_link_libraries(fisheye ${phil_opencv_libs})
@@ -39,10 +39,6 @@ if (NOT ${RIO})
     add_executable(localize localize.cpp ${common_src})
     target_link_libraries(localize ${phil_opencv_libs} aruco cscore)
     target_include_directories(localize PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
-
-    add_executable(record_tag_positions record_tag_positions.cpp ${common_src})
-    target_link_libraries(record_tag_positions ${phil_opencv_libs} aruco cscore )
-    target_include_directories(record_tag_positions PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
     add_executable(localize_from_mm localize_from_mm.cpp ${common_src})
     target_link_libraries(localize_from_mm ${phil_opencv_libs} aruco cscore)

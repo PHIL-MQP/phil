@@ -11,10 +11,10 @@
 #include <phil/common/args.h>
 
 int main(int argc, const char **argv) {
-  args::ArgumentParser parser("This program records camera frames and their timestamps");
+  args::ArgumentParser parser("This program records camera frames and their timestamps.");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-  // FIXME: add more helpful details
-  args::Positional<std::string> config_filename(parser, "config_filename", "yaml file of configuration.", args::Options::Required);
+  args::Positional<std::string> config_filename(parser, "config_filename", "yaml file of configuration.\n"
+      "See the cpp/configs folder for example yaml config files.", args::Options::Required);
 
   try {
     parser.ParseCLI(argc, argv);
