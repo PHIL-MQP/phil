@@ -36,6 +36,8 @@ for i = (1:size(signal,2) - flen)
     unshifted_y(1, i) = (filter * unshifted_window) / 1000;
 end
 
+THRESH = 2;
+
 figure;
 subplot(3, 1, 1);
 plot(signal);
@@ -50,7 +52,10 @@ title("filter");
 
 subplot(3, 1, 3);
 hold on;
-plot(t_total(1:end-flen), y);
-plot(t_total(1:end-flen), unshifted_y, 'Color', 'g');
+plot(t_total(1:end-flen), y, 'DisplayName', 'detection with doppler shift');
+plot(t_total(1:end-flen), unshifted_y, 'Color', 'g', 'DisplayName', 'Detection');
+plot(t_total(1:end-flen), y>THRESH, 'Color', 'k', 'DisplayName', 'Threshold');
 xlim([t_total(1), t_total(end)]);
+legend('show');
+title("detected signal");
 
