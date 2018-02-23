@@ -11855,6 +11855,7 @@ y_{t+1} &amp;= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>In these cases, we can write have linear measurment equations because our measurements are all values we have in our state space.</p>
 <p>The KF update step for the sensor data coming from the RoboRIO.</p>
+<p><strong>note</strong>: In order for the subtraction between $\theta$ and predicted $\theta$ to work, we must use <em>unwrapped</em> angles (still radians)!</p>
 <p>$$
 \begin{bmatrix}
 a_x \\

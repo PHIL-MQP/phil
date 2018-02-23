@@ -65,7 +65,7 @@ int main(int argc, const char **argv) {
   rio_measurement_covariance = 0;
   rio_measurement_covariance(1, 1) = 0.000001;
   rio_measurement_covariance(2, 2) = 0.000001;
-  rio_measurement_covariance(3, 3) = 1;
+  rio_measurement_covariance(3, 3) = 0.000001;
   BFL::Gaussian rio_measurement_uncertainty(rio_measurement_mean, rio_measurement_covariance);
   RioModel encoder_rio_measurement_pdf(rio_measurement_uncertainty);
   BFL::AnalyticMeasurementModelGaussianUncertainty encoder_rio_measurement_model(&encoder_rio_measurement_pdf);
@@ -95,6 +95,7 @@ int main(int argc, const char **argv) {
 
   // Prediction & Update Loop
   double ax, ay, yaw, encoder_l, encoder_r;
+  size_t idx = 0;
   while (reader.read_row(ax, ay, yaw, encoder_l, encoder_r)) {
     std::cout << filter.PostGet()->ExpectedValueGet().format(csv_fmt)
               << ","
@@ -127,6 +128,8 @@ int main(int argc, const char **argv) {
 
     // If you want to run just the prediction update, you can run just not pass in measurements
     //filter.Update(&system_model, input);
+
+    ++idx;
   }
 
   return EXIT_SUCCESS;

@@ -81,6 +81,8 @@ import matplotlib.pyplot as plt
 # 
 # The KF update step for the sensor data coming from the RoboRIO.
 # 
+# **note**: In order for the subtraction between $\theta$ and predicted $\theta$ to work, we must use _unwrapped_ angles (still radians)!
+# 
 # $$
 # \begin{bmatrix}
 # a_x \\

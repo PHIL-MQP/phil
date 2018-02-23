@@ -5,7 +5,7 @@
 # 
 # Doing the plotting in C++ would be hard and annoying
 
-# In[52]:
+# In[9]:
 
 
 import numpy as np
@@ -15,10 +15,10 @@ from matplotlib.patches import Ellipse, Circle
 import os
 
 
-# In[53]:
+# In[59]:
 
 
-filename = "./recorded_sensor_data/field_data_3/auto/kf_out.csv"
+filename = "./recorded_sensor_data/field_data_2/auto/kf_out.csv"
 print(os.stat(filename).st_mtime)
 data = np.genfromtxt(filename, delimiter=",", dtype=np.float64)
 
@@ -43,25 +43,26 @@ cov_ddy = data[:,79]
 cov_ddyaw = data[:,89]
 
 
-# In[54]:
+# In[60]:
 
 
 plt.figure(figsize=(15,15))
-plt.plot(yaw[200:600])
+plt.plot(yaw[475:485])
+plt.plot([4, 4],[2.57, 2.62], linestyle="--")
 plt.show()
 
 
-# In[55]:
+# In[61]:
 
 
-T_begin = 0
-T_end = 650 # x.shape[0]
+T_begin = 475
+T_end = 485 # x.shape[0]
 skip=1
 
 print("approximate circle radius:", np.max(y[T_begin:T_end]) - np.min(y[T_begin:T_end]))
 
 plt.figure(figsize=(15,15))
-colors = cm.rainbow(np.linspace(0, 1, (T_end - T_begin) // skip))
+colors = cm.rainbow(np.linspace(0, 1, T_end // skip))
 plt.scatter(x[T_begin:T_end:skip],y[T_begin:T_end:skip], s=4, color=colors[T_begin:T_end])
 # plt.quiver(x[T_begin:T_end:skip],y[T_begin:T_end:skip], np.cos(yaw[T_begin:T_end:skip]), np.sin(yaw[T_begin:T_end:skip]), width=0.001)
 plt.ylabel("Y (meters)")
@@ -71,7 +72,7 @@ plt.axis("equal")
 plt.show()
 
 
-# In[56]:
+# In[13]:
 
 
 fig, ax = plt.subplots(3,2,figsize=(15,15))
