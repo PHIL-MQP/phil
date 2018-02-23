@@ -37,9 +37,9 @@ import matplotlib.pyplot as plt
 # $$ \hat{x}_{t} = f(x_t , u_t) $$
 # $$ P_{t+1} = AP_tA^T + Q $$
 # $$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$
-# $$ x = \hat{x} + K(z_t - C\hat{x}_t) $$
-# $$ P_t = (I - K_tC)P_t $$
-# $$ y_t = Hx_t $$
+# $$ y_t = g(x_t) $$
+# $$ x = \hat{x} + K_t(z_t - y_t) $$
+# $$ P_t = (I - y_t)P_t  = P_t - y_tP_t $$
 # 
 # We must describe our dynamics. How do we compute our next state given our current state and the control inputs? Here we have $W$ which is the track with and $\alpha$ which is a slip factor. This comes from Yu et. al 2011 (Dynamic modeling and power modeling of robotic skid-steered wheeled vehicles). $\alpha\in[1,\infty]$. where $1$ means no slip, and greater than one means more slip.
 # 
@@ -226,6 +226,10 @@ import matplotlib.pyplot as plt
 # 0 & 0 & \frac{2\sin(\theta)}{\cos(\theta) + 1} & \frac{1}{\cos(\theta)} & \frac{\alpha W}{2} & 0 & 0 & 0 & 0 \\
 # 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
 # \end{bmatrix}
+
+# ## Notes on BFL Implementation
+# 
+# the covariance update equation $ P_t = (I - y_t)P_t  = P_t - y_tP_t $ is implemented on lines 106-108 in `filter/kalman_filter.cpp`. `_Sigma_temp` is $P_t$, and `_Sigma_temp_par` is $y_t$.
 
 # Resources:
 # 

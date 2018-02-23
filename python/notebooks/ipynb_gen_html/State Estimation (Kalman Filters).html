@@ -11814,9 +11814,9 @@ $$ y_{navx} = \begin{bmatrix} \theta \\ v_r \\ v_l \\ \end{bmatrix} $$</p>
 <p>$$ \hat{x}_{t} = f(x_t , u_t) $$
 $$ P_{t+1} = AP_tA^T + Q $$
 $$ K_t = P_tC^T(CP_tC^T + R)^{-1} $$
-$$ x = \hat{x} + K(z_t - C\hat{x}_t) $$
-$$ P_t = (I - K_tC)P_t $$
-$$ y_t = Hx_t $$</p>
+$$ y_t = g(x_t) $$
+$$ x = \hat{x} + K_t(z_t - y_t) $$
+$$ P_t = (I - y_t)P_t  = P_t - y_tP_t $$</p>
 <p>We must describe our dynamics. How do we compute our next state given our current state and the control inputs? Here we have $W$ which is the track with and $\alpha$ which is a slip factor. This comes from Yu et. al 2011 (Dynamic modeling and power modeling of robotic skid-steered wheeled vehicles). $\alpha\in[1,\infty]$. where $1$ means no slip, and greater than one means more slip.</p>
 <p>Overall were are trying to come up with the equations that make up this:
 $$ \hat{x}_{t+1} = f(x_t, u_t) $$</p>
@@ -12064,6 +12064,15 @@ $$\begin{bmatrix} v_l \\ v_r \\ \theta \\ \end{bmatrix}$$</p>
 0 &amp; 0 &amp; \frac{2\sin(\theta)}{\cos(\theta) + 1} &amp; \frac{1}{\cos(\theta)} &amp; \frac{\alpha W}{2} &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 \end{bmatrix}</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Notes-on-BFL-Implementation">Notes on BFL Implementation<a class="anchor-link" href="#Notes-on-BFL-Implementation">&#182;</a></h2><p>the covariance update equation $ P_t = (I - y_t)P_t  = P_t - y_tP_t $ is implemented on lines 106-108 in <code>filter/kalman_filter.cpp</code>. <code>_Sigma_temp</code> is $P_t$, and <code>_Sigma_temp_par</code> is $y_t$.</p>
 
 </div>
 </div>

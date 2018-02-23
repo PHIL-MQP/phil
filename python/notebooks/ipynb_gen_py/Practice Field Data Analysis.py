@@ -5,6 +5,7 @@
 
 # In[2]:
 
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -17,7 +18,8 @@ import csv
 # 
 # this was one of the trials that actually recorded properly
 
-# In[11]:
+# In[3]:
+
 
 reader = csv.reader(open("./recorded_sensor_data/field_data_2/auto/mocap_data-175.173.csv", 'r'))  # not actually mocap data
 headers = next(reader)
@@ -38,6 +40,7 @@ for i, h in enumerate(headers):
 
 # In[13]:
 
+
 yaws = []
 yaw = 0
 for data in sensor_data:
@@ -47,6 +50,7 @@ for data in sensor_data:
 
 
 # In[19]:
+
 
 fig, ax = plt.subplots(figsize=(8,5))
 ax.set_title("Yaw of robot")
@@ -79,6 +83,7 @@ HTML(html)
 
 # In[8]:
 
+
 reader = csv.reader(open("./recorded_sensor_data/field_data_2/auto/mocap_data-175.173.csv", 'r'))  # not actually mocap data
 headers = next(reader)
 sensor_data = []
@@ -103,6 +108,7 @@ for i, h in enumerate(headers):
 
 # In[9]:
 
+
 plt.figure()
 plt.plot(sensor_data[:,10], label='vl')
 plt.plot(sensor_data[:,11], label='vr')
@@ -112,6 +118,7 @@ plt.show()
 
 
 # In[5]:
+
 
 encoder_xs = []
 encoder_ys = []
@@ -141,6 +148,7 @@ for data in sensor_data:
 
 # In[6]:
 
+
 plt.figure()
 plt.plot(encoder_yaws)
 plt.ylabel("degrees")
@@ -156,7 +164,8 @@ plt.show()
 
 # ## Plot the Yaw() versus FusedHeading()
 
-# In[7]:
+# In[5]:
+
 
 plt.figure(figsize=(15,15))
 plt.plot(sensor_data[:,6], label="FusedHeading")
@@ -174,6 +183,7 @@ plt.show()
 
 # In[17]:
 
+
 plt.plot(sensor_data[:,12])
 plt.plot(sensor_data[:,13])
 plt.ylabel("Motor Set Value (-1 to 1)")
@@ -184,6 +194,7 @@ plt.show()
 # ## Plot acceleration & double integrate
 
 # In[26]:
+
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     """
@@ -226,6 +237,7 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
 
 
 # In[27]:
+
 
 pva = PositionFromIMU(sensor_data[:, 3:6], dt_s=0.02, x0=0, y0=0, yaw0=0)
 

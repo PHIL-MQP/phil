@@ -102,7 +102,7 @@ if (NOT ${RIO})
         ${orocos-bfl_INCLUDE_DIRS})
     target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
 
-    add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${localization_src})
+    add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${common_src} ${localization_src})
     target_include_directories(phil_kalman_filter PRIVATE
             ${phil_include_dir}
             ${OpenCV_INCLUDE_DIRS}
@@ -114,4 +114,8 @@ if (NOT ${RIO})
     target_link_libraries(phil_kalman_filter ${orocos-bfl_LIBRARIES})
     target_compile_options(phil_kalman_filter PRIVATE -Wall -Wextra)
     target_compile_definitions(phil_kalman_filter PRIVATE CSV_IO_NO_THREAD)
+
+    # Tests!
+    add_executable(unit_tests src/test/unit_tests.cpp ${common_src})
+    target_include_directories(unit_tests PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 endif ()

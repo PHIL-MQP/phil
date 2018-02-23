@@ -6,6 +6,7 @@
 
 #include <phil/common/args.h>
 #include <phil/common/csv.h>
+#include <phil/common/common.h>
 #include <phil/localization/robot_model.h>
 #include <fstream>
 
@@ -63,9 +64,9 @@ int main(int argc, const char **argv) {
   rio_measurement_mean = 0;
   MatrixWrapper::SymmetricMatrix rio_measurement_covariance(rio_H_dim);
   rio_measurement_covariance = 0;
-  rio_measurement_covariance(1, 1) = 0.000001;
-  rio_measurement_covariance(2, 2) = 0.000001;
-  rio_measurement_covariance(3, 3) = 0.000001;
+  rio_measurement_covariance(1, 1) = 0.0001;
+  rio_measurement_covariance(2, 2) = 0.0001;
+  rio_measurement_covariance(3, 3) = 0.01;
   BFL::Gaussian rio_measurement_uncertainty(rio_measurement_mean, rio_measurement_covariance);
   RioModel encoder_rio_measurement_pdf(rio_measurement_uncertainty);
   BFL::AnalyticMeasurementModelGaussianUncertainty encoder_rio_measurement_model(&encoder_rio_measurement_pdf);
@@ -79,13 +80,13 @@ int main(int argc, const char **argv) {
   prior_covariance = 0;
   prior_covariance(1, 1) = 0.001;
   prior_covariance(2, 2) = 0.001;
-  prior_covariance(3, 3) = 0.00001;
-  prior_covariance(4, 4) = 0.001;
-  prior_covariance(5, 5) = 0.001;
-  prior_covariance(6, 6) = 0.00001;
-  prior_covariance(7, 7) = 0.001;
-  prior_covariance(8, 8) = 0.001;
-  prior_covariance(9, 9) = 0.00001;
+  prior_covariance(3, 3) = 0.000001;
+  prior_covariance(4, 4) = 0.00000001;
+  prior_covariance(5, 5) = 0.00000001;
+  prior_covariance(6, 6) = 0.00000001;
+  prior_covariance(7, 7) = 0.0000001;
+  prior_covariance(8, 8) = 0.0000001;
+  prior_covariance(9, 9) = 0.00000001;
   BFL::Gaussian prior(prior_mean, prior_covariance);
 
   BFL::ExtendedKalmanFilter filter(&prior);
@@ -97,9 +98,17 @@ int main(int argc, const char **argv) {
   double ax, ay, yaw, encoder_l, encoder_r;
   size_t idx = 0;
   while (reader.read_row(ax, ay, yaw, encoder_l, encoder_r)) {
+    // account for inverted yaw readings
+    yaw = -yaw;
+
+    static double accumulated_yaw_rad = yaw * M_PI / 180.0;
+    static double last_yaw_rad = yaw * M_PI / 180.0;
+
     std::cout << filter.PostGet()->ExpectedValueGet().format(csv_fmt)
               << ","
-              << filter.PostGet()->CovarianceGet().format(csv_fmt)
+              << filter.PostGet()->CovarianceGet().diagonal().format(csv_fmt)
+              << ","
+              << accumulated_yaw_rad
               << std::endl;
 
     // convert ticks per second to meters per second
@@ -107,6 +116,7 @@ int main(int argc, const char **argv) {
     double v_l  = -encoder_l * meters_per_tick;
     double v_r  = -encoder_r * meters_per_tick;
 
+    // Create input vectors (use only on of these)
     MatrixWrapper::ColumnVector acc_input(RobotStateModel::M);
     acc_input(1) = ax;
     acc_input(2) = ay;
@@ -115,19 +125,25 @@ int main(int argc, const char **argv) {
     encoder_input(1) = v_l;
     encoder_input(2) = v_r;
 
+    // The NavX gives us angles (-180/180), we want to unwrap this to (-\infty,\infty)
+    double yaw_rad = yaw * M_PI / 180.0;
+    auto d_yaw_rad = phil::yaw_diff_rad(yaw_rad, last_yaw_rad);
+    last_yaw_rad = yaw_rad;
+    accumulated_yaw_rad += d_yaw_rad;
+
+    // Create RoboRIO measurement vectors (use only on of these)
     MatrixWrapper::ColumnVector acc_rio_measurement(rio_H_dim);
-    // convert degrees to radians
-    acc_rio_measurement << ax, ay, -yaw * M_PI / 180.f;
+    acc_rio_measurement << ax, ay, accumulated_yaw_rad;
 
     MatrixWrapper::ColumnVector encoder_rio_measurement(rio_H_dim);
-    // convert degrees to radians
-    acc_rio_measurement << v_l, v_r, -yaw * M_PI / 180.f;
+    acc_rio_measurement << v_l, v_r, accumulated_yaw_rad;
 
 //    filter.Update(&system_model, acc_input, &encoder_rio_measurement_model, encoder_rio_measurement);
     filter.Update(&system_model, encoder_input, &acc_rio_measurement_model, acc_rio_measurement);
 
     // If you want to run just the prediction update, you can run just not pass in measurements
-    //filter.Update(&system_model, input);
+//    filter.Update(&system_model, acc_input);
+//    filter.Update(&system_model, encoder_input);
 
     ++idx;
   }
