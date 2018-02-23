@@ -2,16 +2,15 @@
 
 #include <bfl/pdf/analyticconditionalgaussian_additivenoise.h>
 
-class RobotModel : public BFL::AnalyticConditionalGaussianAdditiveNoise {
+class RobotStateModel : public BFL::AnalyticConditionalGaussianAdditiveNoise {
  public:
-  explicit RobotModel(const BFL::Gaussian &additiveNoise);
+  explicit RobotStateModel(const BFL::Gaussian &additiveNoise);
 
   // redefine virtual functions
   MatrixWrapper::ColumnVector ExpectedValueGet() const override;
 
   MatrixWrapper::Matrix dfGet(unsigned int i) const override;
 
-  // FIXME
   static constexpr double dt_s = 0.02;
 
 // Params of the robot
@@ -27,3 +26,12 @@ class RobotModel : public BFL::AnalyticConditionalGaussianAdditiveNoise {
   static constexpr unsigned int M = 2;
 };
 
+class RioModel : public BFL::AnalyticConditionalGaussianAdditiveNoise {
+ public:
+  explicit RioModel(const BFL::Gaussian &additiveNoise);
+
+  // redefine virtual functions
+  MatrixWrapper::ColumnVector ExpectedValueGet() const override;
+
+  MatrixWrapper::Matrix dfGet(unsigned int i) const override;
+};

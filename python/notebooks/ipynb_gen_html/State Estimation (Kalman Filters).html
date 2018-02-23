@@ -11824,25 +11824,26 @@ $$ \hat{x}_{t+1} = f(x_t, u_t) $$</p>
 v &amp;= \frac{v_l + v_r}{2} \\
 x_{t+1} &amp;= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
 y_{t+1} &amp;= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
-\theta_{t+1} &amp;= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
+\theta_{t+1} &amp;= \theta_t + \dot{\theta}_t\Delta t \\
 \dot{x}_{t+1} &amp;= v\cos(\theta_t) \\
 \dot{y}_{t+1} &amp;= v\sin(\theta_t) \\
 \dot{\theta}_{t+1} &amp;= \frac{v_r - v_l}{\alpha W} \\
-\ddot{x}_{t+1} &amp;=  \ddot{\theta}_{t+1} \\
-\ddot{y}_{t+1} &amp;=  \ddot{\theta}_{t+1} \\
-\ddot{\theta}_{t+1} &amp;= \ddot{\theta}_{t+1} \\
+\ddot{x}_{t+1} &amp;=  \ddot{x}_{t} \\
+\ddot{y}_{t+1} &amp;=  \ddot{y}_{t} \\
+\ddot{\theta}_{t+1} &amp;= 0 \\
 \end{align}</p>
+<p>I'm not sure about the last three equations...</p>
 <p>In order to use en EKF, we need all the partial derivatives of these equations with respect to each of the state variables. We represent these partials as the Jacobian, so it's in a matrix. Each row contains all the partials for each state variable equation (in the same order as above).</p>
 <p>$$\begin{bmatrix}
 1 &amp; 0 &amp; 0 &amp; \Delta t &amp; 0 &amp; 0 &amp; 0.5\Delta t^2 &amp; 0 &amp; 0 \\
 0 &amp; 1 &amp; 0 &amp; 0 &amp; \Delta t &amp; 0 &amp; 0 &amp; 0.5\Delta t^2 &amp; 0 \\
-0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; \Delta t &amp; 0 &amp; 0 &amp; 0 \\
 0 &amp; 0 &amp; -v\sin(\theta_t) &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 0 &amp; 0 &amp; v\cos(\theta_t) &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 \\
 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 0 \\
-0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 \\
+0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
 \end{bmatrix}$$</p>
 
 </div>
@@ -11852,7 +11853,8 @@ y_{t+1} &amp;= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>The KF update step for the sensor data coming from the RoboRIO</p>
+<h3 id="The-measurement-Vector-+-Update-bit">The measurement Vector + Update bit<a class="anchor-link" href="#The-measurement-Vector-+-Update-bit">&#182;</a></h3><p>In these cases, we can write have linear measurment equations because our measurements are all values we have in our state space.</p>
+<p>The KF update step for the sensor data coming from the RoboRIO.</p>
 <p>$$
 \begin{bmatrix}
 a_x \\
@@ -12002,19 +12004,65 @@ $$</p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="The-process-covariance-matrix">The process covariance matrix<a class="anchor-link" href="#The-process-covariance-matrix">&#182;</a></h3><p>$$
-\begin{bmatrix}
-W_1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
-0 &amp; W_2 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
-0 &amp; 0 &amp; W_3 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
-0 &amp; 0 &amp; 0 &amp; W_4 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
-0 &amp; 0 &amp; 0 &amp; 0 &amp; W_5 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
-0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_6 &amp; 0 &amp; 0 &amp; 0 \\
-0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_7 &amp; 0 &amp; 0 \\
-0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_8 &amp; 0 \\
-0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; W_9 \\
-\end{bmatrix}
-$$</p>
+<h1 id="Alternative-EKF-Formulation">Alternative EKF Formulation<a class="anchor-link" href="#Alternative-EKF-Formulation">&#182;</a></h1><p>The above formulation has the wheel speeds as measured by encoders as the control input $u$ and the accelerometer readings as a measurement. We could also reverse these roles, which results in the equations desrcibed below.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>\begin{align}
+x_{t+1} &amp;= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
+y_{t+1} &amp;= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
+\theta_{t+1} &amp;= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
+\dot{x}_{t+1} &amp;= \dot{x}_t + \ddot{x}_t\Delta t \\
+\dot{y}_{t+1} &amp;= \dot{y}_t + \ddot{y}_t\Delta t \\
+\dot{\theta}_{t+1} &amp;= g_z \\
+\ddot{x}_{t+1} &amp;=  a_x \\
+\ddot{y}_{t+1} &amp;= a_y \\
+\ddot{\theta}_{t+1} &amp;= 0 \\
+\end{align}</p>
+<p>Here we need some source of angular rate, so we use the gyro measurement $g_z$. Not sure if this is a good idea, but at least it's not incorrect.</p>
+<p>The KF update step for the sensor data coming from the RoboRIO is now different, since now our wheels speeds $v_l$ and $v_r$ are measurements. We start with two of our kinematics equations and re-arrange to solve for $v_l$ and $v_r$ as functions of our state variables $\dot{x}$, $\dot{\theta}$,  and $\theta$.</p>
+<p>\begin{align}
+\dot{x} &amp;= \frac{v_l+v_r}{2}\cos(\theta) \\
+\frac{2\dot{x}}{\cos(\theta)} &amp;= v_l+v_r \\
+\frac{2\dot{x}}{\cos(\theta)} - v_r &amp;= v_l \\
+\dot{\theta} &amp;= \frac{v_l-v_r}{\alpha W} \\
+\alpha W\dot{\theta} &amp;= v_l-v_r \\
+\alpha W\dot{\theta} + v_r &amp;= v_l \\
+\alpha W\dot{\theta} + v_r &amp;= \frac{2\dot{x}}{\cos(\theta)} - v_r \\
+2v_r &amp;= \frac{2\dot{x}}{\cos(\theta)} - \alpha W\dot{\theta} \\
+v_r &amp;= \frac{\dot{x}}{\cos(\theta)} - \frac{\alpha W\dot{\theta}}{2} \\
+v_l &amp;= \alpha W\dot{\theta} + \frac{\dot{x}}{\cos(\theta)} - \frac{\alpha W\dot{\theta}}{2} = \frac{\dot{x}}{\cos(\theta)} + \frac{\alpha W\dot{\theta}}{2} \\
+\end{align}</p>
+<p>We define the measurement vector in this formulation to be ordered:
+$$\begin{bmatrix} v_l \\ v_r \\ \theta \\ \end{bmatrix}$$</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>It's important to note that now we have a non-linear measurement model. I think this is fine although I haven't found any examples of it in the literature.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>And like before we need our jacobian:</p>
+<p>\begin{bmatrix}
+0 &amp; 0 &amp; \frac{2\sin(\theta)}{\cos(\theta) + 1} &amp; \frac{1}{\cos(\theta)} &amp; \frac{-\alpha W}{2} &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; \frac{2\sin(\theta)}{\cos(\theta) + 1} &amp; \frac{1}{\cos(\theta)} &amp; \frac{\alpha W}{2} &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+0 &amp; 0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \\
+\end{bmatrix}</p>
 
 </div>
 </div>
