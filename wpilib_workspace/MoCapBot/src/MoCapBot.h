@@ -12,11 +12,13 @@ struct data_t {
   double raw_accel_x;
   double raw_accel_y;
   double raw_accel_z;
+  double raw_gyro_x;
+  double raw_gyro_y;
+  double raw_gyro_z;
   double temp;
   double world_accel_y;
   double world_accel_x;
   double yaw;
-  double fused_heading;
   double x;
   double y;
   double z;

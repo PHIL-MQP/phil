@@ -65,7 +65,8 @@ void Robot::TeleopInit() {
 	std::cout << "TeleopInit" << std::endl;
 
 	std::ostringstream filename;
-	filename << "/home/lvuser/rio-data-" << frc::Timer::GetFPGATimestamp() << ".csv";
+	filename << "/home/lvuser/rio-data-" << frc::Timer::GetFPGATimestamp()
+			<< ".csv";
 	log.open(filename.str());
 
 	if (!log) {
@@ -77,10 +78,11 @@ void Robot::TeleopInit() {
 	}
 
 	log << "raw_accel_x,raw_accel_y,raw_accel_z,"
-			<< "world_accel_x,world_accel_y," << "yaw,fused_heading," << "x,y,z,"
-			<< "left_encoder_rate,right_encoder_rate,"
-			<< "left_motor,right_motor,temp," << "fpga time,navx time" << std::endl;
-
+			<< "raw_gyro_x,raw_gyro_y,raw_gyro_z,"
+			<< "world_accel_x,world_accel_y," << "yaw,fused_heading,"
+			<< "x,y,z," << "left_encoder_rate,right_encoder_rate,"
+			<< "left_motor,right_motor,temp," << "fpga time,navx time"
+			<< std::endl;
 
 	// load file to get the name of who to trigger
 	std::ifstream hostname_file;
@@ -88,14 +90,17 @@ void Robot::TeleopInit() {
 	hostname_file >> udp_hostname;
 	std::cout << "hostname: " << udp_hostname << "\n";
 
-
 	// start recording data
 	uint8_t data = 1;
 	std::cout << "Starting Cameras" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6783);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6780);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6781);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6782);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6783);
 
 	// tell the motion capture to start
 	std::cout << "Triggering Motion Capture" << std::endl;
@@ -125,10 +130,14 @@ void Robot::DisabledInit() {
 //   tell the TK1 to stop recording data
 	uint8_t data = 0;
 	std::cout << "Stopping Cameras" << std::endl;
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6780);
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6781);
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6782);
-	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0, 6783);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6780);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6781);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6782);
+	phil::Phil::GetInstance()->SendUDPTo(udp_hostname, &data, 1, nullptr, 0,
+			6783);
 }
 
 void Robot::TeleopPeriodic() {
@@ -138,10 +147,12 @@ void Robot::TeleopPeriodic() {
 	sample.raw_accel_x = ahrs->GetRawAccelX();
 	sample.raw_accel_y = ahrs->GetRawAccelY();
 	sample.raw_accel_z = ahrs->GetRawAccelZ();
+	sample.raw_gyro_x = ahrs->GetRawGyroX();
+	sample.raw_gyro_y = ahrs->GetRawGyroY();
+	sample.raw_gyro_z = ahrs->GetRawGyroZ();
 	sample.world_accel_x = ahrs->GetWorldLinearAccelX();
 	sample.world_accel_y = ahrs->GetWorldLinearAccelY();
 	sample.yaw = ahrs->GetYaw();
-	sample.fused_heading = ahrs->GetFusedHeading();
 	sample.x = ahrs->GetDisplacementX();
 	sample.y = ahrs->GetDisplacementY();
 	sample.z = ahrs->GetDisplacementZ();
@@ -162,22 +173,24 @@ void Robot::TeleopPeriodic() {
 			drive_base->right_encoder->GetRate());
 
 	std::cout << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y
-			<< "," << sample.raw_accel_z << "," << sample.world_accel_x << ","
-			<< sample.world_accel_y << "," << sample.yaw << ","
-			<< sample.fused_heading << "," << "," << sample.x << "," << sample.y
-			<< "," << sample.z << "," << sample.left_encoder_rate << ","
-			<< sample.right_encoder_rate << "," << sample.left_motor<< ","
-			<< sample.right_motor<< "," << sample.temp << "," << sample.fpga_t << ","
-			<< sample.navx_t << std::endl;
+			<< "," << sample.raw_accel_z << "," << sample.raw_gyro_x << ","
+			<< sample.raw_gyro_y << "," << sample.raw_gyro_z
+			<< sample.world_accel_x << "," << sample.world_accel_y << ","
+			<< sample.yaw << "," << sample.x << "," << sample.y << ","
+			<< sample.z << "," << sample.left_encoder_rate << ","
+			<< sample.right_encoder_rate << "," << sample.left_motor << ","
+			<< sample.right_motor << "," << sample.temp << "," << sample.fpga_t
+			<< "," << sample.navx_t << std::endl;
 
 	log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y
-			<< "," << sample.raw_accel_z << "," << sample.world_accel_x << ","
-			<< sample.world_accel_y << "," << sample.yaw << ","
-			<< sample.fused_heading << "," << sample.x << "," << sample.y << ","
+			<< "," << sample.raw_accel_z << sample.raw_gyro_x << ","
+			<< sample.raw_gyro_y << "," << sample.raw_gyro_z << ","
+			<< sample.world_accel_x << "," << sample.world_accel_y << ","
+			<< sample.yaw << "," << sample.x << "," << sample.y << ","
 			<< sample.z << "," << sample.left_encoder_rate << ","
-			<< sample.right_encoder_rate << "," << sample.left_motor<< ","
-			<< sample.right_motor<< "," << sample.temp << "," << sample.fpga_t << ","
-			<< sample.navx_t << std::endl;
+			<< sample.right_encoder_rate << "," << sample.left_motor << ","
+			<< sample.right_motor << "," << sample.temp << "," << sample.fpga_t
+			<< "," << sample.navx_t << std::endl;
 }
 
 void Robot::TestPeriodic() {
