@@ -3,11 +3,13 @@
 
 # # This notebook is an attempt to get position from the sensor recordings taken during our motion capture tests
 
-# In[1]:
+# In[61]:
+
 
 import numpy as np
 np.set_printoptions(precision=4, suppress=True)
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import csv
 import json
 
@@ -24,11 +26,24 @@ def print_h3(value):
 
 def print_md(value):
     display(Markdown(value))
+    
+mpl.rcParams['axes.formatter.useoffset'] = False
+mpl.rcParams['figure.facecolor'] = 'black'
+mpl.rcParams['figure.titlesize'] = 24
+mpl.rcParams['axes.edgecolor'] = 'white'
+mpl.rcParams['axes.labelcolor'] = 'white'
+mpl.rcParams['axes.labelsize'] = 16
+mpl.rcParams['xtick.color'] = 'white'
+mpl.rcParams['ytick.color'] = 'white'
+mpl.rcParams['xtick.labelsize'] = 16
+mpl.rcParams['ytick.labelsize'] = 16
+mpl.rcParams['legend.facecolor'] = 'white'
 
 
 # ## Read MoCap data and RoboRIO data form files
 
-# In[2]:
+# In[62]:
+
 
 data_dir = "../../recorded_sensor_data/mocap_12_10-03-30-00/"
 sensor_file = data_dir + "sensor_data.csv"
@@ -69,9 +84,13 @@ for i, h in enumerate(headers):
 mocap_data = []
 for mocap_row in mocap_reader:
     data = []
-    for d in mocap_row:
+    for idx, d in enumerate(mocap_row):
         try:
-            data.append(float(d))
+            float_d = float(d)
+            if idx == 4:
+                if float_d < -np.pi:
+                    float_d += 4 * np.pi
+            data.append(float_d)
         except ValueError:
             data.append(MISSING_DATA)
     mocap_data.append(data)
@@ -80,7 +99,8 @@ mocap_data = np.array(mocap_data)
 
 # ### Check the amount of data between the two matches?
 
-# In[3]:
+# In[63]:
+
 
 # these should be pretty darn close
 print("Seconds of IMU data recorded (by stamp): ", (sensor_data[-1][-1] - sensor_data[0][-1])/1000.0)
@@ -90,7 +110,8 @@ print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 # ## Plot Mocap Data by Axis
 
-# In[4]:
+# In[64]:
+
 
 plt.plot(mocap_data[:,2], label="rx")
 plt.plot(mocap_data[:,3], label="ry")
@@ -111,7 +132,8 @@ plt.show()
 # 
 # This is what we will call our "ground truth" for the position of the robot over time.
 
-# In[5]:
+# In[65]:
+
 
 mocap_states = np.ndarray((mocap_data.shape[0], 3))
 mocap_states[0] = np.array([mocap_data[0,0], mocap_data[0,1], mocap_data[0,2]])
@@ -129,7 +151,8 @@ for mocap_idx in range(0, len(mocap_data)):
     
 
 
-# In[6]:
+# In[66]:
+
 
 plt.figure(figsize=(10,10))
 plt.scatter(mocap_states[0,0], mocap_states[0,1], marker='.', s=100, color='b')
@@ -145,7 +168,8 @@ plt.show()
 
 # Here's what the data looks like in that weird "jump". Turns out it's not actually a "jump" but smooth transition
 
-# In[7]:
+# In[67]:
+
 
 print(mocap_states[2010:2030,2])
 
@@ -154,7 +178,8 @@ print(mocap_states[2010:2030,2])
 # 
 # We take the numerical derivatives using a 3 point endpoint and midpoint approximations. We also compute the rotational velocity around the Z axis (yaw gyro rate) by 
 
-# In[147]:
+# In[68]:
+
 
 N = mocap_states.shape[0]
 mocap_vx = np.empty(N)
@@ -178,7 +203,8 @@ mocap_vx[-1] = 1/(2*h)*(-3*mocap_states[-1,0]+4*mocap_states[-2,0]-mocap_states[
 mocap_vy[-1] = 1/(2*h)*(-3*mocap_states[-1,1]+4*mocap_states[-2,1]-mocap_states[-3,1])
 
 
-# In[148]:
+# In[69]:
+
 
 mocap_ax[0] = 1/(2*h)*(-3*mocap_vx[0]+4*mocap_vx[1]-mocap_vx[2])
 mocap_ay[0] = 1/(2*h)*(-3*mocap_vy[0]+4*mocap_vy[1]-mocap_vy[2])
@@ -193,7 +219,8 @@ mocap_ax[-1] = 1/(2*h)*(-3*mocap_vx[-1]+4*mocap_vx[-2]-mocap_vx[-3])
 mocap_ay[-1] = 1/(2*h)*(-3*mocap_vy[-1]+4*mocap_vy[-2]-mocap_vy[-3])
 
 
-# In[149]:
+# In[70]:
+
 
 mocap_vx = np.clip(mocap_vx, -2, 2)
 mocap_vy = np.clip(mocap_vy, -2, 2)
@@ -202,7 +229,8 @@ mocap_ax = np.clip(mocap_ax, -4, 4)
 mocap_ay = np.clip(mocap_ay, -4, 4)
 
 
-# In[150]:
+# In[71]:
+
 
 plt.figure(figsize=(10,10))
 plt.plot(mocap_vx, label='vx')
@@ -227,7 +255,8 @@ plt.show()
 # 
 # It's important to note that there are actually a bunch of points at the origin, then the origin jumps a few centimeters to another spot. I can't explain this but we'll just be aware of that as we compare against mocap.
 
-# In[151]:
+# In[72]:
+
 
 global_origin_x = mocap_states[0,0]
 global_origin_y = mocap_states[0,1]
@@ -236,7 +265,8 @@ global_origin_xy = np.array([[global_origin_x], [global_origin_y]])
 print("Global Origin", [global_origin_x, global_origin_y, global_origin_yaw])
 
 
-# In[152]:
+# In[73]:
+
 
 print_h2("Uncalibrated data:")
 plt.plot(sensor_data[:,0], label="acc x")
@@ -260,7 +290,8 @@ plt.show()
 # 
 # We first apply the results of our IMU calibration experiment. Truthfully, they have little effect other than accounting for the magical $0.4$ constant we've been using. It's also worth noting that these numbers come from the the _other_ NavX so it's not really fair to use them but I want to illustrate the whole procedure.
 
-# In[153]:
+# In[74]:
+
 
 def calibrate(input_data):
     # Ideal accelerometer calibration parameters
@@ -299,7 +330,8 @@ def calibrate(input_data):
 calibrated_imu_data = calibrate(sensor_data)
 
 
-# In[154]:
+# In[75]:
+
 
 print_h2("Calibrated data vs Raw Data")
 plt.figure(figsize=(10,10))
@@ -329,7 +361,8 @@ plt.show()
 
 # # Base frame calibration
 
-# In[158]:
+# In[76]:
+
 
 def base_rotation(mean_acc_while_stationary):
     """ https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d """
@@ -393,7 +426,8 @@ plt.show()
 # 
 # The data is now read to be processed by a Kalman Filter or double integrated or whatever else you want
 
-# In[159]:
+# In[77]:
+
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
     """
@@ -445,7 +479,8 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
 # 
 # we can do this now that we've done calibration
 
-# In[174]:
+# In[78]:
+
 
 plt.figure(figsize=(15,10))
 plt.plot(mocap_ax[::2], label='mocap ax')
@@ -494,7 +529,8 @@ plt.show()
 # 
 # What if we double integrate the twice differentiated mocap data?
 
-# In[74]:
+# In[79]:
+
 
 # fake_mocap_data = np.zeros((len(mocap_ax), 6))
 # fake_mocap_data[:,0] = mocap_ax
@@ -505,7 +541,8 @@ plt.show()
 
 # ## Integrating Navx Gyro to get Angle
 
-# In[75]:
+# In[90]:
+
 
 yaws = []
 yaw = np.rad2deg(global_origin_yaw)
@@ -517,21 +554,27 @@ for data in final_imu_data:
 naive_yaws = []
 og_yaw = np.rad2deg(global_origin_yaw)
 for data in sensor_data:
-    gyro_z = -data[5] * 0.4
+    gyro_z = -data[5] * 2000/4985
     og_yaw += 0.02 * gyro_z
     naive_yaws.append(og_yaw)
 
 
-# In[76]:
+# In[96]:
 
-plt.plot(yaws, label="final integrated gyro")
-plt.plot(naive_yaws, label="0.4 * raw integrated gyro")
+
+plt.figure(figsize=(15,15))
+plt.plot(yaws, label="Integrated gyro")
 # sample every other point (50hz versus 100hz collection) and convert to degrees
-plt.plot(np.rad2deg(mocap_states[0:-1:2,2]), label='mocap')
+mocap_yaw_deg = np.rad2deg(mocap_states[0:-1:2,2])
+plt.plot(mocap_yaw_deg, label='mocap')
 plt.ylabel("degrees")
+plt.xlabel("samples")
 plt.title("Yaw of robot")
 plt.legend()
 plt.show()
+
+print("Maximum error over the mocap (ignoring outliner)")
+print(np.max(mocap_yaw_deg[:1000] - yaws[:1000]))
 
 
 # This suggests that the IMU calibration is not correct.
@@ -540,7 +583,8 @@ plt.show()
 
 # # Analysis of accurate of Integrating Yaw from NavX Gyro
 
-# In[77]:
+# In[82]:
+
 
 error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
 
@@ -570,7 +614,8 @@ print("from this it is not clear whether gyro drift plays a role in the error. H
 
 # # X/Y from NavX
 
-# In[78]:
+# In[83]:
+
 
 # adjust the NavX data to start with the correct global X, Y, and Yaw
 navx_x = sensor_data[:,6] - sensor_data[0,6]
@@ -584,7 +629,8 @@ navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
 
 # # Encoder
 
-# In[79]:
+# In[84]:
+
 
 # encoder kinematics
 encoder_x = global_origin_x
@@ -614,7 +660,8 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[80]:
+# In[85]:
+
 
 plt.figure(figsize=(20,10))
 plt.plot(sensor_data[:,9]*distance_per_pulse,label='left encoder rate (m/s)')
@@ -628,7 +675,8 @@ plt.show()
 
 # ## Double Integrate Mocap Robot Sensor Data
 
-# In[114]:
+# In[86]:
+
 
 pva_from_imu = PositionFromIMU(final_imu_data, 0.02, global_origin_x, global_origin_y, global_origin_yaw)
 
@@ -639,7 +687,8 @@ plt.legend()
 plt.show()
 
 
-# In[168]:
+# In[87]:
+
 
 plt.figure(figsize=(15,15))
 plt.title("Sensor Data versus MoCap")
@@ -659,7 +708,8 @@ plt.show()
 
 # ## Comparing TimeStamp Accuracy between NavX and RoboRIO (FPGA)
 
-# In[83]:
+# In[88]:
+
 
 dts_fpgas = []
 dts_navxs = []
@@ -675,24 +725,4 @@ plt.ylabel("delt t (seconds)")
 plt.legend()
 plt.title("Sensor reading timestamps")
 plt.show()
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
 
