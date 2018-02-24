@@ -12,9 +12,9 @@ if (NOT ${RIO})
     target_link_libraries(annotate_video aruco ${phil_opencv_libs})
     target_include_directories(annotate_video PRIVATE ${phil_include_dir} ${OpenCV_INCLUDE_DIRS})
 
-    add_executable(localize_to_markermap localize_to_markermap.cpp)
-    target_link_libraries(localize_to_markermap aruco ${phil_opencv_libs} phil_common)
-    target_include_directories(localize_to_markermap PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+    add_executable(aruco_localize_from_mm aruco_localize_from_mm.cpp)
+    target_link_libraries(aruco_localize_from_mm aruco ${phil_opencv_libs} phil_common)
+    target_include_directories(aruco_localize_from_mm PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
     add_executable(marker_detection_analysis marker_detection_analysis.cpp)
     target_link_libraries(marker_detection_analysis aruco ${phil_opencv_libs})
