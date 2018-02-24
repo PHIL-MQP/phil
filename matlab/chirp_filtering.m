@@ -9,45 +9,52 @@ close all;
 % construct a series of chirps with the desired properties
 F0 = 20000;
 F1 = 27000;
-robot_speed = 5.7; % m/s
+robot_speed = 5; % m/s
 speed_of_sound = 343.2; % m/s
 doppler = F0 * robot_speed / speed_of_sound;
 number_of_chirps = 1;
-adc_sps = 64000;
+adc_sps = F1 * 5; % ensure we're safely above Nyquist's
 dt = 1/adc_sps;
 signal_T = 0.005;
-noise_T = 0.1;
-noise_aplitude = 10;
+padding_T = 0.1;
+noise = 10;
+signal_scale = 1;
 
 t = 0:dt:signal_T-dt;
-t_total = 0:dt:(signal_T+2*noise_T)*number_of_chirps-dt;
-t_size = size(t,2);
-noise_t_size = round(noise_T/dt);
+t_total = 0:dt:signal_T + 2 * padding_T - dt;
+padding_t_size = round(padding_T/dt);
 
-unshifted_chirp = chirp(t, F0, t(end), F1, 'linear', -90);
-noisy_unshifted_chirp = unshifted_chirp + rand(1,t_size)* noise_aplitude - noise_aplitude/2;
-shifted_chirp = chirp(t, F0 + doppler, t(end), F1 + doppler, 'linear', -90);
-noisy_shifted_chirp = shifted_chirp + rand(1,t_size)* noise_aplitude - noise_aplitude/2;
-noise = rand(1,noise_t_size)*noise_aplitude - noise_aplitude/2;
-padded_chirp = [noise noisy_shifted_chirp noise];
-unshifted_padded_chirp = [noise noisy_unshifted_chirp noise];
-signal = repmat(padded_chirp, 1, number_of_chirps);
-unshifted_signal = repmat(unshifted_padded_chirp, 1, number_of_chirps);
+% Original Chirp
+unshifted_chirp = chirp(t, F0, t(end), F1, 'linear', -90) * signal_scale;
+% Doppler Shifted Chirp
+shifted_chirp = chirp(t, F0 + doppler, t(end), F1 + doppler, 'linear', -90) * signal_scale;
+
+% Add padding
+padding = zeros(1, padding_t_size);
+shifted_padded = [padding shifted_chirp padding];
+unshifted_padded = [padding unshifted_chirp padding];
+
+% Add noise
+noisey_shifted_signal = shifted_padded + rand(size(shifted_padded)) * noise - noise/2;
+noisey_unshifted_signal = unshifted_padded + rand(size(unshifted_padded)) * noise - noise/2;
+
+repeated_shifted_signal = repmat(noisey_shifted_signal, 1, number_of_chirps);
+repeated_unshifted_signal = repmat(noisey_unshifted_signal, 1, number_of_chirps);
 
 filter = chirp(t, F0, t(end), F1, 'linear', -90);
 flen = size(filter,2);
 
-shifted_y = zeros(1, size(signal,2) - flen);
-unshifted_y = zeros(1, size(signal,2) - flen);
-for i = (1:size(signal,2) - flen)
-    window = signal(i:i+flen-1)';
-    unshifted_window = unshifted_signal(i:i+flen-1)';
-    shifted_y(1, i) = (filter * window) / 1000;
-    unshifted_y(1, i) = (filter * unshifted_window) / 1000;
+shifted_matched = zeros(1, size(repeated_shifted_signal,2) - flen);
+unshifted_matched = zeros(1, size(repeated_shifted_signal,2) - flen);
+for i = (1:size(repeated_shifted_signal,2) - flen)
+    window = repeated_shifted_signal(i:i+flen-1)';
+    unshifted_window = repeated_unshifted_signal(i:i+flen-1)';
+    shifted_matched(1, i) = (filter * window) / 1000;
+    unshifted_matched(1, i) = (filter * unshifted_window) / 1000;
 end
 
-[unshifted_max_val, unshifted_detection] = max(unshifted_y);
-[shifted_max_val, shifted_detection] = max(shifted_y);
+[unshifted_max_val, unshifted_detection] = max(unshifted_matched);
+[shifted_max_val, shifted_detection] = max(shifted_matched);
 unshifted_detection = unshifted_detection * dt;
 shifted_detection = shifted_detection * dt;
 
@@ -59,30 +66,40 @@ disp("Start of chirp detected at");
 disp(unshifted_detection);
 disp("Start of doppler-shifted chirp detected at");
 disp(shifted_detection);
-disp("Error (seconds) cause by doppler shift");
-disp(unshifted_detection - shifted_detection);
-disp("Error (meters) cause by doppler shift");
-disp((unshifted_detection - shifted_detection) * speed_of_sound);
+disp("Error with no shift (seconds)");
+disp(unshifted_detection - padding_T);
+disp("Error with no shift (meters)");
+disp((unshifted_detection - padding_T) * speed_of_sound);
+disp("Error with dpppler shift (seconds)");
+disp(shifted_detection - padding_T);
+disp("Error with dpppler  shift (meters)");
+disp((shifted_detection - padding_T) * speed_of_sound);
 
 figure;
-subplot(3, 1, 1);
-plot(signal);
-plot(t_total, signal);
-xlim([t_total(1), t_total(end)]);
-title("signal");
+plot(shifted_padded);
+title("Unshifted, No-Noise, Chirp Signal");
 
-subplot(3, 1, 2);
-plot(t, filter, 'Color', 'r');
-xlim([t_total(1), t_total(end)]);
-title("filter");
+figure;
+plot(unshifted_chirp(1:20));
+title("Unshifted, No-Noise, Chirp Signal (close up)");
 
-subplot(3, 1, 3);
+figure;
+plot(filter);
+title("Filter used for matching");
+
+figure;
 hold on;
-plot(t_total(1:end-flen), unshifted_y, 'Color', 'g', 'DisplayName', 'Detection');
-plot(t_total(1:end-flen), shifted_y, 'DisplayName', 'Detection with doppler shift');
-plot(t_total(1:end-flen), (unshifted_y >= unshifted_max_val)*unshifted_max_val, 'DisplayName', 'Binary Detection');
-plot(t_total(1:end-flen), (shifted_y >= shifted_max_val)*unshifted_max_val, 'DisplayName', 'Binary detection with doppler shift');
+plot(t_total, repeated_unshifted_signal, 'DisplayName', 'Final Signal');
+plot(t_total, repeated_shifted_signal, 'DisplayName', 'Finall Shifted Signal');
 xlim([t_total(1), t_total(end)]);
 legend('show');
-title("detected signal");
+title("Final Signal");
+
+figure;
+hold on;
+plot(t_total(1:end-flen), unshifted_matched, 'DisplayName', 'Pattern-Matched');
+plot(t_total(1:end-flen), shifted_matched, 'DisplayName', 'Pattern-Matched on Shifted Signal');
+xlim([t_total(1), t_total(end)]);
+legend('show');
+title("Signal Convolved with Pattern");
 
