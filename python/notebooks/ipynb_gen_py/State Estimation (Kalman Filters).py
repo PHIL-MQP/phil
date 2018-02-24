@@ -188,16 +188,41 @@ import matplotlib.pyplot as plt
 # \begin{align}
 # x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
 # y_{t+1} &= y_t + \dot{y}_t\Delta t + \tfrac{1}{2}\ddot{y}_t\Delta t^2 \\
-# \theta_{t+1} &= \theta_t + \dot{\theta}_t\Delta t + \tfrac{1}{2}\ddot{\theta}_t\Delta t^2\\
+# \theta_{t+1} &= \text{yaw} \\
 # \dot{x}_{t+1} &= \dot{x}_t + \ddot{x}_t\Delta t \\
 # \dot{y}_{t+1} &= \dot{y}_t + \ddot{y}_t\Delta t \\
-# \dot{\theta}_{t+1} &= g_z \\
+# \dot{\theta}_{t+1} &= 0 \\
 # \ddot{x}_{t+1} &=  a_x \\
 # \ddot{y}_{t+1} &= a_y \\
 # \ddot{\theta}_{t+1} &= 0 \\
 # \end{align}
 # 
-# Here we need some source of angular rate, so we use the gyro measurement $g_z$. Not sure if this is a good idea, but at least it's not incorrect.
+# Here we need some source of $\theta$, so we use the yaw measurement from the NavX? Not sure if this is a good idea?
+# 
+# Notice this is a linear in the state, so we can rewrite it in matrix form.
+# 
+# $$
+# \begin{bmatrix}
+# x_{t+1} \\
+# y_{t+1} \\ 
+# \dot{x}_{t+1} \\
+# \dot{y}_{t+1} \\
+# \dot{\theta}_{t+1} \\
+# \ddot{x}_{t+1} \\
+# \ddot{y}_{t+1} \\
+# \ddot{\theta}_{t+1} \\
+# \end{bmatrix}
+# =\begin{bmatrix}
+# x_{t+1} \\
+# y_{t+1} \\ 
+# \dot{x} \\
+# \dot{y} \\
+# \dot{\theta} \\
+# \ddot{x} \\
+# \ddot{y} \\
+# \ddot{\theta} \\
+# \end{bmatrix}
+# $$
 # 
 # The KF update step for the sensor data coming from the RoboRIO is now different, since now our wheels speeds $v_l$ and $v_r$ are measurements. We start with two of our kinematics equations and re-arrange to solve for $v_l$ and $v_r$ as functions of our state variables $\dot{x}$, $\dot{\theta}$,  and $\theta$.
 # 

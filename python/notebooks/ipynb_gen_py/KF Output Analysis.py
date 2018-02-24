@@ -5,7 +5,7 @@
 # 
 # Doing the plotting in C++ would be hard and annoying
 
-# In[20]:
+# In[1]:
 
 
 import numpy as np
@@ -26,7 +26,7 @@ mpl.rcParams['ytick.color'] = 'white'
 mpl.rcParams['legend.facecolor'] = 'white'
 
 
-# In[21]:
+# In[2]:
 
 
 filename = "./recorded_sensor_data/field_data_3/auto/kf_out.csv"
@@ -56,7 +56,7 @@ cov_ddyaw = data[:,17]
 measured_yaw = data[:,18]
 
 
-# In[22]:
+# In[3]:
 
 
 plt.figure(figsize=(15,15))
@@ -69,7 +69,7 @@ plt.legend()
 plt.show()
 
 
-# In[25]:
+# In[4]:
 
 
 T_begin = 0
@@ -88,7 +88,7 @@ plt.axis("equal")
 plt.show()
 
 
-# In[24]:
+# In[5]:
 
 
 fig, ax = plt.subplots(3,2,figsize=(15,15))
