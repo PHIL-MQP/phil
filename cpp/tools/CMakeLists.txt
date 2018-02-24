@@ -1,5 +1,5 @@
 if (NOT WIN32)
-    add_executable(test_udp_trigger test_udp_trigger.cpp ${common_src})
+    add_executable(test_udp_trigger test_udp_trigger.cpp ../src/common/udp.cpp)
     target_include_directories(test_udp_trigger PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
 endif ()
 
@@ -11,6 +11,10 @@ if (NOT ${RIO})
     add_executable(annotate_video annotate_video.cpp)
     target_link_libraries(annotate_video aruco ${phil_opencv_libs})
     target_include_directories(annotate_video PRIVATE ${phil_include_dir} ${OpenCV_INCLUDE_DIRS})
+
+    add_executable(localize_to_markermap localize_to_markermap.cpp)
+    target_link_libraries(localize_to_markermap aruco ${phil_opencv_libs} phil_common)
+    target_include_directories(localize_to_markermap PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
     add_executable(marker_detection_analysis marker_detection_analysis.cpp)
     target_link_libraries(marker_detection_analysis aruco ${phil_opencv_libs})
@@ -24,8 +28,8 @@ if (NOT ${RIO})
     target_link_libraries(fisheye ${phil_opencv_libs})
     target_include_directories(fisheye PRIVATE ${OpenCV_INCLUDE_DIRS})
 
-    add_executable(record_cameras_on_udp_trigger record_cameras_on_udp_trigger.cpp ${common_src})
-    target_link_libraries(record_cameras_on_udp_trigger aruco cscore ${phil_opencv_libs} yaml-cpp)
+    add_executable(record_cameras_on_udp_trigger record_cameras_on_udp_trigger.cpp)
+    target_link_libraries(record_cameras_on_udp_trigger aruco cscore ${phil_opencv_libs} yaml-cpp phil_common)
     target_include_directories(record_cameras_on_udp_trigger PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
 
     if (NOT CMAKE_HOST_WIN32)
@@ -34,12 +38,12 @@ if (NOT ${RIO})
         target_link_libraries(record_imu_calibration_data linux_navx_driver)
     endif ()
 
-    add_executable(localize localize.cpp ${common_src})
-    target_link_libraries(localize ${phil_opencv_libs} aruco cscore)
+    add_executable(localize localize.cpp)
+    target_link_libraries(localize ${phil_opencv_libs} aruco cscore phil_common)
     target_include_directories(localize PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 
-    add_executable(localize_from_mm localize_from_mm.cpp ${common_src})
-    target_link_libraries(localize_from_mm ${phil_opencv_libs} aruco cscore)
+    add_executable(localize_from_mm localize_from_mm.cpp)
+    target_link_libraries(localize_from_mm ${phil_opencv_libs} aruco cscore phil_common)
     target_include_directories(localize_from_mm PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
 endif ()
 

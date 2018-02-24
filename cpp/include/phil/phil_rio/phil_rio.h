@@ -34,11 +34,6 @@ class Phil {
   void GiveSensors(frc::Encoder *left_encoder, frc::Encoder *right_encoder, AHRS *ahrs);
 
   /**
-   * For when we are only doing IMU and Encoders, we will use this method.
-   */
-  void ReadSensorsAndProcessLocally();
-
-  /**
    * For when we have a camera being processed on a co-processor
    */
   void ReadSensorsAndProcessRemotely();

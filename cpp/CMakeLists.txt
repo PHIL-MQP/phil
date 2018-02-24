@@ -24,6 +24,7 @@ elseif (NOT ${RIO})
     set(phil_opencv_libs
             opencv_core
             opencv_imgproc
+            opencv_calib3d
             opencv_videoio
             opencv_imgcodecs
             opencv_highgui)
@@ -75,7 +76,7 @@ add_subdirectory(tools)
 
 # Phil RIO library. Only when cross-compiling
 if (${RIO})
-    add_library(phil_rio ${phil_rio_src} ${common_src} src/localization/localization.cpp)
+    add_library(phil_rio ${phil_rio_src} src/common/udp.cpp)
     target_include_directories(phil_rio PRIVATE ${phil_include_dir} ${WPILIB_INCLUDE_DIR} ${NAVX_INCLUDE_DIR})
 
     # Test program
@@ -91,7 +92,11 @@ if (${RIO})
 endif ()
 
 if (NOT ${RIO})
-    add_executable(phil_main src/main/main.cpp ${common_src} ${localization_src})
+    add_library(phil_common ${common_src})
+    target_link_libraries(phil_common wpiutil ${phil_opencv_libs})
+    target_include_directories(phil_common PUBLIC ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+
+    add_executable(phil_main src/main/main.cpp)
     target_include_directories(phil_main PRIVATE
         ${phil_include_dir}
         ${OpenCV_INCLUDE_DIRS}
@@ -100,9 +105,9 @@ if (NOT ${RIO})
         ${CSCORE_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/include/eigen3
         ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_main ntcore cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
+    target_link_libraries(phil_main phil_common ntcore cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
 
-    add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${common_src} ${localization_src})
+    add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${localization_src})
     target_include_directories(phil_kalman_filter PRIVATE
             ${phil_include_dir}
             ${OpenCV_INCLUDE_DIRS}
@@ -111,11 +116,12 @@ if (NOT ${RIO})
             ${CSCORE_INCLUDE_DIR}
             ${CMAKE_SOURCE_DIR}/include/eigen3
             ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_kalman_filter ${orocos-bfl_LIBRARIES})
+    target_link_libraries(phil_kalman_filter phil_common ${orocos-bfl_LIBRARIES})
     target_compile_options(phil_kalman_filter PRIVATE -Wall -Wextra)
     target_compile_definitions(phil_kalman_filter PRIVATE CSV_IO_NO_THREAD)
 
     # Tests!
-    add_executable(unit_tests src/test/unit_tests.cpp ${common_src})
+    add_executable(unit_tests src/test/unit_tests.cpp)
     target_include_directories(unit_tests PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
+    target_link_libraries(unit_tests phil_common)
 endif ()

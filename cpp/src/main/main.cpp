@@ -6,8 +6,8 @@
 #include <marker_mapper/markermapper.h>
 #include <aruco/aruco.h>
 
-#include "phil/common/udp.h"
-#include "phil/localization/localization.h"
+#include <phil/common/udp.h>
+#include <phil/common/common.h>
 
 /**
  * The main program that runs on the TK1. Receives sensor data from the camera and the RoboRIO and performs localization
@@ -114,9 +114,8 @@ int main(int argc, char **argv) {
 
     // TODO: read serial data from PSoC
 
-    // do localization
-    double time_s = time / 1e6; // convert micoseconds to seconds
-    phil::pose_t pose = phil::compute_pose(time_s, frame, rio_data);
+    // TODO: localization
+    phil::pose_t pose{};
 
     table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
   }

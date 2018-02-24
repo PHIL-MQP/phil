@@ -4,7 +4,6 @@
 #include <phil/phil_rio/phil_rio.h>
 #include <SmartDashboard/SmartDashboard.h>
 #include <networktables/NetworkTableInstance.h>
-#include <phil/localization/localization.h>
 
 namespace phil {
 
@@ -33,41 +32,6 @@ void Phil::GiveSensors(Encoder *left_encoder, Encoder *right_encoder, AHRS *ahrs
   this->left_encoder = left_encoder;
   this->right_encoder = right_encoder;
   this->ahrs = ahrs;
-}
-
-void Phil::ReadSensorsAndProcessLocally() {
-  // read configuration values
-  double wheel_radius = frc::SmartDashboard::GetNumber(phil::kWheelRadius, -1);
-  double track_width = frc::SmartDashboard::GetNumber(phil::kTrackWidth, -1);
-  bool motor_1_inverted = frc::SmartDashboard::GetBoolean(phil::kMotor1Inverted, false);
-  bool motor_2_inverted = frc::SmartDashboard::GetBoolean(phil::kMotor2Inverted, true);
-
-  // Read the sensors
-  phil::data_t rio_data = {0};
-  rio_data.raw_accel_x = ahrs->GetRawAccelX();
-  rio_data.raw_accel_y = ahrs->GetRawAccelY();
-  rio_data.raw_accel_z = ahrs->GetRawAccelZ();
-  rio_data.raw_gyro_x = ahrs->GetRawGyroX();
-  rio_data.raw_gyro_y = ahrs->GetRawGyroY();
-  rio_data.raw_gyro_z = ahrs->GetRawGyroZ();
-  rio_data.raw_mag_x = ahrs->GetRawMagX();
-  rio_data.raw_mag_y = ahrs->GetRawMagY();
-  rio_data.raw_mag_z = ahrs->GetRawMagZ();
-  rio_data.navx_x = ahrs->GetDisplacementX();
-  rio_data.navx_y = ahrs->GetDisplacementY();
-  rio_data.navx_z = ahrs->GetDisplacementZ();
-  rio_data.left_encoder_rate = left_encoder->GetRate();
-  rio_data.right_encoder_rate = right_encoder->GetRate();
-  rio_data.fpga_t = frc::Timer::GetFPGATimestamp();
-  rio_data.navx_t = ahrs->GetLastSensorTimestamp();
-  rio_data.left_motor = motor_1_inverted * left_motor->Get();
-  rio_data.right_motor = motor_2_inverted * right_motor->Get();
-
-  cv::Mat no_image;
-  pose_t pose = phil::compute_pose(0, no_image, rio_data);
-
-  // post to network tables
-  table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
 }
 
 void Phil::ReadSensorsAndProcessRemotely() {
