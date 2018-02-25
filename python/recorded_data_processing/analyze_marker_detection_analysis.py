@@ -3,18 +3,19 @@ import argparse
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from scipy import stats
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('infile', help='output of marker_detection_analysis program')
+    parser.add_argument('detected_markers', help='output of marker_detection_analysis program (such as detected_markers.csv)')
     parser.add_argument('ids', help='file of ids that you want to allow (filters out others)')
     parser.add_argument('--no-plot', '-p', action="store_true", help='show the plots')
     args = parser.parse_args()
 
     ids = np.genfromtxt(args.ids, delimiter=',', dtype=np.int32)
-    reader = csv.reader(open(args.infile, 'r'))
+    reader = csv.reader(open(args.detected_markers, 'r'))
     data = []
     for line in reader:
         if int(line[1]) in ids:
@@ -39,19 +40,25 @@ def main():
     print("{:0.3f},{:0.3f},{:0.3f},{:0.3f},{:0.3f}".format(maximum, percentile, mean, median, mode))
 
     if not args.no_plot:
+        # pretty formatting
+        mpl.rcParams['axes.formatter.useoffset'] = False
+        mpl.rcParams['axes.labelsize'] = 14
+        mpl.rcParams['xtick.labelsize'] = 14
+        mpl.rcParams['ytick.labelsize'] = 14
+
         plt.figure()
         max_id = np.max(ids)
         plt.hist(data[:, 1], bins=max_id)
         plt.xticks(range(0, max_id, 2))
         plt.ylabel("Number of detections")
         plt.xlabel("Tag ID #")
-        plt.title("Tags Detected")
+        plt.title("Tags Detected", fontsize=18)
 
         plt.figure()
         plt.plot(times_between_detections)
         plt.ylabel("time since last detected tag")
         plt.xlabel("instances of detected tags")
-        plt.title("time between detected tags")
+        plt.title("Time Between Detected Tags", fontsize=18)
 
         plt.show()
 
