@@ -11,6 +11,7 @@ int main(int argc, const char **argv) {
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
   args::Positional<std::string>
       rio_csv(parser, "rio_csv", "csv file of data logged on the roborio", args::Options::Required);
+  args::Flag step_flag(parser, "step", "press enter to publish each line/packet of the data", {'s', "step"});
 
   try {
     parser.ParseCLI(argc, argv);
@@ -52,10 +53,14 @@ int main(int argc, const char **argv) {
     phil::data_t response = client.Transaction(data);
     phil::print_data_t(response);
 
-    struct timespec deadline{};
-    deadline.tv_sec = 0;
-    deadline.tv_nsec = 20000000;
-    clock_nanosleep(CLOCK_REALTIME, 0, &deadline, NULL);
+    if (args::get(step_flag)) {
+      std::cin.get();
+    } else {
+      struct timespec deadline{};
+      deadline.tv_sec = 0;
+      deadline.tv_nsec = 20000000;
+      clock_nanosleep(CLOCK_REALTIME, 0, &deadline, NULL);
+    }
   }
 
   return EXIT_SUCCESS;

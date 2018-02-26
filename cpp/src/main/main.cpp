@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
   phil::UDPServer server(phil::kPort);
   struct timeval timeout{0};
   timeout.tv_sec = 0;
-  timeout.tv_usec = 20000; // 20ms
+  timeout.tv_usec = 50000; // 20ms
   server.SetTimeout(timeout);
 
   // network tables
@@ -111,7 +111,8 @@ int main(int argc, char **argv) {
     ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
 
     if (bytes_received == -1) {
-      std::cout << phil::yellow << "No data from RoboRIO" << phil::reset << std::endl;
+      long now = std::chrono::system_clock::now().time_since_epoch().count();
+      std::cout << now << " " << phil::yellow << "No data from RoboRIO" << phil::reset << std::endl;
     } else if (bytes_received != phil::data_t_size) {
       std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
                 << std::endl;

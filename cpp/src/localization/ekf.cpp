@@ -1,5 +1,4 @@
 #include <phil/localization/ekf.h>
-#include <phil/localization/robot_model.h>
 
 namespace phil {
 
@@ -18,8 +17,8 @@ EKF::EKF()
   prior_covariance(7, 7) = 0.0000001;
   prior_covariance(8, 8) = 0.0000001;
   prior_covariance(9, 9) = 0.00000001;
-  BFL::Gaussian prior(prior_mean, prior_covariance);
-  filter = std::make_unique<BFL::ExtendedKalmanFilter>(&prior);
+  prior = std::make_unique<BFL::Gaussian>(prior_mean, prior_covariance);
+  filter = std::make_unique<BFL::ExtendedKalmanFilter>(prior.get());
 
   // Define x = f(x,u)
   MatrixWrapper::ColumnVector encoder_system_noise_mean(EncoderControlModel::N);
@@ -27,8 +26,8 @@ EKF::EKF()
   MatrixWrapper::SymmetricMatrix encoder_system_noise_covariance(EncoderControlModel::N);
   encoder_system_noise_covariance = 0.0;
   BFL::Gaussian encoder_system_uncertainty(encoder_system_noise_mean, encoder_system_noise_covariance);
-  EncoderControlModel encoder_system_pdf(encoder_system_uncertainty);
-  encoder_system_model = std::make_unique<BFL::AnalyticSystemModelGaussianUncertainty>(&encoder_system_pdf);
+  encoder_system_pdf = std::make_unique<EncoderControlModel>(encoder_system_uncertainty);
+  encoder_system_model = std::make_unique<BFL::AnalyticSystemModelGaussianUncertainty>(encoder_system_pdf.get());
 
   // Construct measurement models for each of our sensor packages
   // First for the yaw measurement which comes from the NavX on the RoboRIO
@@ -39,9 +38,10 @@ EKF::EKF()
   MatrixWrapper::SymmetricMatrix yaw_measurement_covariance(1);
   yaw_measurement_covariance = 0.01; // TODO: compute actual variance of this!
   BFL::Gaussian yaw_measurement_uncertainty(yaw_measurement_mean, yaw_measurement_covariance);
-  BFL::LinearAnalyticConditionalGaussian yaw_measurement_pdf(yaw_measurement_H, yaw_measurement_uncertainty);
+  yaw_measurement_pdf =
+      std::make_unique<BFL::LinearAnalyticConditionalGaussian>(yaw_measurement_H, yaw_measurement_uncertainty);
   yaw_measurement_model =
-      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(&yaw_measurement_pdf);
+      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(yaw_measurement_pdf.get());
 
   // Second for the world-frame accelerometer measurements which comes from the NavX on the RoboRIO
   MatrixWrapper::Matrix acc_measurement_H(2, EncoderControlModel::N);
@@ -54,9 +54,10 @@ EKF::EKF()
   acc_measurement_covariance(1, 1) = 0.0001;
   acc_measurement_covariance(2, 2) = 0.0001;
   BFL::Gaussian acc_measurement_uncertainty(acc_measurement_mean, acc_measurement_covariance);
-  BFL::LinearAnalyticConditionalGaussian acc_measurement_pdf(acc_measurement_H, acc_measurement_uncertainty);
+  acc_measurement_pdf =
+      std::make_unique<BFL::LinearAnalyticConditionalGaussian>(acc_measurement_H, acc_measurement_uncertainty);
   acc_measurement_model =
-      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(&acc_measurement_pdf);
+      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(acc_measurement_pdf.get());
 
   MatrixWrapper::Matrix camera_measurement_H(3, EncoderControlModel::N);
   camera_measurement_H << 1, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -69,9 +70,10 @@ EKF::EKF()
   camera_measurement_covariance(1, 1) = 0.0001;
   camera_measurement_covariance(2, 2) = 0.0001;
   BFL::Gaussian camera_measurement_uncertainty(camera_measurement_mean, camera_measurement_covariance);
-  BFL::LinearAnalyticConditionalGaussian camera_measurement_pdf(camera_measurement_H, camera_measurement_uncertainty);
+  camera_measurement_pdf =
+      std::make_unique<BFL::LinearAnalyticConditionalGaussian>(camera_measurement_H, camera_measurement_uncertainty);
   camera_measurement_model =
-      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(&camera_measurement_pdf);
+      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(camera_measurement_pdf.get());
 
   MatrixWrapper::Matrix beacon_measurement_H(2, EncoderControlModel::N);
   beacon_measurement_H << 1, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -83,9 +85,10 @@ EKF::EKF()
   beacon_measurement_covariance(1, 1) = 0.0001;
   beacon_measurement_covariance(2, 2) = 0.0001;
   BFL::Gaussian beacon_measurement_uncertainty(beacon_measurement_mean, beacon_measurement_covariance);
-  BFL::LinearAnalyticConditionalGaussian beacon_measurement_pdf(beacon_measurement_H, beacon_measurement_uncertainty);
+  beacon_measurement_pdf =
+      std::make_unique<BFL::LinearAnalyticConditionalGaussian>(beacon_measurement_H, beacon_measurement_uncertainty);
   beacon_measurement_model =
-      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(&beacon_measurement_pdf);
+      std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(beacon_measurement_pdf.get());
 }
 
 }

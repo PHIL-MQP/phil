@@ -29,7 +29,7 @@ UDPServer::UDPServer(uint16_t port_num) {
 ssize_t UDPServer::Read(uint8_t *response, size_t response_size) {
   struct sockaddr_in remote_addr{};
   ssize_t recvlen =
-      recvfrom(socket_fd, (uint8_t *) &response, response_size, 0, (struct sockaddr *) &remote_addr, &sockaddr_size);
+      recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &remote_addr, &sockaddr_size);
   return recvlen;
 }
 
@@ -84,7 +84,7 @@ void UDPClient::SetTimeout(struct timeval timeout) {
 data_t UDPClient::Transaction(data_t data) {
   struct sockaddr_in response_addr{};
 
-  if (sendto(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &server_addr, sockaddr_size)
+  if (sendto(socket_fd, reinterpret_cast<uint8_t *>(&data), data_t_size, 0, (struct sockaddr *) &server_addr, sockaddr_size)
       < 0) {
     std::cerr << "sendto failed: [" << strerror(errno) << "]" << std::endl;
   }
