@@ -106,6 +106,8 @@ int main(int argc, char **argv) {
 
   cv::Mat frame;
   bool done = false;
+  static double accumulated_yaw_rad = 0;
+  static double last_yaw_rad = 0;
   std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
   while (!done) {
     // read some sensor data from roborio
@@ -119,12 +121,22 @@ int main(int argc, char **argv) {
       std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
                 << std::endl;
     } else {
+      constexpr double meters_per_tick = 0.000357;
+      double v_l = -rio_data.left_encoder_rate * meters_per_tick;
+      double v_r = -rio_data.right_encoder_rate * meters_per_tick;
+
       MatrixWrapper::ColumnVector encoder_input(2);
-      encoder_input(1) = rio_data.left_encoder_rate;
-      encoder_input(2) = rio_data.right_encoder_rate;
+      encoder_input(1) = v_l;
+      encoder_input(2) = v_r;
+
+      // The NavX gives us angles (-180/180), we want to unwrap this to (-\infty,\infty)
+      double yaw_rad = -rio_data.yaw * M_PI / 180.0;
+      auto d_yaw_rad = phil::yaw_diff_rad(yaw_rad, last_yaw_rad);
+      last_yaw_rad = yaw_rad;
+      accumulated_yaw_rad += d_yaw_rad;
 
       MatrixWrapper::ColumnVector yaw_measurement(1);
-      yaw_measurement << rio_data.yaw;
+      yaw_measurement << accumulated_yaw_rad;
 
       MatrixWrapper::ColumnVector acc_measurement(2);
       acc_measurement << rio_data.world_accel_x, rio_data.world_accel_y;
