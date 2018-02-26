@@ -10,6 +10,7 @@
 #include <phil/common/common.h>
 #include <phil/common/udp.h>
 #include <phil/localization/ekf.h>
+#include <unistd.h>
 
 /**
  * The main program that runs on the TK1. Receives sensor data from the camera and the RoboRIO and performs localization
@@ -96,8 +97,9 @@ int main(int argc, char **argv) {
 
   // network tables
   auto inst = nt::NetworkTableInstance::GetDefault();
-  std::shared_ptr<NetworkTable> table;
-  table = inst.GetTable(phil::kTableName);
+  inst.StartClient("localhost", NT_DEFAULT_PORT);
+  usleep(500000); // wait for connection to be established
+  auto table = inst.GetTable(phil::kTableName);
 
   // Create the EKF
   phil::EKF ekf;
@@ -179,8 +181,10 @@ int main(int argc, char **argv) {
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
+    std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
     table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
   }
 
   return EXIT_FAILURE;
 }
+
