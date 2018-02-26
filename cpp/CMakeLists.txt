@@ -15,6 +15,9 @@ if (NOT ${RIO})
     pkg_check_modules(orocos-bfl REQUIRED orocos-bfl)
 endif ()
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if (${TK1})
     set(phil_opencv_libs
             opencv_core
@@ -93,8 +96,15 @@ endif ()
 
 if (NOT ${RIO})
     add_library(phil_common ${common_src})
-    target_link_libraries(phil_common wpiutil ${phil_opencv_libs})
     target_include_directories(phil_common PUBLIC ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
+    target_link_libraries(phil_common wpiutil ${phil_opencv_libs})
+
+    add_library(phil_localization ${localization_src})
+    target_include_directories(phil_localization PUBLIC
+            ${phil_include_dir}
+            ${CMAKE_SOURCE_DIR}/include/eigen3
+            ${orocos-bfl_INCLUDE_DIRS})
+    target_link_libraries(phil_localization phil_common orocos-bfl)
 
     add_executable(phil_main src/main/main.cpp)
     target_include_directories(phil_main PRIVATE
@@ -105,7 +115,7 @@ if (NOT ${RIO})
         ${CSCORE_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/include/eigen3
         ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_main phil_common ntcore cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
+    target_link_libraries(phil_main ntcore phil_common phil_localization cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
 
     add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${localization_src})
     target_include_directories(phil_kalman_filter PRIVATE
@@ -116,7 +126,7 @@ if (NOT ${RIO})
             ${CSCORE_INCLUDE_DIR}
             ${CMAKE_SOURCE_DIR}/include/eigen3
             ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_kalman_filter phil_common ${orocos-bfl_LIBRARIES})
+    target_link_libraries(phil_kalman_filter phil_common phil_localization ${orocos-bfl_LIBRARIES})
     target_compile_options(phil_kalman_filter PRIVATE -Wall -Wextra)
     target_compile_definitions(phil_kalman_filter PRIVATE CSV_IO_NO_THREAD)
 

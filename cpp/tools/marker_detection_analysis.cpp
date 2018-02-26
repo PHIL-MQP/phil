@@ -1,6 +1,8 @@
-#include <opencv2/opencv.hpp>
-#include <aruco/aruco.h>
 #include <unordered_set>
+
+#include <aruco/aruco.h>
+#include <opencv2/opencv.hpp>
+
 #include <phil/common/args.h>
 
 void detectMarkers(cv::VideoCapture capture,
