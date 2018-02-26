@@ -5,28 +5,20 @@
 # 
 # Doing the plotting in C++ would be hard and annoying
 
-# In[1]:
+# In[23]:
 
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import matplotlib.cm as cm
 from matplotlib.patches import Ellipse, Circle
 import csv
 import os
 
-mpl.rcParams['axes.formatter.useoffset'] = False
-mpl.rcParams['figure.facecolor'] = 'black'
-mpl.rcParams['figure.titlesize'] = 24
-mpl.rcParams['axes.edgecolor'] = 'white'
-mpl.rcParams['axes.labelcolor'] = 'white'
-mpl.rcParams['xtick.color'] = 'white'
-mpl.rcParams['ytick.color'] = 'white'
-mpl.rcParams['legend.facecolor'] = 'white'
+plt.style.use("../phil.mplstyle")
 
 
-# In[2]:
+# In[22]:
 
 
 filename = "./recorded_sensor_data/field_data_3/auto/kf_out.csv"
@@ -56,7 +48,7 @@ cov_ddyaw = data[:,17]
 measured_yaw = data[:,18]
 
 
-# In[3]:
+# In[18]:
 
 
 plt.figure(figsize=(15,15))
@@ -69,7 +61,7 @@ plt.legend()
 plt.show()
 
 
-# In[4]:
+# In[19]:
 
 
 T_begin = 0
@@ -88,7 +80,7 @@ plt.axis("equal")
 plt.show()
 
 
-# In[5]:
+# In[20]:
 
 
 fig, ax = plt.subplots(3,2,figsize=(15,15))

@@ -3,7 +3,7 @@
 
 # # This notebook is an attempt to get position from the sensor recordings taken during our motion capture tests
 
-# In[61]:
+# In[2]:
 
 
 import numpy as np
@@ -27,22 +27,13 @@ def print_h3(value):
 def print_md(value):
     display(Markdown(value))
     
-mpl.rcParams['axes.formatter.useoffset'] = False
-mpl.rcParams['figure.facecolor'] = 'black'
-mpl.rcParams['figure.titlesize'] = 24
-mpl.rcParams['axes.edgecolor'] = 'white'
-mpl.rcParams['axes.labelcolor'] = 'white'
-mpl.rcParams['axes.labelsize'] = 16
-mpl.rcParams['xtick.color'] = 'white'
-mpl.rcParams['ytick.color'] = 'white'
-mpl.rcParams['xtick.labelsize'] = 16
-mpl.rcParams['ytick.labelsize'] = 16
-mpl.rcParams['legend.facecolor'] = 'white'
+
+plt.style.use("../phil.mplstyle")
 
 
 # ## Read MoCap data and RoboRIO data form files
 
-# In[62]:
+# In[3]:
 
 
 data_dir = "../../recorded_sensor_data/mocap_12_10-03-30-00/"
@@ -99,7 +90,7 @@ mocap_data = np.array(mocap_data)
 
 # ### Check the amount of data between the two matches?
 
-# In[63]:
+# In[4]:
 
 
 # these should be pretty darn close
@@ -110,7 +101,7 @@ print("Seconds of MoCap recorded:", len(mocap_data) / 100)
 
 # ## Plot Mocap Data by Axis
 
-# In[64]:
+# In[5]:
 
 
 plt.plot(mocap_data[:,2], label="rx")
@@ -132,7 +123,7 @@ plt.show()
 # 
 # This is what we will call our "ground truth" for the position of the robot over time.
 
-# In[65]:
+# In[6]:
 
 
 mocap_states = np.ndarray((mocap_data.shape[0], 3))
@@ -151,7 +142,7 @@ for mocap_idx in range(0, len(mocap_data)):
     
 
 
-# In[66]:
+# In[7]:
 
 
 plt.figure(figsize=(10,10))
@@ -168,7 +159,7 @@ plt.show()
 
 # Here's what the data looks like in that weird "jump". Turns out it's not actually a "jump" but smooth transition
 
-# In[67]:
+# In[8]:
 
 
 print(mocap_states[2010:2030,2])
@@ -178,7 +169,7 @@ print(mocap_states[2010:2030,2])
 # 
 # We take the numerical derivatives using a 3 point endpoint and midpoint approximations. We also compute the rotational velocity around the Z axis (yaw gyro rate) by 
 
-# In[68]:
+# In[9]:
 
 
 N = mocap_states.shape[0]
@@ -203,7 +194,7 @@ mocap_vx[-1] = 1/(2*h)*(-3*mocap_states[-1,0]+4*mocap_states[-2,0]-mocap_states[
 mocap_vy[-1] = 1/(2*h)*(-3*mocap_states[-1,1]+4*mocap_states[-2,1]-mocap_states[-3,1])
 
 
-# In[69]:
+# In[10]:
 
 
 mocap_ax[0] = 1/(2*h)*(-3*mocap_vx[0]+4*mocap_vx[1]-mocap_vx[2])
@@ -219,7 +210,7 @@ mocap_ax[-1] = 1/(2*h)*(-3*mocap_vx[-1]+4*mocap_vx[-2]-mocap_vx[-3])
 mocap_ay[-1] = 1/(2*h)*(-3*mocap_vy[-1]+4*mocap_vy[-2]-mocap_vy[-3])
 
 
-# In[70]:
+# In[11]:
 
 
 mocap_vx = np.clip(mocap_vx, -2, 2)
@@ -229,7 +220,7 @@ mocap_ax = np.clip(mocap_ax, -4, 4)
 mocap_ay = np.clip(mocap_ay, -4, 4)
 
 
-# In[71]:
+# In[12]:
 
 
 plt.figure(figsize=(10,10))
@@ -255,7 +246,7 @@ plt.show()
 # 
 # It's important to note that there are actually a bunch of points at the origin, then the origin jumps a few centimeters to another spot. I can't explain this but we'll just be aware of that as we compare against mocap.
 
-# In[72]:
+# In[13]:
 
 
 global_origin_x = mocap_states[0,0]
@@ -265,7 +256,7 @@ global_origin_xy = np.array([[global_origin_x], [global_origin_y]])
 print("Global Origin", [global_origin_x, global_origin_y, global_origin_yaw])
 
 
-# In[73]:
+# In[14]:
 
 
 print_h2("Uncalibrated data:")
@@ -290,7 +281,7 @@ plt.show()
 # 
 # We first apply the results of our IMU calibration experiment. Truthfully, they have little effect other than accounting for the magical $0.4$ constant we've been using. It's also worth noting that these numbers come from the the _other_ NavX so it's not really fair to use them but I want to illustrate the whole procedure.
 
-# In[74]:
+# In[15]:
 
 
 def calibrate(input_data):
@@ -330,7 +321,7 @@ def calibrate(input_data):
 calibrated_imu_data = calibrate(sensor_data)
 
 
-# In[75]:
+# In[16]:
 
 
 print_h2("Calibrated data vs Raw Data")
@@ -361,7 +352,7 @@ plt.show()
 
 # # Base frame calibration
 
-# In[76]:
+# In[17]:
 
 
 def base_rotation(mean_acc_while_stationary):
@@ -426,7 +417,7 @@ plt.show()
 # 
 # The data is now read to be processed by a Kalman Filter or double integrated or whatever else you want
 
-# In[77]:
+# In[18]:
 
 
 def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
@@ -479,7 +470,7 @@ def PositionFromIMU(imu_data, dt_s, x0, y0, yaw0):
 # 
 # we can do this now that we've done calibration
 
-# In[78]:
+# In[19]:
 
 
 plt.figure(figsize=(15,10))
@@ -529,7 +520,7 @@ plt.show()
 # 
 # What if we double integrate the twice differentiated mocap data?
 
-# In[79]:
+# In[20]:
 
 
 # fake_mocap_data = np.zeros((len(mocap_ax), 6))
@@ -541,7 +532,7 @@ plt.show()
 
 # ## Integrating Navx Gyro to get Angle
 
-# In[90]:
+# In[21]:
 
 
 yaws = []
@@ -559,7 +550,7 @@ for data in sensor_data:
     naive_yaws.append(og_yaw)
 
 
-# In[96]:
+# In[22]:
 
 
 plt.figure(figsize=(15,15))
@@ -583,7 +574,7 @@ print(np.max(mocap_yaw_deg[:1000] - yaws[:1000]))
 
 # # Analysis of accurate of Integrating Yaw from NavX Gyro
 
-# In[82]:
+# In[23]:
 
 
 error = (np.rad2deg(mocap_states[0:-1:2,2])[:len(yaws)] - yaws[:len(yaws)])
@@ -614,7 +605,7 @@ print("from this it is not clear whether gyro drift plays a role in the error. H
 
 # # X/Y from NavX
 
-# In[83]:
+# In[24]:
 
 
 # adjust the NavX data to start with the correct global X, Y, and Yaw
@@ -629,7 +620,7 @@ navx_xy = (global_yaw_rot@navx_xy) + global_origin_xy
 
 # # Encoder
 
-# In[84]:
+# In[25]:
 
 
 # encoder kinematics
@@ -660,7 +651,7 @@ for data in sensor_data:
     encoder_ys.append(encoder_y)
 
 
-# In[85]:
+# In[26]:
 
 
 plt.figure(figsize=(20,10))
@@ -675,7 +666,7 @@ plt.show()
 
 # ## Double Integrate Mocap Robot Sensor Data
 
-# In[86]:
+# In[27]:
 
 
 pva_from_imu = PositionFromIMU(final_imu_data, 0.02, global_origin_x, global_origin_y, global_origin_yaw)
@@ -687,7 +678,7 @@ plt.legend()
 plt.show()
 
 
-# In[87]:
+# In[28]:
 
 
 plt.figure(figsize=(15,15))
@@ -708,7 +699,7 @@ plt.show()
 
 # ## Comparing TimeStamp Accuracy between NavX and RoboRIO (FPGA)
 
-# In[88]:
+# In[29]:
 
 
 dts_fpgas = []
