@@ -27,7 +27,10 @@ int main(int argc, char **argv) {
   cs::CvSink sink{"sink"};
   sink.SetSource(camera);
 
-  std::cout << phil::cyan << "Go to localhost:8082 to see annotated camera stream" << phil::reset << std::endl;
+  std::cout << phil::cyan
+            << "Go to localhost:8081 to see the camera stream, or localhost:8082 for the annotated stream"
+            << phil::reset
+            << std::endl;
   cs::CvSink cvsink{"cvsink"};
   cvsink.SetSource(camera);
   cs::CvSource cvsource{"cvsource", cs::VideoMode::kMJPEG, w, h, fps};
@@ -99,7 +102,7 @@ int main(int argc, char **argv) {
   auto inst = nt::NetworkTableInstance::GetDefault();
   inst.StartClient("localhost", NT_DEFAULT_PORT);
   usleep(500000); // wait for connection to be established
-  auto table = inst.GetTable(phil::kTableName);
+  auto phil_table = inst.GetTable(phil::kTableName);
 
   // Create the EKF
   phil::EKF ekf;
@@ -194,7 +197,7 @@ int main(int argc, char **argv) {
     pose.theta = estimate(3);
 
     std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
-    table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
+    phil_table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
   }
 
   return EXIT_FAILURE;
