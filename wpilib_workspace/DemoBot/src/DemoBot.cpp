@@ -1,3 +1,8 @@
+/**
+ * This program lets your drive the robot around and publish the required encoder data to the co-processor.
+ *  If you also run phil_main on your co-processor,
+ *  you will get a position estimate which you can view in Shuffleboard (hypothetically).
+ */
 #include <iostream>
 
 #include <Commands/Scheduler.h>
