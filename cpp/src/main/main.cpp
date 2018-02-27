@@ -104,6 +104,13 @@ int main(int argc, char **argv) {
   usleep(500000); // wait for connection to be established
   auto phil_table = inst.GetTable(phil::kTableName);
 
+  // set the .type entry to ensure the shuffleboard integration works
+  auto type_entry = phil_table->GetEntry(".type");
+  type_entry.SetString("Phil");
+  auto x_entry = phil_table->GetEntry("x");
+  auto y_entry = phil_table->GetEntry("y");
+  auto yaw_entry = phil_table->GetEntry("yaw");
+
   // Create the EKF
   phil::EKF ekf;
 
@@ -197,7 +204,9 @@ int main(int argc, char **argv) {
     pose.theta = estimate(3);
 
     std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
-    phil_table->PutNumberArray(phil::kPoseKey, llvm::ArrayRef<double>({pose.x, pose.y, pose.theta}));
+    x_entry.SetDouble(pose.x);
+    y_entry.SetDouble(pose.y);
+    yaw_entry.SetDouble(pose.theta);
   }
 
   return EXIT_FAILURE;
