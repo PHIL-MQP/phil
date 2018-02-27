@@ -29,9 +29,12 @@
 #include "radioTxPin.h"			// Transmitter data pin
 #include "radioPttPin.h"		// "Push-to-talk" pin (if needed, enables transmitter when set high)
 #include "ledPin.h"				// On-board LED used to display debugging info
-
+#include "WaveDAC8_1.h"
+#include "WaveDAC8_2.h"
+#include "Pin_3.h"
 CY_ISR_PROTO(BitTimeISR);		// Declare radio-sample and millis interrupt routine
 CY_ISR_PROTO(ChirpSampleISR);	// Declare audio-chirp-sample interrupt routine
+CY_ISR_PROTO(OnConverstionCompleteISR);
 
 void chirp(const uint16_t f0, const uint16_t f1, const uint32_t len);	// Routine to generate a sine chirp signal
 int16_t sine(const uint16_t x);	// Sine routine using lookup table
@@ -39,7 +42,7 @@ uint16 prs();					// Read and advance state of pseudo random sequence
 
 // One quarter of a sine wave in 2048 10-bit values (0-2047):
 // Note: sineTbl is stored in Flash memory
-const int16_t sineTbl[] = {
+const int16_t sineTbl[2048] = {
 128,128,128,129,129,129,130,130,131,131,131,132,132,133,133,133,134,134,135,135,135,136,136,136,137,
 137,138,138,138,139,139,140,140,140,141,141,142,142,142,143,143,143,144,144,145,145,145,146,146,147,
 147,147,148,148,149,149,149,150,150,150,151,151,152,152,152,153,153,154,154,154,155,155,155,156,156,
@@ -121,10 +124,9 @@ const int16_t sineTbl[] = {
 90,90,90,91,91,92,92,92,93,93,93,94,94,95,95,95,96,96,97,97,97,98,98,98,99,
 99,100,100,100,101,101,101,102,102,103,103,103,104,104,105,105,105,106,106,106,107,107,108,108,108,
 109,109,110,110,110,111,111,112,112,112,113,113,113,114,114,115,115,115,116,116,117,117,117,118,118,
-119,119,119,120,120,120,121,121,122,122,122,123,123,124,124,124,125,125,126,126,126,127,127,128,
-};
+119,119,119,120,120,120,121,121,122,122,122,123,123,124,124,124,125,125,126,126,126,127,127};
 
-const uint32_t sample_rate = 62500;
+const uint32_t sample_rate = 180000;
 
 // Parameters to create "chirp" output (rising or falling frequency sine wave):
 // The 1st variable (sample_x65536) represents time along the sine wave (i.e. generates argument to the "sine" function)
@@ -140,10 +142,12 @@ uint32_t sample_count_max = 0;			// Number of samples in complete ping (at sampl
 uint32_t sample_count = 0;				// Number of samples remaining in current chirp (at sample_rate)
 
 // Parameters describing the physical chirp (starting frequency, ending frequency, length in time, and volume level):
-uint16_t f0 = 500;				// Starting frequency of chirp in Hz
-uint16_t f1 = 2000;				// Ending frequency of chirp in Hz
-uint32_t length = 1000;				// Length of timed operations in milliseconds (e.g. beep)
+uint16_t f0 = 22500;				// Starting frequency of chirp in Hz
+uint16_t f1 = 22500;				// Ending frequency of chirp in Hz
+uint32_t length = 5;				// Length of timed operations in milliseconds (e.g. beep)
 
+#define buffer_size 10000
+int32 buffer[buffer_size];
 
 // Transmit definitions
 char msg[] = "Hello World  !";	// Message to be transmitted on radio (note space for sequence digit)
@@ -170,7 +174,8 @@ int main()
 
 	BitTime_StartEx(BitTimeISR);			// Set up the 16 kHz timer interrupt
 	ChirpSample_StartEx(ChirpSampleISR);	// Set up the 60 kHz audio sample interrupt
-
+    OnConversionComplete_StartEx(OnConverstionCompleteISR);
+    
 	// Init the Amplitude Shift Keying (ASK) radio interface for Cypress PSoC
 	// Configure the radio interface:
 	//		(2000 b/s, rcv pin read func, tx pin write func, ptt pin write func):
@@ -182,23 +187,28 @@ int main()
     CyGlobalIntEnable;
 
 	// Startup built-in hardware devices
-	VDAC8_P_Start();
-	VDAC8_M_Start();
+	//VDAC8_P_Start();
+	//VDAC8_M_Start();
+   // WaveDAC8_Start();
+    test_Start();
+   
 	PGA_P_Start();
 	PGA_M_Start();
 	TransducerDrive_P_Start();
 	TransducerDrive_M_Start();
 	PseudoRandom_Start();
+    ADC_DelSig_1_Start();
+    ADC_DelSig_1_StartConvert();
 
 	USBUART_Start(0, USBUART_DWR_POWER_OPERATION);	// Debug-interface (to host computer)
 	while(USBUART_GetConfiguration()==0);			// Wait for USB to enumerate us
 	USBUART_CDC_Init();								// Initialize the Host-to-PSoC connection
 
-	USBPutString("Starting up!\r");
+	USBPutString("Starting up!\r\n");
     if (CYASKinit())								// Init the radio routines
-        USBPutString("Init success");
+        USBPutString("Init success\r\n");
     else
-        USBPutString("Init failed");
+        USBPutString("Init failed\r\n");
 
 	mode = Idle;									// Begin in idle mode
 
@@ -208,19 +218,24 @@ int main()
 			c = USBGetUpperCaseChar();
 			if (c == 'T')							// "Transmit"
 			{
-				USBPutString("\rTransmit Mode:\r");
+				USBPutString("Transmit Mode:\r\n");
 				CYASKsend((uint8_t *)"Xmt starting", 13);	// Send startup message on radio
 				digit = '0';
 				mode = Tx;
 			}
 			else if (c == 'R')						// "Receive"
 			{
-				USBPutString("\rReceive Mode:\r");
+				USBPutString("Receive Mode:\r\n");
 				mode = Rx;
 			}
+            else if (c == 'U')
+            {
+                USBPutString("Ultrasonic Return Mode\r\n");
+                mode = U;
+            }
 			else if (c == 'I')						// "Idle"
 			{
-				USBPutString("\rIdle Mode\r");
+				USBPutString("Idle Mode\r\n");
 				mode = Idle;
 			}
 			else if (c == 'B')						// "Beep"
@@ -228,16 +243,16 @@ int main()
 				temp = USBGetNum(0);				// Get requested frequency in Hz
 				PseudoRandom_WriteSeed(temp);		// Also use parameter to set PRS seed (temp code)
 				while (temp < 100 || temp > 31000) {
-					USBPutString("\rBeep:\rEnter frequency in Hz [100..31000]: ");
+					USBPutString("Beep:\r\nEnter frequency in Hz [100..31000]: ");
 					temp = USBGetNum(0);
 				};
-				uprintf("\rBeep (%d Hz)\r", temp);
+				uprintf("Beep (%d Hz)\r\n", temp);
 				chirp((uint16_t)temp, (uint16_t)temp, length);	// Generate beep (freq. in Hz, length in millis)
 				mode = Idle;
 			}
 			else if (c == 'C')						// "Chirp"
 			{
-				uprintf("\rChirp (%d Hz to %d Hz)\r", f0, f1);
+				uprintf("Chirp (%d Hz to %d Hz)\r\n", f0, f1);
 				chirp(f0, f1, length);				// Generate beep (freq. in Hz, length in millis)
 				mode = Idle;
 			}
@@ -245,18 +260,18 @@ int main()
 			{
 				c = USBGetUpperCaseChar();
 				if (c != 'A' && c != 'B') {
-					uprintf("\r'F' command must specify 'A' or 'B' frequency to set.  Try again.\r\r");
-					while (c != '\r') c = USBGetUpperCaseChar();	// Flush line input
+					uprintf("'F' command must specify 'A' or 'B' frequency to set.  Try again.\r\n");
+					while (c != '\n') c = USBGetUpperCaseChar();	// Flush line input
 				} else {
 					temp = USBGetNum(0);
 					if (temp == 0) {
-						uprintf("\rFA = %d\rFB = %d\r\r", f0, f1);
+						uprintf("FA = %d\r\nFB = %d\r\n", f0, f1);
 					} else {
 						if (c == 'A')
 							f0 = temp;
 						else // (c == 'B')
 							f1 = temp;
-						uprintf("\rFrequency %c set to %d Hz.\r", c, temp);
+						uprintf("Frequency %c set to %d Hz.\r\n", c, temp);
 					}
 				}
 			}
@@ -265,7 +280,7 @@ int main()
 				uint32_t oldLength = length;
 				length = USBGetNum(0);
 				if (length == 0) length = oldLength;
-				uprintf("\rLength set to %d milliseconds.\r", length);
+				uprintf("Length set to %d milliseconds.\r\n", length);
 			}
 			else if (c == 'X')						// "Tests"
 			{
@@ -280,26 +295,27 @@ int main()
 			}
 			else if (c == 'Q')						// "Quit"
 			{
-				USBPutString("\rQuitting\r");
+				USBPutString("Quitting\r\n");
 				return 0;
 			}
 			else if (c == 'V')						// "Voltage"
 			{
 				temp = USBGetNum(0);
 				while (temp > 5000) {
-					USBPutString("\rVoltage:\rEnter Voltage in mV [0..4000]: ");
+					USBPutString("Voltage:\r\nEnter Voltage in mV [0..4000]: ");
 					temp = USBGetNum(0);
 				};
-				uprintf("\rVoltage set to %d.%03dV\r", temp/1000, temp%1000);
+				uprintf("Voltage set to %d.%03dV\r\n", temp/1000, temp%1000);
 				temp = temp/16;					// Convert to 0..250 range
 				if (temp>255) temp = 255;		// Limit for VDACs is 255
-				VDAC8_P_SetValue(temp);			// Set plus-side voltage (0-1.020V)
-				VDAC8_M_SetValue(temp);			// Set minus-side voltage
+				//VDAC8_P_SetValue(temp);			// Set plus-side voltage (0-1.020V)
+				//VDAC8_M_SetValue(temp);			// Set minus-side voltage
+              
 			}
-			else if(c==' ' || c=='\r')			// Ignore
+			else if(c==' ' || c=='\r' || c=='\n')			// Ignore
 			{
 			}
-			else USBPutString("\rUnknown command ignored.\r\r");
+			else USBPutString("Unknown command ignored.\r\n");
 		}
 		if(mode == Tx) {
 			msg[12] = digit++;					// Create rotating digit 0 to 9
@@ -309,12 +325,15 @@ int main()
 			uprintf("%s\r", msg);
 			CyDelay(500);
 		}
+        else if(mode == U){
+            uprintf("%u\r\n", buffer[0]);
+        }
 		else if(mode == Rx) {
 		    badCnt = CYASKrxBad();
 		    if(badCnt != lastBadCnt)
 		    {
 				lastBadCnt = badCnt;
-				uprintf("* * * * * * * BAD RCV COUNT * * * * * * *   --->  %d\r", badCnt);
+				uprintf("* * * * * * * BAD RCV COUNT * * * * * * *   --->  %d\r\n", badCnt);
 				for (i=0; i<4; i++) {
 					led = !led;
 					ledPin_Write(led);			// Double blink the LED
@@ -324,7 +343,7 @@ int main()
 		    if (CYASKrecv(buf, &buflen)) 		// Non-blocking: Get message from radio if available
 		    {
 				// Message with a good checksum received, report it.
-				uprintf("Message: %s\r", (char*)buf);
+				uprintf("Message: %s\r\n", (char*)buf);
 				led = !led;
 				ledPin_Write(led);				// Toggle the LED
 		    }
@@ -337,13 +356,25 @@ int main()
 // Produce sine signal and send it to the transducer DACs as 10-bit values
 void chirp(const uint16_t f0, const uint16_t f1, const uint32_t len)	// Generate a test beep frequency f and len milliseconds
 {
+      
+      WaveDAC8_1_Start();
+       WaveDAC8_2_Start();
+   Pin_3_Write(0);
+    Pin_4_Write(0);
+   //uprintf("Start \n");
   	sin_index = 0;
     sample_incr = (f0*2048.f)/sample_rate;
     float final_sample_incr = (f1*2048.f)/sample_rate;//reads every 60 indexes per wave so sample_incr*30waves/sec
-    sample_incr_incr = ((final_sample_incr-sample_incr)*1000)/(len*sample_rate);
-
-    sample_count_max = (62500 * len)/1000; // 10 for number of waves, 2048 samples per wave
+   // sample_incr_incr = ((final_sample_incr-sample_incr)*1000)/(len*sample_rate);
+    sample_incr_incr = 0;
+    sample_count_max = (sample_rate * len)/1000; // 10 for number of waves, 2048 samples per wave
     sample_count = sample_count_max;
+    CyDelay(len);
+     WaveDAC8_1_Stop();
+     WaveDAC8_2_Stop();
+    Pin_3_Write(1);
+    Pin_4_Write(1);
+    
 }
 
 // Function to update pseudo-random number generator
@@ -380,9 +411,10 @@ CY_ISR(ChirpSampleISR)
 		sample_count--;					// Count this sample
 
         uint8_t sin_value = sineTbl[(uint16_t)sin_index];
-		VDAC8_P_SetValue(sin_value);			// Set plus-side voltage (0-1.020V)
-		VDAC8_M_SetValue(255 - sin_value);		// Set minus-side voltage (diff P-M is instantaneous value of sine)
-
+		//VDAC8_P_SetValue(sin_value);			// Set plus-side voltage (0-1.020V)
+		//VDAC8_M_SetValue(255 - sin_value);		// Set minus-side voltage (diff P-M is instantaneous value of sine)
+            
+            
         if (sin_index + sample_incr > 2047) {
             sin_index = sin_index + sample_incr - 2048;
         }
@@ -393,12 +425,22 @@ CY_ISR(ChirpSampleISR)
 		sample_incr += sample_incr_incr;	// Use sample increment increment (2nd deriv.) to create chirp
 
 	} else {
-		VDAC8_P_SetValue(128);			// Set plus-side voltage to "zero"
-		VDAC8_M_SetValue(128);			// Set minus-side voltage to "zero" (diff P-M is value of output)
+        // uprintf("Stop \n");
+	   // Pin_3_Write(1);
+
 	}
 }
 
-
+CY_ISR(OnConverstionCompleteISR){
+  //  static unsigned int x = 0;
+//    buffer[x] = ADC_DelSig_1_GetResult32();
+ //   x++;
+  //  if(x==buffer_size){
+    //    x=0;   
+    //}
+   test_SetValue(ADC_DelSig_1_GetResult32());
+    
+}
 // Timer Interrupt
 //
 // Definitions to generate bit sample timer (16 kHz for 2 kbps @ 8 samples/bit) and

@@ -32,7 +32,8 @@ Initialising = 0, ///< Initialising. Initial default value until init() is calle
 Sleep,            ///< Hardware is in low power sleep mode (if supported)
 Idle,             ///< Idle
 Tx,               ///< Transmitting messages
-Rx                ///< Receiving messages
+Rx,
+U                ///< Receiving messages
 } Mode;
 
 

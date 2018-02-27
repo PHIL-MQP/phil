@@ -356,9 +356,11 @@
       <Data key="8d318d8b-cf7b-4b6b-b02c-ab1c5c49d0ba" value="radioRxPin" />
       <Data key="09a7640e-f105-4f30-9382-95ca1c74aa81" value="radioPttPin" />
       <Data key="52f31aa9-2f0a-497d-9a1f-1424095e13e6" value="Pin_1" />
+      <Data key="91002ff6-9c75-4d57-abcd-f20e4a216dc8" value="Pin_1" />
       <Data key="323094b5-0178-4780-934b-e651227706c7" value="Pin_Vin" />
-      <Data key="77715107-f8d5-47e5-a629-0fb83101ac6b" value="FilterCapPin_P" />
+      <Data key="77715107-f8d5-47e5-a629-0fb83101ac6b" value="test_pin" />
       <Data key="a9d9b4cb-f788-4be1-b23a-77929ebc7e80/ed092b9b-d398-4703-be89-cebf998501f6" value="LCD_LCDPort" />
+      <Data key="a8831520-8ac3-4bbd-97cc-451d54e6e49e" value="Pin_2" />
       <Data key="beca5e2d-f70f-4900-a4db-7eca1ed3126e/8b77a6c4-10a0-4390-971c-672353e2a49c" value="USBUART_Dm" />
       <Data key="beca5e2d-f70f-4900-a4db-7eca1ed3126e/618a72fc-5ddd-4df5-958f-a3d55102db42" value="USBUART_Dp" />
       <Data key="bf486de4-defc-415d-bf01-120c9d034bb2" value="FilterCapPin_M" />
@@ -397,6 +399,11 @@
         <Data key="Port Format" value="0,5" />
       </Group>
     </Group>
+    <Group key="91002ff6-9c75-4d57-abcd-f20e4a216dc8">
+      <Group key="0">
+        <Data key="Port Format" value="1,7" />
+      </Group>
+    </Group>
     <Group key="323094b5-0178-4780-934b-e651227706c7">
       <Group key="0">
         <Data key="Port Format" value="0,4" />
@@ -428,6 +435,11 @@
       </Group>
       <Group key="6">
         <Data key="Port Format" value="2,6" />
+      </Group>
+    </Group>
+    <Group key="a8831520-8ac3-4bbd-97cc-451d54e6e49e">
+      <Group key="0">
+        <Data key="Port Format" value="2,0" />
       </Group>
     </Group>
     <Group key="beca5e2d-f70f-4900-a4db-7eca1ed3126e/8b77a6c4-10a0-4390-971c-672353e2a49c">
