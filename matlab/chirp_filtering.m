@@ -9,11 +9,12 @@ close all;
 % construct a series of chirps with the desired properties
 F0 = 20000;
 F1 = 27000;
-robot_speed = 5; % m/s
+robot_speed = 3; % m/s
 speed_of_sound = 343.2; % m/s
-doppler = F0 * robot_speed / speed_of_sound;
+start_doppler = F0 * robot_speed / speed_of_sound;
+end_doppler = F1 * robot_speed / speed_of_sound;
 number_of_chirps = 1;
-adc_sps = F1 * 5; % ensure we're safely above Nyquist's
+adc_sps = 96000; % ensure we're safely above Nyquist's
 dt = 1/adc_sps;
 signal_T = 0.005;
 padding_T = 0.1;
@@ -27,7 +28,7 @@ padding_t_size = round(padding_T/dt);
 % Original Chirp
 unshifted_chirp = chirp(t, F0, t(end), F1, 'linear', -90) * signal_scale;
 % Doppler Shifted Chirp
-shifted_chirp = chirp(t, F0 + doppler, t(end), F1 + doppler, 'linear', -90) * signal_scale;
+shifted_chirp = chirp(t, F0 + start_doppler, t(end), F1 + end_doppler, 'linear', -90) * signal_scale;
 
 % Add padding
 padding = zeros(1, padding_t_size);
@@ -59,8 +60,8 @@ unshifted_detection = unshifted_detection * dt;
 shifted_detection = shifted_detection * dt;
 
 fprintf("Chirping from %fHz to %fHz\n", F0, F1);
-fprintf("Robot moving at %fm/s will cause shift of %fHz\n", robot_speed, doppler);
-fprintf("Shifted Chirp will be from %fHz to %fHz\n", F0 + doppler, F1 + doppler);
+fprintf("Robot moving at %fm/s will cause shift of ~%fHz\n", robot_speed, start_doppler);
+fprintf("Shifted Chirp will be from %fHz to %fHz\n", F0 + start_doppler, F1 + end_doppler);
 
 disp("Start of chirp detected at");
 disp(unshifted_detection);
