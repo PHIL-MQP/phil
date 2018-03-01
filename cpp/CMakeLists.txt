@@ -114,8 +114,10 @@ if (NOT ${RIO})
         ${NTCORE_INCLUDE_DIR}
         ${CSCORE_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/include/eigen3
+        ${YAML_CPP_INCLUDE_DIRS}
         ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_main ntcore phil_common phil_localization cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
+    target_link_libraries(phil_main ntcore phil_common phil_localization yaml-cpp cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
+    target_compile_options(phil_main PRIVATE -Wall -Wextra -Wno-missing-field-initializers)
 
     add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${localization_src})
     target_include_directories(phil_kalman_filter PRIVATE
