@@ -31,11 +31,12 @@ EKF::EKF()
 
   // Construct measurement models for each of our sensor packages
   // First for the yaw measurement which comes from the NavX on the RoboRIO
-  MatrixWrapper::Matrix yaw_measurement_H(1, EncoderControlModel::N);
+  constexpr int yaw_dim = 1;
+  MatrixWrapper::Matrix yaw_measurement_H(yaw_dim, EncoderControlModel::N);
   yaw_measurement_H << 0, 0, 1, 0, 0, 0, 0, 0, 0;
-  MatrixWrapper::ColumnVector yaw_measurement_mean(1);
+  MatrixWrapper::ColumnVector yaw_measurement_mean(yaw_dim);
   yaw_measurement_mean = 0;
-  MatrixWrapper::SymmetricMatrix yaw_measurement_covariance(1);
+  MatrixWrapper::SymmetricMatrix yaw_measurement_covariance(yaw_dim);
   yaw_measurement_covariance = 0.01; // TODO: compute actual variance of this!
   BFL::Gaussian yaw_measurement_uncertainty(yaw_measurement_mean, yaw_measurement_covariance);
   yaw_measurement_pdf =
@@ -44,12 +45,13 @@ EKF::EKF()
       std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(yaw_measurement_pdf.get());
 
   // Second for the world-frame accelerometer measurements which comes from the NavX on the RoboRIO
-  MatrixWrapper::Matrix acc_measurement_H(2, EncoderControlModel::N);
+  constexpr int acc_dim = 2;
+  MatrixWrapper::Matrix acc_measurement_H(acc_dim, EncoderControlModel::N);
   acc_measurement_H << 0, 0, 0, 0, 0, 0, 1, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 1, 0;
-  MatrixWrapper::ColumnVector acc_measurement_mean(2);
+  MatrixWrapper::ColumnVector acc_measurement_mean(acc_dim);
   acc_measurement_mean = 0;
-  MatrixWrapper::SymmetricMatrix acc_measurement_covariance(2);
+  MatrixWrapper::SymmetricMatrix acc_measurement_covariance(acc_dim);
   acc_measurement_covariance = 0;
   acc_measurement_covariance(1, 1) = 0.0001;
   acc_measurement_covariance(2, 2) = 0.0001;
@@ -59,28 +61,31 @@ EKF::EKF()
   acc_measurement_model =
       std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(acc_measurement_pdf.get());
 
-  MatrixWrapper::Matrix camera_measurement_H(3, EncoderControlModel::N);
+  constexpr int camera_dim = 3;
+  MatrixWrapper::Matrix camera_measurement_H(camera_dim, EncoderControlModel::N);
   camera_measurement_H << 1, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 1, 0, 0, 0, 0, 0, 0;
-  MatrixWrapper::ColumnVector camera_measurement_mean(2);
+  MatrixWrapper::ColumnVector camera_measurement_mean(camera_dim);
   camera_measurement_mean = 0;
-  MatrixWrapper::SymmetricMatrix camera_measurement_covariance(2);
+  MatrixWrapper::SymmetricMatrix camera_measurement_covariance(camera_dim);
   camera_measurement_covariance = 0;
   camera_measurement_covariance(1, 1) = 0.0001;
   camera_measurement_covariance(2, 2) = 0.0001;
+  camera_measurement_covariance(3, 3) = 0.0001;
   BFL::Gaussian camera_measurement_uncertainty(camera_measurement_mean, camera_measurement_covariance);
   camera_measurement_pdf =
       std::make_unique<BFL::LinearAnalyticConditionalGaussian>(camera_measurement_H, camera_measurement_uncertainty);
   camera_measurement_model =
       std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(camera_measurement_pdf.get());
 
-  MatrixWrapper::Matrix beacon_measurement_H(2, EncoderControlModel::N);
+  constexpr int beacon_dim = 2;
+  MatrixWrapper::Matrix beacon_measurement_H(beacon_dim, EncoderControlModel::N);
   beacon_measurement_H << 1, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 1, 0, 0, 0, 0, 0, 0, 0;
-  MatrixWrapper::ColumnVector beacon_measurement_mean(2);
+  MatrixWrapper::ColumnVector beacon_measurement_mean(beacon_dim);
   beacon_measurement_mean = 0;
-  MatrixWrapper::SymmetricMatrix beacon_measurement_covariance(2);
+  MatrixWrapper::SymmetricMatrix beacon_measurement_covariance(beacon_dim);
   beacon_measurement_covariance = 0;
   beacon_measurement_covariance(1, 1) = 0.0001;
   beacon_measurement_covariance(2, 2) = 0.0001;

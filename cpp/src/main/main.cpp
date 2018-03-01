@@ -67,10 +67,10 @@ int main(int argc, const char **argv) {
   const auto w = yaml_get<int>(config, {"camera", "w"});
   const auto h = yaml_get<int>(config, {"camera", "h"});
   const auto fps = yaml_get<int>(config, {"camera", "fps"});
+  const auto encoding = yaml_get<std::string>(config, {"camera", "encoding"});
+  const auto map_filename = yaml_get<std::string>(config, {"aruco", "map"});
   const auto phil_source_url = yaml_get<std::string>(config, {"camera", "source_url"});
   const auto dictionary = yaml_get<std::string>(config, {"aruco", "dictionary"});
-  const auto map_filename = yaml_get<std::string>(config, {"aruco", "map"});
-  const auto encoding = yaml_get<std::string>(config, {"camera", "encoding"});
   const auto cam_params_file = yaml_get<std::string>(config, {"camera", "params"});
 
   constexpr auto hostname_length = 10;
@@ -80,24 +80,14 @@ int main(int argc, const char **argv) {
     std::cout << phil::yellow << "Failed to get hostname" << phil::reset << "\n";
   }
 
-  cs::UsbCamera camera{"usbcam", 0};
-  if (encoding == "MJPEG") {
-      camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
-    } else if (encoding == "YUYV") {
-      camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
-    } else {
-      std::cerr << phil::red << "Invalid camera encoding [" << encoding << "].\n" << "Must be either MJPEG or YUYV"
-                    << phil::reset << "\n";
-    }
-  cs::MjpegServer mjpegServer("httpserver", 8081);
-  mjpegServer.SetSource(camera);
-  cs::CvSink sink("sink");
+  cs::HttpCamera camera("phil/main/camera", phil_source_url);
+  cs::CvSink sink("phil/main/sink");
   sink.SetSource(camera);
 
   constexpr int annotated_stream_port = 8777;
 
-  cs::CvSource cvsource("phil/annotated_source", cs::VideoMode::kMJPEG, w, h, fps);
-  cs::MjpegServer cvMjpegServer("phil/annotated_mjpeg_server", annotated_stream_port);
+  cs::CvSource cvsource("phil/main/annotated_source", cs::VideoMode::kMJPEG, w, h, fps);
+  cs::MjpegServer cvMjpegServer{"phil/main/annotated_mjpeg_server", annotated_stream_port};
   cvMjpegServer.SetSource(cvsource);
 
   std::cout << phil::cyan << "See annotated camera stream at " << hostname << ":" << annotated_stream_port
@@ -226,13 +216,25 @@ int main(int argc, const char **argv) {
 
     // only wait briefly for camera frame.
     // if it's not available that's fine we'll just not call the EKF update for camera data
-    uint64_t time = sink.GrabFrame(frame, 0.001);
+    uint64_t time = sink.GrabFrame(frame, 0.005);
     if (time > 0) {
+      if (frame.empty()) {
+        std::cerr << phil::yellow << "empty frame" << std::endl;
+        break;
+      }
+
       cv::Mat annotated_frame;
       frame.copyTo(annotated_frame);
 
       // update step for camera measurement
       std::vector<aruco::Marker> detected_markers = detector.detect(frame);
+
+      // show annotated frame. It's useful to debugging/visualizing
+      if (detected_markers.empty()) {
+        std::cout << phil::cyan << "no tags detected" << phil::reset << "\n";
+        cvsource.PutFrame(annotated_frame); // put in the unannotated frame
+        continue;
+      }
 
       // estimate 3d camera pose if possible
       if (tracker.isValid()) {
@@ -249,14 +251,14 @@ int main(int argc, const char **argv) {
         }
 
         // annotate the video feed
-        for (int idx : mmap.getIndices(detected_markers)) {
-          detected_markers[idx].draw(annotated_frame, cv::Scalar(0, 0, 255), 1);
+        for (auto &marker : detected_markers) {
+          marker.draw(annotated_frame, cv::Scalar(0, 0, 255), 2);
+          aruco::CvDrawingUtils::draw3dCube(annotated_frame, marker, camera_params);
+          aruco::CvDrawingUtils::draw3dAxis(annotated_frame, marker, camera_params);
         }
       } else {
         std::cerr << "Invalid marker map pose tracker\n";
       }
-
-      // and run update step of EKF with just the camera data
 
       // show annotated frame. It's useful to debugging/visualizing
       cvsource.PutFrame(annotated_frame);
