@@ -31,8 +31,10 @@ int main(int argc, const char**argv) {
   const auto h = static_cast<int>(video.get(CV_CAP_PROP_FRAME_HEIGHT));
   const auto fps = static_cast<int>(video.get(CV_CAP_PROP_FPS));
 
-  cs::CvSource source("phil/cvsource", cs::VideoMode::kMJPEG, w, h, fps);
-  cs::MjpegServer mjpegServer{"httpserver", 8081};
+  std::cout << w << "x" << h << "p" << fps << "\n";
+
+  cs::CvSource source("phil/source", cs::VideoMode::kMJPEG, w, h, fps);
+  cs::MjpegServer mjpegServer("phil/camera", 8081);
   mjpegServer.SetSource(source);
 
   cv::Mat frame;
@@ -42,6 +44,11 @@ int main(int argc, const char**argv) {
     if (frame.empty()) {
       break;
     }
+
+    struct timespec timeout{};
+    timeout.tv_sec = 0;
+    timeout.tv_nsec = static_cast<long>(1.0/fps*1e9);
+    clock_nanosleep(CLOCK_REALTIME, 0, &timeout, nullptr);
 
     source.PutFrame(frame);
   }
