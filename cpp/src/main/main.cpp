@@ -25,8 +25,7 @@ T yaml_get(const YAML::Node &node, const std::vector<std::string> &keys) {
       if (idx == keys.size() - 1) {
         return tmp.as<T>();
       }
-    }
-    else {
+    } else {
       std::cerr << phil::red << "Key [" << key << "] not found" << phil::reset << "\n";
       throw YAML::ParserException(node.Mark(), "key mispelled");
     }
@@ -65,28 +64,14 @@ int main(int argc, const char **argv) {
     return EXIT_FAILURE;
   }
 
-  const auto w = yaml_get<int>(config, {"test"});
+  const auto w = yaml_get<int>(config, {"camera", "w"});
   const auto h = yaml_get<int>(config, {"camera", "h"});
   const auto fps = yaml_get<int>(config, {"camera", "fps"});
+  const auto phil_source_url = yaml_get<std::string>(config, {"camera", "source_url"});
   const auto dictionary = yaml_get<std::string>(config, {"aruco", "dictionary"});
   const auto map_filename = yaml_get<std::string>(config, {"aruco", "map"});
   const auto encoding = yaml_get<std::string>(config, {"camera", "encoding"});
   const auto cam_params_file = yaml_get<std::string>(config, {"camera", "params"});
-
-  cs::UsbCamera camera{"usbcam", 0};
-  if (encoding == "MJPEG") {
-    camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
-  } else if (encoding == "YUYV") {
-    camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
-  } else {
-    std::cerr << phil::red << "Invalid camera encoding [" << encoding << "].\n" << "Must be either MJPEG or YUYV"
-              << phil::reset << "\n";
-  }
-
-  cs::MjpegServer mjpegServer{"httpserver", 8081};
-  mjpegServer.SetSource(camera);
-  cs::CvSink sink{"sink"};
-  sink.SetSource(camera);
 
   constexpr auto hostname_length = 10;
   char hostname[hostname_length] = "localhost";
@@ -95,13 +80,28 @@ int main(int argc, const char **argv) {
     std::cout << phil::yellow << "Failed to get hostname" << phil::reset << "\n";
   }
 
-  std::cout << phil::cyan << "Go to " << hostname << ":8081 to see the camera stream, or " << hostname
-            << ":8082 for the annotated stream" << phil::reset << std::endl;
-  cs::CvSink cvsink{"cvsink"};
-  cvsink.SetSource(camera);
-  cs::CvSource cvsource{"cvsource", cs::VideoMode::kMJPEG, w, h, fps};
-  cs::MjpegServer cvMjpegServer{"cvhttpserver", 8082};
+  cs::UsbCamera camera{"usbcam", 0};
+  if (encoding == "MJPEG") {
+      camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
+    } else if (encoding == "YUYV") {
+      camera.SetVideoMode(cs::VideoMode::kMJPEG, w, h, fps);
+    } else {
+      std::cerr << phil::red << "Invalid camera encoding [" << encoding << "].\n" << "Must be either MJPEG or YUYV"
+                    << phil::reset << "\n";
+    }
+  cs::MjpegServer mjpegServer("httpserver", 8081);
+  mjpegServer.SetSource(camera);
+  cs::CvSink sink("sink");
+  sink.SetSource(camera);
+
+  constexpr int annotated_stream_port = 8777;
+
+  cs::CvSource cvsource("phil/annotated_source", cs::VideoMode::kMJPEG, w, h, fps);
+  cs::MjpegServer cvMjpegServer("phil/annotated_mjpeg_server", annotated_stream_port);
   cvMjpegServer.SetSource(cvsource);
+
+  std::cout << phil::cyan << "See annotated camera stream at " << hostname << ":" << annotated_stream_port
+            << phil::reset << "\n";
 
   // read in the markermapper config yaml file
   aruco::MarkerMap mmap;

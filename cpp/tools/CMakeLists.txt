@@ -25,6 +25,10 @@ if (NOT ${RIO})
     add_executable(aruco_localize_from_mm aruco_localize_from_mm.cpp)
     target_link_libraries(aruco_localize_from_mm aruco ${phil_opencv_libs} phil_common)
 
+    add_executable(play_video_with_cscore play_video_with_cscore.cpp)
+    target_include_directories(play_video_with_cscore PRIVATE ${CSCORE_INCLUDE_DIR})
+    target_link_libraries(play_video_with_cscore phil_common cscore)
+
     add_executable(localize localize.cpp)
     target_link_libraries(localize ${phil_opencv_libs} aruco cscore phil_common)
     target_include_directories(localize PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
