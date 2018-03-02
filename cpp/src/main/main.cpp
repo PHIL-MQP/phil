@@ -5,6 +5,7 @@
 
 #include <aruco/aruco.h>
 #include <cscore.h>
+#include <eigen3/Eigen/Eigen>
 #include <marker_mapper/markermapper.h>
 #include <networktables/NetworkTableInstance.h>
 #include <opencv2/opencv.hpp>
@@ -134,13 +135,6 @@ int main(int argc, const char **argv) {
   aruco::MarkerMapPoseTracker tracker;
   tracker.setParams(camera_params, mmap);
 
-  // communication with the roborio
-  phil::UDPServer server(phil::kPort);
-  struct timeval timeout{0};
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 50000; // 20ms
-  server.SetTimeout(timeout);
-
   // network tables
   auto inst = nt::NetworkTableInstance::GetDefault();
   const auto servername = yaml_get<std::string>(config, {"nt", "server"});
@@ -156,15 +150,16 @@ int main(int argc, const char **argv) {
   auto y_entry = phil_table->GetEntry("y");
   auto yaw_entry = phil_table->GetEntry("yaw");
 
-  // Create the EKF
-  phil::EKF ekf;
+  // Setup communication with the roborio
+  phil::UDPServer server(phil::kPort);
 
-  cv::Mat frame;
-  bool done = false;
-  static double accumulated_yaw_rad = 0;
-  static double last_yaw_rad = 0;
-  std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
-  while (!done) {
+  std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
+  server.Read(nullptr, phil::data_t_size);
+
+  std::cout << phil::green << "Collecting Initial Stationary Sample" << phil::reset << std::endl;
+  constexpr size_t num_initial_samples = 250;
+  Eigen::Matrix<double, num_initial_samples, 2> initial_samples(num_initial_samples, 2);
+  for (size_t i = 0; i < num_initial_samples; ++i) {
     // read some sensor data from roborio
     phil::data_t rio_data = {0};
     ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
@@ -176,6 +171,70 @@ int main(int argc, const char **argv) {
       std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
                 << std::endl;
     } else {
+      initial_samples(i, 0) = rio_data.world_accel_x;
+      initial_samples(i, 1) = rio_data.world_accel_y;
+    }
+  }
+
+  // compute the variance of our initial sample
+  Eigen::Matrix<double, Eigen::Dynamic, 2> centered = initial_samples.rowwise() - initial_samples.colwise().mean();
+  double variance_norm = centered.array().square().matrix().colwise().mean().norm();
+  auto static_threshold = std::pow(variance_norm, 6);
+
+  // set a timeout so we can be robust to missing RoboRIO data
+  struct timeval timeout{0};
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 40000;
+  server.SetTimeout(timeout);
+
+  phil::EKF ekf;
+  cv::Mat frame;
+  bool done = false;
+  static double accumulated_yaw_rad = 0;
+  static double last_yaw_rad = 0;
+  constexpr size_t window_size = 20;
+  size_t window_idx = 0;
+  Eigen::Array<double, window_size, 2> window;
+  Eigen::Array<double, 1, 2> biases;
+  std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
+  while (!done) {
+    // read some sensor data from roborio
+    phil::data_t rio_data = {0};
+    ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
+
+    if (bytes_received != -1 && bytes_received != phil::data_t_size) {
+      std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
+                << std::endl;
+    } else {
+      // static-interval detection for zero velocity updates
+      // FIXME: need to use raw_accel_* here instead, or rotate using current yaw estimate
+      window(window_idx, 0) = rio_data.world_accel_x;
+      window(window_idx, 1) = rio_data.world_accel_y;
+
+      auto window_mean = window.colwise().mean();
+      double window_variance_norm = (window.rowwise() - window_mean).array().square().matrix().colwise().mean().norm();
+
+      if (window_variance_norm > static_threshold) {
+        // set the bias in each axis to the current mean of the window
+        biases = window_mean;
+
+        // set the current velocity estimate to be 0
+        // TODO: consider making this a "measurment" update with near zero variance?
+        auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
+        current_state_estimate(4) = 0;
+        current_state_estimate(5) = 0;
+        ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
+      }
+
+      // wrap cicular-array index around
+      ++window_idx;
+      if (window_idx >= window_size) {
+        window_idx = 0;
+      }
+
+      double adjusted_ax, adjusted_ay;
+
+      // Data structures for EKF Update
       constexpr double meters_per_tick = 0.000357;
       double v_l = -rio_data.left_encoder_rate * meters_per_tick;
       double v_r = -rio_data.right_encoder_rate * meters_per_tick;
@@ -194,7 +253,7 @@ int main(int argc, const char **argv) {
       yaw_measurement << accumulated_yaw_rad;
 
       MatrixWrapper::ColumnVector acc_measurement(2);
-      acc_measurement << rio_data.world_accel_x, rio_data.world_accel_y;
+      acc_measurement << adjusted_ax, adjusted_ay;
 
       // TODO: perform calibration and other operations to accelerometer data
       Eigen::Matrix3d Ta;
