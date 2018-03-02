@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include <bfl/filter/extendedkalmanfilter.h>
 #include <bfl/model/linearanalyticsystemmodel_gaussianuncertainty.h>
 #include <bfl/model/linearanalyticmeasurementmodel_gaussianuncertainty.h>
@@ -6,7 +8,6 @@
 #include <phil/common/csv.h>
 #include <phil/common/common.h>
 #include <phil/localization/robot_model.h>
-#include <fstream>
 #include <phil/localization/ekf.h>
 
 int main(int argc, const char **argv) {

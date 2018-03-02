@@ -8,6 +8,14 @@ if (NOT ${RIO})
     target_include_directories(ntcore_main PRIVATE ${WPIUTIL_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR})
     target_link_libraries(ntcore_main ntcore phil_common)
 
+    add_executable(phil_kalman_filter phil_kalman_filter.cpp)
+    target_include_directories(phil_kalman_filter PRIVATE ${orocos-bfl_INCLUDE_DIRS})
+    target_link_libraries(phil_kalman_filter phil_common phil_localization orocos-bfl)
+
+    target_link_libraries(phil_kalman_filter phil_common phil_localization ${orocos-bfl_LIBRARIES})
+    target_compile_options(phil_kalman_filter PRIVATE -Wall -Wextra)
+    target_compile_definitions(phil_kalman_filter PRIVATE CSV_IO_NO_THREAD)
+
     add_executable(annotate_video annotate_video.cpp)
     target_link_libraries(annotate_video aruco ${phil_opencv_libs})
     target_include_directories(annotate_video PRIVATE ${phil_include_dir} ${OpenCV_INCLUDE_DIRS})

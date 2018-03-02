@@ -119,19 +119,6 @@ if (NOT ${RIO})
     target_link_libraries(phil_main ntcore phil_common phil_localization yaml-cpp cscore wpiutil ${phil_opencv_libs} aruco orocos-bfl)
     target_compile_options(phil_main PRIVATE -Wall -Wextra -Wno-missing-field-initializers)
 
-    add_executable(phil_kalman_filter src/main/phil_kalman_filter.cpp ${localization_src})
-    target_include_directories(phil_kalman_filter PRIVATE
-            ${phil_include_dir}
-            ${OpenCV_INCLUDE_DIRS}
-            ${WPIUTIL_INCLUDE_DIR}
-            ${NTCORE_INCLUDE_DIR}
-            ${CSCORE_INCLUDE_DIR}
-            ${CMAKE_SOURCE_DIR}/include/eigen3
-            ${orocos-bfl_INCLUDE_DIRS})
-    target_link_libraries(phil_kalman_filter phil_common phil_localization ${orocos-bfl_LIBRARIES})
-    target_compile_options(phil_kalman_filter PRIVATE -Wall -Wextra)
-    target_compile_definitions(phil_kalman_filter PRIVATE CSV_IO_NO_THREAD)
-
     # Tests!
     add_executable(unit_tests src/test/unit_tests.cpp)
     target_include_directories(unit_tests PRIVATE ${phil_include_dir} ${WPIUTIL_INCLUDE_DIR})
