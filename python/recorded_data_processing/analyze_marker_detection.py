@@ -14,19 +14,23 @@ def main():
     parser.add_argument('ids', nargs="*", help='file(s) of ids that you want to allow.'
                                                ' If more than one is provided, they will be plotted and compared.')
     parser.add_argument('--no-plot', '-p', action="store_true", help='show the plots')
+    parser.add_argument("--only-valid-poses", action="store_true", default=False, help="plot FPS over time")
     args = parser.parse_args()
 
-    detected_markers = np.genfromtxt(args.detected_markers, delimiter=',', dtype=np.int32)
+    detected_markers = np.genfromtxt(args.detected_markers, delimiter=',', dtype=np.float)
+
     ids_to_detections_map = {}
-    print("name,worst_case,percentile,mean,median,mode")
+    print("name,worst_case,percentile,mean,median")
     for id_filename in args.ids:
         allowed_ids = np.genfromtxt(id_filename, delimiter=',', dtype=np.int32)
 
         tag_detections = []
-        for line in detected_markers:
-            tag_id = int(line[1])
+        for detection in detected_markers:
+            tag_id = int(detection[1])
             if tag_id in allowed_ids:
-                tag_detections.append([int(d) for d in line[:2]])
+                valid = (detection[2] != -999999)
+                if valid or not args.only_valid_poses:
+                    tag_detections.append(detection)
         tag_detections = np.array(tag_detections)
 
         times_between_detections = [0]
@@ -36,7 +40,6 @@ def main():
                 dt_s = (tag_detections[idx, 0] - tag_detections[last_distinct_idx, 0]) / 1e6
                 times_between_detections.append(dt_s)
                 last_distinct_idx = idx
-        times_between_detections = np.array(times_between_detections)
 
         ids_to_detections_map[id_filename] = {
             'tag_detections': tag_detections,
@@ -45,11 +48,11 @@ def main():
 
         mean = np.mean(times_between_detections)
         median = np.median(times_between_detections)
+        minimum = np.min(times_between_detections)
         maximum = np.max(times_between_detections)
         mode = stats.mode(times_between_detections)[0][0]
         percentile = np.percentile(times_between_detections, 95)
-        print("{:9s}, {:0.3f}, {:0.3f}, {:0.3f}, {:0.3f}, {:0.3f}".format(os.path.basename(id_filename),
-                                                                          maximum, percentile, mean, median, mode))
+        print("{:9s}, {:0.4f}, {:0.4f}, {:0.4f}, {:0.4f}".format(os.path.basename(id_filename), maximum, percentile, mean, median))
 
     plt.style.use("python/phil.mplstyle")
     if not args.no_plot:

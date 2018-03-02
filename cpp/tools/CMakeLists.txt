@@ -15,8 +15,8 @@ if (NOT ${RIO})
     add_executable(publish_rio_data publish_rio_data.cpp)
     target_link_libraries(publish_rio_data phil_common)
 
-    add_executable(marker_detection_analysis marker_detection_analysis.cpp)
-    target_link_libraries(marker_detection_analysis aruco phil_common)
+    add_executable(detect_markers_in_video detect_markers_in_video.cpp)
+    target_link_libraries(detect_markers_in_video aruco phil_common)
 
     add_executable(record_cameras_on_udp_trigger record_cameras_on_udp_trigger.cpp)
     target_link_libraries(record_cameras_on_udp_trigger aruco cscore ${phil_opencv_libs} yaml-cpp phil_common)

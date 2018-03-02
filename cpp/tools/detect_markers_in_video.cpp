@@ -4,12 +4,13 @@
 #include <opencv2/opencv.hpp>
 
 #include <phil/common/args.h>
+#include <phil/common/common.h>
 
-void detectMarkers(cv::VideoCapture capture,
-                   const std::vector<unsigned long> &timestamps,
-                   aruco::CameraParameters cam_params,
-                   bool step,
-                   bool show) {
+int detectMarkers(cv::VideoCapture capture,
+                  const std::vector<unsigned long> &timestamps,
+                  aruco::CameraParameters cam_params,
+                  bool step,
+                  bool show) {
   cv::Mat frame;
   cv::Mat annotated_frame;
 
@@ -34,6 +35,13 @@ void detectMarkers(cv::VideoCapture capture,
 
       if (frame.empty()) {
         break;
+      }
+
+      if (frame_idx >= timestamps.size()) {
+        std::cerr << phil::red
+                  << "There are more frames in the video than timestamps. This is very suspicious! Exiting now."
+                  << phil::reset << "\n";
+        return EXIT_FAILURE;
       }
 
       frame.copyTo(annotated_frame);
@@ -72,18 +80,22 @@ void detectMarkers(cv::VideoCapture capture,
       ++frame_idx;
     }
   }
+
+  return EXIT_SUCCESS;
 }
 
 int main(int argc, const char **argv) {
-  args::ArgumentParser parser("Creates a CSV for time-stamps tag and their detected poses."
-      "This program will print detected tag info to standard out.\n"
-      "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py\n"
-      "-v will show the video, -s will show and step through each frame (press enter)\n\n"
-      "you can use -s to step through frame by frame\n");
+  args::ArgumentParser parser("Prints time-stamps of detected tags and their poses to standard out."
+                                  "It is recommended you redirect this to a file called detected_markers.csv.\n"
+                                  "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py\n"
+                                  "-v will show the video, -s will show and step through each frame (press enter)\n\n"
+                                  "you can use -s to step through frame by frame\n");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
   args::Positional<std::string> video_param(parser, "video_filename", "video file to process", args::Options::Required);
-  args::Positional<std::string> timestamps_param(parser, "timestamps_filename", "timestamps.csv file", args::Options::Required);
-  args::Positional<std::string> params_param(parser, "params_filename", "camera parameters yaml file", args::Options::Required);
+  args::Positional<std::string>
+      timestamps_param(parser, "timestamps_filename", "timestamps.csv file", args::Options::Required);
+  args::Positional<std::string>
+      params_param(parser, "params_filename", "camera parameters yaml file", args::Options::Required);
   args::Flag show_flag(parser, "show", "show the video", {'s', "show"});
   args::Flag step_flag(parser, "step", "step the video frame-by-frame", {'p', "step"});
 
@@ -167,5 +179,5 @@ int main(int argc, const char **argv) {
     }
   }
 
-  detectMarkers(cap, timestamps, params, step, show);
+  return detectMarkers(cap, timestamps, params, step, show);
 }
