@@ -1,9 +1,3 @@
-Reading from keyboard
----------------------------
-Forward/back arrows : linear velocity incr/decr.
-Right/left arrows : angular velocity incr/decr.
-Spacebar : reset linear/angular velocities.
-q : quit.
 65365, 64667, 179826
 65365, 64667, 37212
 65365, 64667, 195508
