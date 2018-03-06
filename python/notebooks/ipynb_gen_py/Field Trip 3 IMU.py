@@ -1,19 +1,20 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[10]:
 
 
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+plt.style.use("phil.mplstyle")
 
 
-# In[2]:
+# In[11]:
 
 
-datafile = "recorded_sensor_data/field_data_2/auto/mocap_data-175.173.csv"
+datafile = "recorded_sensor_data/field_data_3/auto/rio-data-25.5221.csv"
 reader = csv.reader(open(datafile, 'r'))
 
 next(reader) # skip header
@@ -28,7 +29,7 @@ temperatures = np.array(raw_data[:,-1])
 naxv_displacements = np.array(raw_data[:,4:7])
 
 
-# In[3]:
+# In[12]:
 
 
 def get_static_intervals(threshold, data, window_size):
@@ -65,22 +66,22 @@ def get_static_intervals(threshold, data, window_size):
     return static_indicators, classifications   
 
 
-# In[4]:
+# In[13]:
 
 
 # static_guess = [[0, 95],[600,950],[1800,2200],[3350,3800], [5300,5700]]
 
 init_variance = np.linalg.norm(np.var(raw_acc_data[:, :80], axis=0))
 
-static_guess, classification = get_static_intervals(init_variance**6, raw_acc_data, 80)
+static_guess, classification = get_static_intervals(init_variance**5, raw_acc_data, 80)
 
 print(static_guess)
 opacity = 0.8
 
 plt.figure(figsize=(18,8))
-plt.title("Acc raw data with static detector", fontsize = 16)
-plt.xlabel("# of samples", fontsize = 14)
-plt.ylabel("acceleration (g)", fontsize = 14)
+plt.title("Acc raw data with static detector")
+plt.xlabel("# of samples")
+plt.ylabel("acceleration (g)")
 plt.plot(raw_data[:,0] , c = 'y', alpha = opacity, label = 'acc x')
 plt.plot(raw_data[:,1] , c = 'g', alpha = opacity, label = 'acc y')
 plt.plot(raw_data[:,2] , c = 'c', alpha = opacity, label = 'acc z')
@@ -93,9 +94,9 @@ plt.show()
 
 
 plt.figure(figsize=(18,8))
-plt.title("Acc raw data static intervals only", fontsize = 16)
-plt.xlabel("# of samples", fontsize = 14)
-plt.ylabel("acceleration (g)", fontsize = 14)
+plt.title("Acc raw data static intervals only")
+plt.xlabel("# of samples")
+plt.ylabel("acceleration (g)")
 for g in static_guess:
     plt.plot(range(g[0], g[1]),raw_data[g[0]:g[1],0], c = 'y', alpha = opacity, label = 'acc x')
     plt.plot(range(g[0], g[1]),raw_data[g[0]:g[1],1], c = 'g', alpha = opacity, label = 'acc y')
@@ -103,7 +104,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[5]:
+# In[14]:
 
 
 def find_static_mean(data, static_intervals):
@@ -120,9 +121,9 @@ def plot_static_mean(data, static_intervals):
     averages = find_static_mean(data,static_intervals)
     
     plt.figure(figsize=(18,8))
-    plt.title("Acc mean values for different static intervals", fontsize = 14)
-    plt.ylabel("acceleration (g)", fontsize = 14)
-    plt.xlabel("n-th static interval", fontsize = 14)
+    plt.title("Acc mean values of different static intervals")
+    plt.ylabel("acceleration (g)")
+    plt.xlabel("n-th static interval")
     plt.plot(averages[:,0], c = 'y',marker = 'o', label = "acc x")
     plt.plot(averages[:,1], c = 'b', marker = 'o', label = "acc y")
 #     plt.plot(averages[:,2], c = 'c', marker = 'o', label = "acc z")
@@ -132,7 +133,22 @@ def plot_static_mean(data, static_intervals):
 plot_static_mean(raw_data,static_guess)
 
 
-# In[6]:
+plt.figure(figsize=(18,8))
+plt.title("Acc raw data compare with temperature")
+plt.xlabel("# of samples")
+plt.plot(raw_data[:,0] , c = 'y', alpha = opacity, label = 'acc x')
+plt.plot(raw_data[:,1] , c = 'g', alpha = opacity, label = 'acc y')
+plt.plot(raw_data[:,2] , c = 'c', alpha = opacity, label = 'acc z')
+# for g in static_guess:
+#     plt.plot([g[0],g[0]],[-1.5,2.0], c = 'r')
+#     plt.plot([g[1],g[1]],[-1.5,2.0], c = 'r')
+plt.plot(classification, c = 'r', label = 'detector')
+plt.plot(temperatures - 32, label = "temperature")
+plt.legend(bbox_to_anchor=(1,1))
+plt.show()
+
+
+# In[15]:
 
 
 def clockwise_yaw_rotation_matrix(yaw_angle):
@@ -213,7 +229,7 @@ def base_rotation(mean_acc_while_stationary):
     return R
 
 
-# In[7]:
+# In[16]:
 
 
 #calibrate first
@@ -233,53 +249,65 @@ halfway_acc_data = (R @ calibrated_acc_data.T).T
 # halfway_acc_data = (R @ raw_acc_data.T).T
 
 
-final_acc_data = np.copy(halfway_acc_data) 
+drift_compt_data = np.copy(halfway_acc_data) 
     
-#compansate drifting 
+offline_drift_compt_data = np.copy(halfway_acc_data) 
+    
 average_means = find_static_mean(raw_acc_data, static_guess)
-
-plot_static_mean(final_acc_data,static_guess)
-
-plt.figure(figsize=(18,8))
-plt.title("Acc raw data static intervals only", fontsize = 16)
-plt.xlabel("# of samples", fontsize = 14)
-plt.ylabel("acceleration (g)", fontsize = 14)
-for g in static_guess:
-    plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],0], c = 'y', alpha = opacity, label = 'acc x')
-    plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],1], c = 'g', alpha = opacity, label = 'acc y')
-plt.legend(bbox_to_anchor=(1,1))
-plt.show()
-
 
 def some_equation(drift_rate, dx):
     return drift_rate * dx
 
-# drift_rates = np.zeros((len(static_guess) - 1, 3))
-# for i,d in enumerate(static_guess):   
-#     if i != 0:
-#         start = static_guess[i - 1][0]
-#         end = static_guess[i - 1][1]
-#         start_mean = np.mean(final_acc_data[start : start + 20], axis = 0)
-#         end_mean = np.mean(final_acc_data[end - 20 : end], axis = 0)
+# online compensate for drift
+drift_rates = np.zeros((len(static_guess) - 1, 3))
+for i,d in enumerate(static_guess):   
+    if i != 0:
+        start = static_guess[i - 1][0]
+        end = static_guess[i - 1][1]
+        start_mean = np.mean(drift_compt_data[start : start + 10], axis = 0)
+        end_mean = np.mean(drift_compt_data[end - 10 : end], axis = 0)
         
-#         drift_rate = (end_mean - start_mean) / (end - start - 20)
-#         drift_rates[i - 1] = drift_rate
-#         for j in range(start, static_guess[i][0]):
-#             final_acc_data[j] -= some_equation(drift_rate, j - start)
+        drift_rate = (end_mean - start_mean) / (end - start - 10)
+        drift_rates[i - 1] = drift_rate
+        for j in range(start, static_guess[i][0]):
+            drift_compt_data[j] -= some_equation(drift_rate, j - start)
 
 
-plot_static_mean(final_acc_data,static_guess)  
-
+# offline compensate for drift
+offline_drift_rates = np.zeros((len(static_guess) -1, 3))
+for i,d in enumerate(static_guess):   
+    if i != 0:
+        start = static_guess[i - 1][0]
+        end = static_guess[i][0]
+        
+        offline_drift_rate = (average_means[i] - average_means[i - 1]) / (end - start)
+        # delta Gs / delta samples
+        offline_drift_rates[i - 1] = offline_drift_rate
+        for j in range(start, end):
+            offline_drift_compt_data[j] -= some_equation(offline_drift_rate, j - start)            
+            
+final_acc_data = np.copy(drift_compt_data) 
 
 plt.figure(figsize=(18,8))
-plt.title("Acc raw data static intervals only", fontsize = 16)
-plt.xlabel("# of samples", fontsize = 14)
-plt.ylabel("acceleration (g)", fontsize = 14)
+plt.title("Raw Acceleometer Data in Static Intervals")
+plt.xlabel("# of samples")
+plt.ylabel("acceleration (g)")
 for g in static_guess:
     plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],0], c = 'y', alpha = opacity, label = 'acc x')
     plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],1], c = 'g', alpha = opacity, label = 'acc y')
-plt.legend(bbox_to_anchor=(1,1))
+plt.plot(np.mean(static_guess, axis=1), average_means[:,0] - average_means[0,0])
+plt.plot(np.mean(static_guess, axis=1), average_means[:,1] - average_means[0,1])
 plt.show()
+
+# offline drift
+plt.figure(figsize=(18,8))
+plt.title("Raw Acceleometer Data on Static Intervals with Offline Drift Compensation")
+plt.xlabel("# of samples")
+plt.ylabel("acceleration (g)")
+for g in static_guess:
+    plt.plot(range(g[0], g[1]),offline_drift_compt_data[g[0]:g[1],0], c='y', alpha=opacity, label='acc x')
+    plt.plot(range(g[0], g[1]),offline_drift_compt_data[g[0]:g[1],1], c='g', alpha=opacity, label='acc y')
+plt.show() 
 
 #compansate bias 
 for i in range(len(static_guess)):   
@@ -297,36 +325,56 @@ for i in range(len(static_guess)):
             final_acc_data[j] += bias    
 
 plt.figure(figsize=(18,8))
-plt.title("After compensate bias", fontsize = 16)
-plt.xlabel("# of samples", fontsize = 14)
-plt.ylabel("acceleration (g)", fontsize = 14)
+plt.title("After compensate bias")
+plt.xlabel("# of samples")
+plt.ylabel("acceleration (g)")
 for g in static_guess:
     plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],0], c = 'y', alpha = opacity, label = 'acc x')
     plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],1], c = 'g', alpha = opacity, label = 'acc y')
-plt.legend(bbox_to_anchor=(1,1))
 plt.show()            
+
             
 plt.figure(figsize=(18,8))
-plt.title("Drift rate", fontsize = 16)
-plt.xlabel("nth interval", fontsize = 14)
-plt.ylabel("acceleration (g)", fontsize = 14)
+plt.title("Online Drift rate")
+plt.xlabel("nth interval")
+plt.ylabel("acceleration (g)")
 plt.plot(drift_rates[:,0], c = 'y', label = 'x drift rate', marker='o')
 plt.plot(drift_rates[:,1], c = 'b', label = 'y drift rate', marker='o')
 
 plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
+plt.figure(figsize=(18,8))
+plt.title("Offline Drift rate")
+plt.xlabel("nth interval")
+plt.ylabel("acceleration (g)")
+plt.plot(offline_drift_rates[:,0], c = 'y', label = 'x drift rate', marker='o')
+plt.plot(offline_drift_rates[:,1], c = 'b', label = 'y drift rate', marker='o')
 
-# In[ ]:
+plt.legend(bbox_to_anchor=(1,1))
+plt.show()
+
+
+# In[17]:
 
 
 raw_velocity = integrate_velocity_with_yaw(raw_acc_data, 0.02, 9.8, yaws)
+
+raw_velocity_no_yaw = integrate_sth(raw_acc_data, 0.02, 9.8)
 
 raw_displacement = integrate_sth(raw_velocity, 0.02, 1)
 
 halfway_velocity = integrate_velocity_with_yaw(halfway_acc_data, 0.02, 9.8, yaws)
 
 halfway_displacement = integrate_sth(halfway_velocity, 0.02, 1)
+
+offline_drift_compt_velocity = integrate_velocity_with_yaw(offline_drift_compt_data, 0.02, 9.8, yaws)
+
+offline_drift_compt_displacement = integrate_sth(offline_drift_compt_velocity, 0.02, 1)
+
+drift_compt_velocity = integrate_velocity_with_yaw(drift_compt_data, 0.02, 9.8, yaws)
+
+drift_compt_displacement = integrate_sth(drift_compt_velocity, 0.02, 1)
 
 final_velocity = integrate_velocity_with_yaw(final_acc_data, 0.02, 9.8,yaws)
 
@@ -339,50 +387,50 @@ for i in range(len(static_guess)):
             final_acc_data[left:right], 0.02, 9.8, yaws[left:right])
     else:
         final_velocity_zeroed[left:] = integrate_velocity_with_yaw(final_acc_data[left:], 0.02, 9.8, yaws)
-
-plt.figure(figsize=(18,8))
-plt.title("After compensate bias", fontsize = 16)
-plt.xlabel("# of samples", fontsize = 14)
-plt.ylabel("acceleration (g)", fontsize = 14)
-for g in static_guess:
-    plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],0], c = 'y', alpha = opacity, label = 'acc x')
-    plt.plot( range(g[0], g[1]),final_acc_data[g[0]:g[1],1], c = 'g', alpha = opacity, label = 'acc y')
-plt.legend(bbox_to_anchor=(1,1))
-plt.show()
         
 final_displacement = integrate_sth(final_velocity_zeroed, 0.02, 1)
 
 plt.figure(figsize=(18,8))
-plt.title("Temperatures", fontsize = 12)
-plt.xlabel("time", fontsize = 14)
-plt.ylabel("degrees", fontsize = 14)
-plt.plot(temperatures)
-plt.show()
-
-
-plt.figure(figsize=(18,8))
-plt.title("Raw velocity", fontsize = 16)
-plt.xlabel("time (0.02s)", fontsize = 14)
-plt.ylabel("velocity (m/s)", fontsize = 14)
+plt.title("Raw velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
 plt.plot(raw_velocity[:,0] , c = 'y', label = 'x velocity')
 plt.plot(raw_velocity[:,1] , c = 'g', label = 'y velocity')
 plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
+
 plt.figure(figsize=(18,8))
-plt.title("Calibrated velocity", fontsize = 16)
-plt.xlabel("time (0.02s)", fontsize = 14)
-plt.ylabel("velocity (m/s)", fontsize = 14)
+plt.title("Calibrated velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
 plt.plot(halfway_velocity[:,0] , c = 'y', label = 'x velocity')
 plt.plot(halfway_velocity[:,1] , c = 'g', label = 'y velocity')
 plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
+plt.figure(figsize=(18,8))
+plt.title("online drift compt velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
+plt.plot(drift_compt_velocity[:,0] , c = 'y', label = 'x velocity')
+plt.plot(drift_compt_velocity[:,1] , c = 'g', label = 'y velocity')
+plt.legend(bbox_to_anchor=(1,1))
+plt.show()
 
 plt.figure(figsize=(18,8))
-plt.title("bias & drift compt velocity", fontsize = 16)
-plt.xlabel("time (0.02s)", fontsize = 14)
-plt.ylabel("velocity (m/s)", fontsize = 14)
+plt.title("offline drift compt velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
+plt.plot(offline_drift_compt_velocity[:,0] , c = 'y', label = 'x velocity')
+plt.plot(offline_drift_compt_velocity[:,1] , c = 'g', label = 'y velocity')
+plt.legend(bbox_to_anchor=(1,1))
+plt.show()
+
+plt.figure(figsize=(18,8))
+plt.title("bias compt velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
 plt.plot(final_velocity[:,0] , c = 'y', label = 'x velocity')
 plt.plot(final_velocity[:,1] , c = 'g', label = 'y velocity')
 plt.legend(bbox_to_anchor=(1,1))
@@ -390,9 +438,9 @@ plt.show()
 
 
 plt.figure(figsize=(18,8))
-plt.title("Zero-velocity updated velocity", fontsize = 16)
-plt.xlabel("time (0.02s)", fontsize = 14)
-plt.ylabel("velocity (m/s)", fontsize = 14)
+plt.title("Zero-velocity updated velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
 plt.plot(final_velocity_zeroed[:,0] , c = 'y', label = 'x velocity')
 plt.plot(final_velocity_zeroed[:,1] , c = 'g', label = 'y velocity')
 plt.legend(bbox_to_anchor=(1,1))
@@ -400,22 +448,25 @@ plt.show()
 
 
 plt.figure(figsize=(18,8))
-plt.title("Raw vs Zero-updated y velocity", fontsize = 16)
-plt.xlabel("time (0.02s)", fontsize = 14)
-plt.ylabel("velocity (m/s)", fontsize = 14)
+plt.title("Raw vs Zero-updated y velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
 plt.plot(raw_velocity[:,1] , c = 'r', label = 'raw velocity')
 plt.plot(final_velocity_zeroed[:,1] , c = 'g', label = 'zero-updated velocity')
-plt.legend(bbox_to_anchor=(0.2,1))
+plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 plt.figure(figsize=(18,8))
-plt.title("Raw vs Zero-updated x velocity", fontsize = 16)
-plt.xlabel("time (0.02s)", fontsize = 14)
-plt.ylabel("velocity (m/s)", fontsize = 14)
+plt.title("Raw vs Zero-updated x velocity")
+plt.xlabel("time (0.02s)")
+plt.ylabel("velocity (m/s)")
 plt.plot(raw_velocity[:,0] , c = 'r', label = 'raw velocity')
 plt.plot(final_velocity_zeroed[:,0] , c = 'g', label = 'zero-updated velocity')
-plt.legend(bbox_to_anchor=(0.2,1))
+plt.legend(bbox_to_anchor=(1,1))
 plt.show()
+
+
+# In[20]:
 
 
 colors = cm.rainbow(np.linspace(0, 1, (len(raw_data))))
@@ -427,7 +478,7 @@ plt.ylabel("y displacement (m)", fontsize = 14)
 plt.scatter(raw_displacement[:,0], raw_displacement[:,1], s=.5, color=colors)
 plt.axis("equal")
 plt.show()
-
+ 
 plt.figure(figsize=(10,10))
 plt.title("Calibrated displacement", fontsize = 12)
 plt.xlabel("x displacement (m)", fontsize = 14)
@@ -435,7 +486,7 @@ plt.ylabel("y displacement (m)", fontsize = 14)
 plt.scatter(halfway_displacement[:,0], halfway_displacement[:,1], s=.5, color=colors)
 plt.axis("equal")
 plt.show()
-
+ 
 plt.figure(figsize=(10,10))
 plt.title("Zero-velocity updated displacement", fontsize = 12)
 plt.xlabel("x displacement (m)", fontsize = 14)
@@ -443,8 +494,7 @@ plt.ylabel("y displacement (m)", fontsize = 14)
 plt.scatter(final_displacement[:,0], final_displacement[:,1], s=.5, color=colors)
 plt.axis("equal")
 plt.show()
-
-
+ 
 plt.figure(figsize=(10,10))
 plt.title("NavX displacement", fontsize = 12)
 plt.xlabel("x displacement (m)", fontsize = 14)
@@ -453,21 +503,35 @@ plt.scatter(naxv_displacements[:,0], naxv_displacements[:,1], s=.5, color=colors
 plt.axis("equal")
 plt.show()
 
-
 plt.figure(figsize=(10,10))
-plt.title("Zero-velocity updated displacement: first 600 samples", fontsize = 16)
+plt.title("Zero-velocity updated displacement: first 6000 samples", fontsize = 16)
 plt.xlabel("x displacement (m)", fontsize = 14)
 plt.ylabel("y displacement (m)", fontsize = 14)
 plt.scatter(final_displacement[:6000,0], final_displacement[:6000,1], s=.5, color=colors)
 plt.axis("equal")
 plt.show()
 
+plt.figure(figsize=(10,10))
+plt.title("NavX displacement: first 6000 samples", fontsize = 16)
+plt.xlabel("x displacement (m)", fontsize = 14)
+plt.ylabel("y displacement (m)", fontsize = 14)
+plt.scatter(naxv_displacements[:6000,0], naxv_displacements[:6000,1], s=.5, color=colors)
+plt.axis("equal")
+plt.show()
+
+plt.figure(figsize=(10,10))
+plt.title("Zero-velocity updated displacement: first 600 samples", fontsize = 16)
+plt.xlabel("x displacement (m)", fontsize = 14)
+plt.ylabel("y displacement (m)", fontsize = 14)
+plt.scatter(final_displacement[:600,0], final_displacement[:600,1], s=.5, color=colors)
+plt.axis("equal")
+plt.show()
 
 plt.figure(figsize=(10,10))
 plt.title("NavX displacement: first 600 samples", fontsize = 16)
 plt.xlabel("x displacement (m)", fontsize = 14)
 plt.ylabel("y displacement (m)", fontsize = 14)
-plt.scatter(naxv_displacements[:6000,0], naxv_displacements[:6000,1], s=.5, color=colors)
+plt.scatter(naxv_displacements[:600,0], naxv_displacements[:600,1], s=.5, color=colors)
 plt.axis("equal")
 plt.show()
 
