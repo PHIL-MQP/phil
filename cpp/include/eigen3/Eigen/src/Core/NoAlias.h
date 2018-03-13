@@ -33,7 +33,6 @@ class NoAlias
   public:
     typedef typename ExpressionType::Scalar Scalar;
     
-    EIGEN_DEVICE_FUNC
     explicit NoAlias(ExpressionType& expression) : m_expression(expression) {}
     
     template<typename OtherDerived>
@@ -99,7 +98,7 @@ class NoAlias
   * \sa class NoAlias
   */
 template<typename Derived>
-NoAlias<Derived,MatrixBase> EIGEN_DEVICE_FUNC MatrixBase<Derived>::noalias()
+NoAlias<Derived,MatrixBase> MatrixBase<Derived>::noalias()
 {
   return NoAlias<Derived, Eigen::MatrixBase >(derived());
 }

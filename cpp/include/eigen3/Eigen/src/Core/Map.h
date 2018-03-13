@@ -20,17 +20,11 @@ struct traits<Map<PlainObjectType, MapOptions, StrideType> >
 {
   typedef traits<PlainObjectType> TraitsBase;
   enum {
-    PlainObjectTypeInnerSize = ((traits<PlainObjectType>::Flags&RowMajorBit)==RowMajorBit)
-                             ? PlainObjectType::ColsAtCompileTime
-                             : PlainObjectType::RowsAtCompileTime,
-
     InnerStrideAtCompileTime = StrideType::InnerStrideAtCompileTime == 0
                              ? int(PlainObjectType::InnerStrideAtCompileTime)
                              : int(StrideType::InnerStrideAtCompileTime),
     OuterStrideAtCompileTime = StrideType::OuterStrideAtCompileTime == 0
-                             ? (InnerStrideAtCompileTime==Dynamic || PlainObjectTypeInnerSize==Dynamic
-                                ? Dynamic
-                                : int(InnerStrideAtCompileTime) * int(PlainObjectTypeInnerSize))
+                             ? int(PlainObjectType::OuterStrideAtCompileTime)
                              : int(StrideType::OuterStrideAtCompileTime),
     Alignment = int(MapOptions)&int(AlignedMask),
     Flags0 = TraitsBase::Flags & (~NestByRefBit),
@@ -114,10 +108,9 @@ template<typename PlainObjectType, int MapOptions, typename StrideType> class Ma
     inline Index outerStride() const
     {
       return StrideType::OuterStrideAtCompileTime != 0 ? m_stride.outer()
-           : internal::traits<Map>::OuterStrideAtCompileTime != Dynamic ? Index(internal::traits<Map>::OuterStrideAtCompileTime)
-           : IsVectorAtCompileTime ? (this->size() * innerStride())
-           : int(Flags)&RowMajorBit ? (this->cols() * innerStride())
-           : (this->rows() * innerStride());
+           : IsVectorAtCompileTime ? this->size()
+           : int(Flags)&RowMajorBit ? this->cols()
+           : this->rows();
     }
 
     /** Constructor in the fixed-size case.

@@ -90,7 +90,7 @@ MatrixBase<Derived>::dot(const MatrixBase<OtherDerived>& other) const
   * \sa dot(), norm(), lpNorm()
   */
 template<typename Derived>
-EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE typename NumTraits<typename internal::traits<Derived>::Scalar>::Real MatrixBase<Derived>::squaredNorm() const
+EIGEN_STRONG_INLINE typename NumTraits<typename internal::traits<Derived>::Scalar>::Real MatrixBase<Derived>::squaredNorm() const
 {
   return numext::real((*this).cwiseAbs2().sum());
 }
@@ -102,7 +102,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE typename NumTraits<typename internal::trai
   * \sa lpNorm(), dot(), squaredNorm()
   */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline typename NumTraits<typename internal::traits<Derived>::Scalar>::Real MatrixBase<Derived>::norm() const
+inline typename NumTraits<typename internal::traits<Derived>::Scalar>::Real MatrixBase<Derived>::norm() const
 {
   return numext::sqrt(squaredNorm());
 }
@@ -117,7 +117,7 @@ EIGEN_DEVICE_FUNC inline typename NumTraits<typename internal::traits<Derived>::
   * \sa norm(), normalize()
   */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline const typename MatrixBase<Derived>::PlainObject
+inline const typename MatrixBase<Derived>::PlainObject
 MatrixBase<Derived>::normalized() const
 {
   typedef typename internal::nested_eval<Derived,2>::type _Nested;
@@ -139,7 +139,7 @@ MatrixBase<Derived>::normalized() const
   * \sa norm(), normalized()
   */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline void MatrixBase<Derived>::normalize()
+inline void MatrixBase<Derived>::normalize()
 {
   RealScalar z = squaredNorm();
   // NOTE: after extensive benchmarking, this conditional does not impact performance, at least on recent x86 CPU
@@ -160,7 +160,7 @@ EIGEN_DEVICE_FUNC inline void MatrixBase<Derived>::normalize()
   * \sa stableNorm(), stableNormalize(), normalized()
   */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline const typename MatrixBase<Derived>::PlainObject
+inline const typename MatrixBase<Derived>::PlainObject
 MatrixBase<Derived>::stableNormalized() const
 {
   typedef typename internal::nested_eval<Derived,3>::type _Nested;
@@ -185,7 +185,7 @@ MatrixBase<Derived>::stableNormalized() const
   * \sa stableNorm(), stableNormalized(), normalize()
   */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline void MatrixBase<Derived>::stableNormalize()
+inline void MatrixBase<Derived>::stableNormalize()
 {
   RealScalar w = cwiseAbs().maxCoeff();
   RealScalar z = (derived()/w).squaredNorm();
@@ -257,9 +257,9 @@ struct lpNorm_selector<Derived, Infinity>
 template<typename Derived>
 template<int p>
 #ifndef EIGEN_PARSED_BY_DOXYGEN
-EIGEN_DEVICE_FUNC inline typename NumTraits<typename internal::traits<Derived>::Scalar>::Real
+inline typename NumTraits<typename internal::traits<Derived>::Scalar>::Real
 #else
-EIGEN_DEVICE_FUNC MatrixBase<Derived>::RealScalar
+MatrixBase<Derived>::RealScalar
 #endif
 MatrixBase<Derived>::lpNorm() const
 {

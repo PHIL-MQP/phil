@@ -184,7 +184,7 @@ template<typename MatrixType, int _DiagIndex> class Diagonal
   *
   * \sa class Diagonal */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline typename MatrixBase<Derived>::DiagonalReturnType
+inline typename MatrixBase<Derived>::DiagonalReturnType
 MatrixBase<Derived>::diagonal()
 {
   return DiagonalReturnType(derived());
@@ -192,7 +192,7 @@ MatrixBase<Derived>::diagonal()
 
 /** This is the const version of diagonal(). */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline typename MatrixBase<Derived>::ConstDiagonalReturnType
+inline typename MatrixBase<Derived>::ConstDiagonalReturnType
 MatrixBase<Derived>::diagonal() const
 {
   return ConstDiagonalReturnType(derived());
@@ -210,7 +210,7 @@ MatrixBase<Derived>::diagonal() const
   *
   * \sa MatrixBase::diagonal(), class Diagonal */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline typename MatrixBase<Derived>::DiagonalDynamicIndexReturnType
+inline typename MatrixBase<Derived>::DiagonalDynamicIndexReturnType
 MatrixBase<Derived>::diagonal(Index index)
 {
   return DiagonalDynamicIndexReturnType(derived(), index);
@@ -218,7 +218,7 @@ MatrixBase<Derived>::diagonal(Index index)
 
 /** This is the const version of diagonal(Index). */
 template<typename Derived>
-EIGEN_DEVICE_FUNC inline typename MatrixBase<Derived>::ConstDiagonalDynamicIndexReturnType
+inline typename MatrixBase<Derived>::ConstDiagonalDynamicIndexReturnType
 MatrixBase<Derived>::diagonal(Index index) const
 {
   return ConstDiagonalDynamicIndexReturnType(derived(), index);
@@ -237,7 +237,6 @@ MatrixBase<Derived>::diagonal(Index index) const
   * \sa MatrixBase::diagonal(), class Diagonal */
 template<typename Derived>
 template<int Index_>
-EIGEN_DEVICE_FUNC
 inline typename MatrixBase<Derived>::template DiagonalIndexReturnType<Index_>::Type
 MatrixBase<Derived>::diagonal()
 {
@@ -247,7 +246,6 @@ MatrixBase<Derived>::diagonal()
 /** This is the const version of diagonal<int>(). */
 template<typename Derived>
 template<int Index_>
-EIGEN_DEVICE_FUNC
 inline typename MatrixBase<Derived>::template ConstDiagonalIndexReturnType<Index_>::Type
 MatrixBase<Derived>::diagonal() const
 {
