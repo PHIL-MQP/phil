@@ -201,18 +201,19 @@ int main(int argc, const char **argv) {
   }
 
   // compute the variance of our initial sample
-  auto initial_static_means = initial_samples.colwise().mean();
+  Eigen::Matrix<double, 1, 3> initial_static_means = initial_samples.colwise().mean();
   Eigen::MatrixX3d centered = initial_samples.rowwise() - initial_static_means;
-  auto variance = centered.array().square().matrix().colwise().mean();
-  double variance_norm = variance.norm();
-  auto static_threshold = std::pow(variance_norm, 1.2);
+  double variance_norm = centered.array().square().matrix().colwise().mean().norm();
+  double static_threshold = std::pow(variance_norm, 1.2);
 
   std::cout << "Using static threshold [" << static_threshold << "]\n";
 
   // use initial sample to compute base frame rotation
+  Eigen::Vector3d calibrated_mean = Ta*Ka*(initial_static_means.transpose() + ba);
+  Eigen::Vector3d unit_calibrated_mean = calibrated_mean / calibrated_mean.norm();
   Eigen::Vector3d expected_means{0, 0, 1};
-  Eigen::Vector3d v = initial_static_means.cross(expected_means);
-  double c = initial_static_means.dot(expected_means);
+  Eigen::Vector3d v = unit_calibrated_mean.cross(expected_means);
+  double c = unit_calibrated_mean.dot(expected_means);
   Eigen::Matrix3d v_x = Eigen::Matrix3d::Zero();
   v_x(0, 1) = -v(2);
   v_x(0, 2) = v(1);
@@ -221,7 +222,10 @@ int main(int argc, const char **argv) {
   v_x(2, 0) = -v(1);
   v_x(2, 1) = v(0);
   Eigen::Matrix3d base_rotation = Eigen::Matrix3d::Identity() + v_x + (v_x*v_x)*(1/(1+c));
-
+  std::cout << unit_calibrated_mean << "\n";
+  std::cout << "Base Rotation Matrix:\n"
+            << base_rotation
+            <<"\n";
 
   ////////////////////////////////
   //// Start of the main loop ////

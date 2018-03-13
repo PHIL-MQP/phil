@@ -66,7 +66,7 @@ def get_static_intervals(threshold, data, window_size):
     return static_indicators, classifications   
 
 
-# In[39]:
+# In[42]:
 
 
 # static_guess = [[0, 95],[600,950],[1800,2200],[3350,3800], [5300,5700]]
@@ -79,7 +79,7 @@ print("Using threshold:", static_threshold)
 print(static_guess)
 
 
-# In[40]:
+# In[43]:
 
 
 opacity = 0.8
@@ -109,7 +109,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[ ]:
+# In[44]:
 
 
 def find_static_mean(data, static_intervals):
@@ -153,7 +153,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[ ]:
+# In[55]:
 
 
 def clockwise_yaw_rotation_matrix(yaw_angle):
@@ -234,7 +234,7 @@ def base_rotation(mean_acc_while_stationary):
     return R
 
 
-# In[ ]:
+# In[58]:
 
 
 #calibrate first
@@ -249,9 +249,13 @@ unit_calibrated_mean = calibrated_mean / np.linalg.norm(calibrated_mean)
 
 #find out the rotation matrix
 R = base_rotation(unit_calibrated_mean)
+print("base rotation", R)
 
 halfway_acc_data = (R @ calibrated_acc_data.T).T
 # halfway_acc_data = (R @ raw_acc_data.T).T
+
+
+# In[47]:
 
 
 drift_compt_data = np.copy(halfway_acc_data) 
@@ -360,7 +364,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[ ]:
+# In[48]:
 
 
 raw_velocity = integrate_velocity_with_yaw(raw_acc_data, 0.02, 9.8, yaws)
