@@ -6,9 +6,6 @@
 #include <aruco/aruco.h>
 #include <cscore.h>
 #include <eigen3/Eigen/Eigen>
-#include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Geometry>
 #include <marker_mapper/markermapper.h>
 #include <networktables/NetworkTableInstance.h>
 #include <opencv2/opencv.hpp>
@@ -18,6 +15,7 @@
 #include <phil/common/udp.h>
 #include <phil/localization/ekf.h>
 #include <phil/common/args.h>
+#include <phil/common/math.h>
 
 template<typename T>
 T yaml_get(const YAML::Node &node, const std::vector<std::string> &keys) {
@@ -45,6 +43,8 @@ T yaml_get(const YAML::Node &node, const std::vector<std::string> &keys) {
 int main(int argc, const char **argv) {
   args::ArgumentParser parser("The main program to run on the localization co-processor");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+  args::Flag verbose_flag(parser, "verbose", "Print more information", {'v', "verbose"});
+  args::Flag no_camera_flag(parser, "no_camera", "Don't check the camera stream", {"no-camera"});
   args::Positional<std::string> config_filename(parser, "config_filename", "", args::Options::Required);
 
   try {
@@ -67,6 +67,9 @@ int main(int argc, const char **argv) {
     std::cerr << phil::red << "Failed to open config file." << phil::reset << "\n" << e.what() << "\n";
     return EXIT_FAILURE;
   }
+
+  const bool verbose = args::get(verbose_flag);
+  const bool no_camera = args::get(no_camera_flag);
 
   const auto w = yaml_get<int>(config, {"camera", "w"});
   const auto h = yaml_get<int>(config, {"camera", "h"});
@@ -157,7 +160,7 @@ int main(int argc, const char **argv) {
   phil::UDPServer server(phil::kPort);
 
   std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
-  while (server.Read() < 0) ;
+  while (server.Read() < 0);
 
   // Create calibration matrices
   Eigen::Matrix3d Ta;
@@ -177,7 +180,7 @@ int main(int argc, const char **argv) {
   /////////////////////////////////////////////
 
   std::cout << phil::green << "Collecting Initial Stationary Sample" << phil::reset << "\n";
-  constexpr size_t num_initial_samples = 80;
+  constexpr size_t num_initial_samples = 60;
   Eigen::MatrixX3d initial_samples(num_initial_samples, 3);
   for (size_t i = 0; i < num_initial_samples; ++i) {
     // read some sensor data from roborio
@@ -244,10 +247,10 @@ int main(int argc, const char **argv) {
   bool done = false;
   static double accumulated_yaw_rad = 0;
   static double last_yaw_rad = 0;
-  constexpr size_t window_size = 20;
-  size_t window_idx = 0;
-  Eigen::Matrix<double, window_size, 3> window;
+  constexpr size_t window_size = 60;
+  phil::math::Window<window_size, 3> window;
   Eigen::Vector3d latest_static_bias_estimate;
+  size_t main_loop_idx = 0;
   std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
   while (!done) {
     // read some sensor data from roborio
@@ -266,28 +269,26 @@ int main(int argc, const char **argv) {
                 << std::endl;
     } else {
       Eigen::Vector3d raw_acc{rio_data.raw_acc_x, rio_data.raw_acc_y, rio_data.raw_acc_z};
-      window.row(window_idx) = raw_acc;
+      window.push(raw_acc);
 
-      // implement circular buffer behavior
-      ++window_idx;
-      if (window_idx >= window_size) {
-        window_idx = 0;
-      }
+      if (window.isFull()) {
+        auto window_mean = window.colwise().mean();
+        auto error = window.rowwise() - window_mean;
+        double window_variance_norm = std::pow(error.array().square().matrix().colwise().mean().norm(), 2);
+        if (window_variance_norm < static_threshold) {
+          //[[9, 104], [539, 760], [776, 965], [1749, 1757], [1763, 2193], [3035, 3061], [3250, 3281],
+          // [3337, 3342], [3351, 3771], [5292, 5293], [5303, 5734], [7629, 7637], [7646, 7728]]
+          std::cout << "static at idx [" << main_loop_idx << "]\n";
+          // set the bias in each axis to the current mean of the window
+          latest_static_bias_estimate = window_mean;
 
-      // check if the robot is static. we may use the raw data here
-      auto window_mean = window.colwise().mean();
-      auto error = window.rowwise() - window_mean;
-      double window_variance_norm = error.array().square().matrix().colwise().mean().norm();
-      if (window_variance_norm > static_threshold) {
-        // set the bias in each axis to the current mean of the window
-        latest_static_bias_estimate = window_mean;
-
-        // set the current velocity estimate to be 0
-        // TODO: consider making this a "measurement" update with near zero variance?
-        auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
-        current_state_estimate(4) = 0;
-        current_state_estimate(5) = 0;
-        ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
+          // set the current velocity estimate to be 0
+          // TODO: consider making this a "measurement" update with near zero variance?
+          auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
+          current_state_estimate(4) = 0;
+          current_state_estimate(5) = 0;
+          ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
+        }
       }
 
       // apply calibration
@@ -327,7 +328,11 @@ int main(int argc, const char **argv) {
 
     // only wait briefly for camera frame.
     // if it's not available that's fine, we'll just not call the EKF update for camera data
-    uint64_t time = sink.GrabFrame(frame, 0.005);
+    uint64_t time = 0;
+    if (!no_camera) {
+      time = sink.GrabFrame(frame, 0.005);
+    }
+
     if (time > 0) {
       if (frame.empty()) {
         std::cerr << phil::yellow << "empty frame" << std::endl;
@@ -382,10 +387,14 @@ int main(int argc, const char **argv) {
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
-    std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
+    if (verbose) {
+      std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
+    }
     x_entry.SetDouble(pose.x);
     y_entry.SetDouble(pose.y);
     yaw_entry.SetDouble(pose.theta);
+
+    ++main_loop_idx;
   }
 
   return EXIT_FAILURE;

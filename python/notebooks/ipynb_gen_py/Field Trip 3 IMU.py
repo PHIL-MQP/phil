@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[11]:
 
 
 import csv
@@ -9,9 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 plt.style.use("phil.mplstyle")
+np.set_printoptions(precision=5, suppress=True)
 
 
-# In[4]:
+# In[12]:
 
 
 datafile = "recorded_sensor_data/field_data_3/auto/rio-data-25.5221.csv"
@@ -20,16 +21,17 @@ reader = csv.reader(open(datafile, 'r'))
 next(reader) # skip header
 raw_data = []
 for row in reader:
-    raw_data.append(list(map(float, [row[0],row[1],row[2],row[5],row[7],row[8],row[9],row[14]])))
+    raw_data.append(list(map(float, [row[0],row[1],row[2],row[5],row[7],row[8],row[9],row[14],row[16]])))
 raw_data = np.array(raw_data)
 
-raw_acc_data = np.array(raw_data[:,:3])
-yaws = np.array(raw_data[:,3])
-temperatures = np.array(raw_data[:,-1])
-naxv_displacements = np.array(raw_data[:,4:7])
+raw_acc_data = raw_data[:,:3]
+yaws = raw_data[:,3]
+temperatures = raw_data[:,-1]
+naxv_displacements = raw_data[:,4:7]
+navx_times = raw_data[:, 8]
 
 
-# In[5]:
+# In[37]:
 
 
 def get_static_intervals(threshold, data, window_size):
@@ -53,6 +55,7 @@ def get_static_intervals(threshold, data, window_size):
             temp_pair = [-1, -1]
         #start of a static intervals
         elif static and not previously_static:
+            print(center)
             temp_pair[0] = center
         
         previously_static = static
@@ -66,20 +69,20 @@ def get_static_intervals(threshold, data, window_size):
     return static_indicators, classifications   
 
 
-# In[42]:
+# In[38]:
 
 
 # static_guess = [[0, 95],[600,950],[1800,2200],[3350,3800], [5300,5700]]
-num_static_samples = 81
+num_static_samples = 61
 init_variance = np.linalg.norm(np.var(raw_acc_data[1:num_static_samples,:], axis=0))
 static_threshold = init_variance**1.2
-static_guess, classification = get_static_intervals(static_threshold, raw_acc_data, num_static_samples)
+static_guess, classification = get_static_intervals(static_threshold, raw_acc_data, 60)
 rr = raw_acc_data[1:num_static_samples,:]
 print("Using threshold:", static_threshold)
 print(static_guess)
 
 
-# In[43]:
+# In[39]:
 
 
 opacity = 0.8
