@@ -42,14 +42,13 @@ void Phil::ReadSensorsAndProcessRemotely() {
   data.left_encoder_rate = left_encoder->GetRate();
   data.right_encoder_rate = right_encoder->GetRate();
 
-  std::cout << "the co-processor will do math here..." << std::endl;
   data_t response_data = udp_client.Transaction(data);
 
   struct timeval t1 = {};
   gettimeofday(&t1, nullptr);
   double rio_return_time_s = timeval_to_sec(t1);
   double half_rtt = (rio_return_time_s - response_data.rio_send_time_s) / 2.0;
-  tk1_time_offset = rio_return_time_s - (response_data.tk1_recv_time_s + half_rtt);
+  tk1_time_offset = rio_return_time_s - (response_data.received_time_s + half_rtt);
 }
 
 phil::pose_t Phil::GetPosition() {

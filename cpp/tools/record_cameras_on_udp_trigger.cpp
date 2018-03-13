@@ -78,8 +78,7 @@ int main(int argc, const char **argv) {
 
   // wait for UDP message to start
   phil::UDPServer udp_server(udp_port);
-  uint8_t message = 0;
-  udp_server.Read(&message, 1);
+  udp_server.Read();
 
   std::cout << "Starting recording" << std::endl;
 
@@ -104,7 +103,8 @@ int main(int argc, const char **argv) {
     }
 
     // check for UDP message to stop
-    ssize_t bytes_received = udp_server.Read(&message, 1);
+    ssize_t bytes_received;
+    bytes_received = udp_server.Read();
     if (bytes_received > 0) {
       break;
     }

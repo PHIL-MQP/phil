@@ -22,11 +22,11 @@ struct data_t {
   double fpga_t;
   long navx_t;
   double rio_send_time_s;
-  double tk1_recv_time_s;
+  double received_time_s;
 };
 
 inline void print_data_t(data_t d) {
-  printf("rio:%f, main:%f\n", d.rio_send_time_s, d.tk1_recv_time_s);
+  printf("rio:%f, main:%f\n", d.rio_send_time_s, d.received_time_s);
 };
 
 inline double timeval_to_sec(struct timeval tv) {
@@ -38,15 +38,21 @@ extern socklen_t sockaddr_size;
 
 class UDPServer {
  public:
-  UDPServer(uint16_t port_num = kPort);
+  explicit UDPServer(int16_t port_num = kPort);
 
   /**
    * Blocks until the next packet is received
-   * @param response the functions fills this pointer with data
-   * @param response_size the amount of data you expect to receive in bytes
-   * @return the number of bytes actuall received and put in data
+   * @param result This functions fills the result pointer with data
+   * @return pair of the number of bytes actually received and put in data and the address to respond to
    */
-  ssize_t Read(uint8_t *response, size_t response_size);
+  std::pair<ssize_t, struct sockaddr_in> Read(phil::data_t *result);
+
+  /**
+   * Read but just return how much and don't return the data or socket of the client who sent it
+   */
+  ssize_t Read();
+
+  ssize_t Reply(struct sockaddr_in client, phil::data_t reply);
 
   /**
    * Sets the timeout for future calls to sendto and recvfrom

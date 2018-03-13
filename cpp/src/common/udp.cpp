@@ -8,7 +8,7 @@ namespace phil {
 
 socklen_t sockaddr_size = sizeof(struct sockaddr_in);
 
-UDPServer::UDPServer(uint16_t port_num) {
+UDPServer::UDPServer(const int16_t port_num) {
   if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     std::cerr << "socket failed: [" << strerror(errno) << "]" << std::endl;
     return;
@@ -26,11 +26,21 @@ UDPServer::UDPServer(uint16_t port_num) {
 
 }
 
-ssize_t UDPServer::Read(uint8_t *response, size_t response_size) {
+ssize_t UDPServer::Read() {
+  uint8_t scrap;
+  return recvfrom(socket_fd, &scrap, 1, 0, nullptr, &sockaddr_size);
+}
+
+std::pair<ssize_t, struct sockaddr_in> UDPServer::Read(data_t *result) {
   struct sockaddr_in remote_addr{};
-  ssize_t recvlen =
-      recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &remote_addr, &sockaddr_size);
-  return recvlen;
+  auto recvlen = recvfrom(socket_fd, reinterpret_cast<uint8_t *>(result), data_t_size, 0,
+                          reinterpret_cast<sockaddr *>(&remote_addr), &sockaddr_size);
+  return {recvlen, remote_addr};
+}
+
+ssize_t UDPServer::Reply(struct sockaddr_in client, data_t reply) {
+  return sendto(socket_fd, reinterpret_cast<uint8_t *>(&reply), data_t_size, 0,
+                reinterpret_cast<const sockaddr *>(&client), sockaddr_size);
 }
 
 void UDPServer::SetTimeout(struct timeval timeout) {
@@ -82,15 +92,18 @@ void UDPClient::SetTimeout(struct timeval timeout) {
 }
 
 data_t UDPClient::Transaction(data_t data) {
-  struct sockaddr_in response_addr{};
+  struct sockaddr response_addr{};
 
-  if (sendto(socket_fd, reinterpret_cast<uint8_t *>(&data), data_t_size, 0, (struct sockaddr *) &server_addr, sockaddr_size)
-      < 0) {
+  if (sendto(socket_fd,
+             reinterpret_cast<uint8_t *>(&data),
+             data_t_size,
+             0,
+             (struct sockaddr *) &server_addr,
+             sockaddr_size) < 0) {
     std::cerr << "sendto failed: [" << strerror(errno) << "]" << std::endl;
   }
 
-  ssize_t recvlen =
-      recvfrom(socket_fd, (uint8_t *) &data, data_t_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
+  ssize_t recvlen = recvfrom(socket_fd, (uint8_t *) &data, data_t_size, 0, &response_addr, &sockaddr_size);
 
   if (recvlen != data_t_size) {
     fprintf(stderr, "received %zd bytes, expected %zu bytes\n", recvlen, data_t_size);
@@ -100,9 +113,9 @@ data_t UDPClient::Transaction(data_t data) {
   }
 }
 
-ssize_t  UDPClient::Read(uint8_t *response, size_t response_size) {
-  struct sockaddr_in response_addr{};
-  ssize_t recvlen = recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
+ssize_t UDPClient::Read(uint8_t *response, size_t response_size) {
+  struct sockaddr response_addr{};
+  ssize_t recvlen = recvfrom(socket_fd, response, response_size, 0, &response_addr, &sockaddr_size);
   return recvlen;
 }
 
@@ -118,6 +131,6 @@ void UDPClient::RawTransaction(uint8_t *request, size_t request_size, uint8_t *r
     return;
   }
 
-  recvfrom(socket_fd, response, response_size, 0, (struct sockaddr *) &response_addr, &sockaddr_size);
+  recvfrom(socket_fd, response, response_size, 0, reinterpret_cast<sockaddr *>(&response_addr), &sockaddr_size);
 }
 } // end namespace

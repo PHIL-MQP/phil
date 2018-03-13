@@ -37,7 +37,7 @@ int main(int argc, const char **argv) {
                      "navx time");
 
   phil::UDPClient client("localhost");
-  client.SetTimeout({0, 20000});
+  client.SetTimeout({0, 50000});
 
   double ax, ay, az, yaw, encoder_l, encoder_r, fpga_t;
   long navx_t;
@@ -60,8 +60,8 @@ int main(int argc, const char **argv) {
     } else {
       struct timespec deadline{};
       deadline.tv_sec = 0;
-      deadline.tv_nsec = 1'000'000;
-      clock_nanosleep(CLOCK_REALTIME, 0, &deadline, NULL);
+      deadline.tv_nsec = 20'000'000;
+      clock_nanosleep(CLOCK_REALTIME, 0, &deadline, nullptr);
     }
   }
 

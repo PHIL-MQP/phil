@@ -6,6 +6,8 @@
 #include <aruco/aruco.h>
 #include <cscore.h>
 #include <eigen3/Eigen/Eigen>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
 #include <marker_mapper/markermapper.h>
 #include <networktables/NetworkTableInstance.h>
@@ -155,13 +157,7 @@ int main(int argc, const char **argv) {
   phil::UDPServer server(phil::kPort);
 
   std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
-  server.Read(nullptr, phil::data_t_size);
-
-  // Now that we've established communications, set a timeout so we can be robust to dropped RoboRIO data
-  struct timeval timeout{0};
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 40000;
-  server.SetTimeout(timeout);
+  while (server.Read() < 0) ;
 
   // Create calibration matrices
   Eigen::Matrix3d Ta;
@@ -180,17 +176,23 @@ int main(int argc, const char **argv) {
   //// Start of the localization procedure ////
   /////////////////////////////////////////////
 
-  std::cout << phil::green << "Collecting Initial Stationary Sample" << phil::reset << std::endl;
+  std::cout << phil::green << "Collecting Initial Stationary Sample" << phil::reset << "\n";
   constexpr size_t num_initial_samples = 80;
   Eigen::MatrixX3d initial_samples(num_initial_samples, 3);
   for (size_t i = 0; i < num_initial_samples; ++i) {
     // read some sensor data from roborio
     phil::data_t rio_data = {0};
-    ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
+    ssize_t bytes_received = 0;
+    struct sockaddr_in client = {0};
+    std::tie(bytes_received, client) = server.Read(&rio_data);
+    phil::data_t reply = {0};
+    reply.rio_send_time_s = rio_data.rio_send_time_s;
+    reply.received_time_s = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
+    server.Reply(client, reply);
 
     if (bytes_received != phil::data_t_size) {
-      std::cerr << phil::red << "bytes received doesn't match data_t size: [" << strerror(errno) << "]" << phil::reset
-                << std::endl;
+      std::cerr << phil::red << "bytes received [" << bytes_received << "] doesn't match data_t size: ["
+                << strerror(errno) << "]" << phil::reset << "\n";
       return EXIT_FAILURE;
     } else {
       // the correct amount of data was received so we store it
@@ -199,6 +201,12 @@ int main(int argc, const char **argv) {
       initial_samples(i, 2) = rio_data.raw_acc_z;
     }
   }
+
+  // Now that we've collected our initial sample, set a timeout so we can be robust to dropped RoboRIO data
+  struct timeval timeout{0};
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 300000;
+  server.SetTimeout(timeout);
 
   // compute the variance of our initial sample
   Eigen::Matrix<double, 1, 3> initial_static_means = initial_samples.colwise().mean();
@@ -209,7 +217,7 @@ int main(int argc, const char **argv) {
   std::cout << "Using static threshold [" << static_threshold << "]\n";
 
   // use initial sample to compute base frame rotation
-  Eigen::Vector3d calibrated_mean = Ta*Ka*(initial_static_means.transpose() + ba);
+  Eigen::Vector3d calibrated_mean = Ta * Ka * (initial_static_means.transpose() + ba);
   Eigen::Vector3d unit_calibrated_mean = calibrated_mean / calibrated_mean.norm();
   Eigen::Vector3d expected_means{0, 0, 1};
   Eigen::Vector3d v = unit_calibrated_mean.cross(expected_means);
@@ -221,11 +229,11 @@ int main(int argc, const char **argv) {
   v_x(1, 2) = -v(0);
   v_x(2, 0) = -v(1);
   v_x(2, 1) = v(0);
-  Eigen::Matrix3d base_rotation = Eigen::Matrix3d::Identity() + v_x + (v_x*v_x)*(1/(1+c));
+  Eigen::Matrix3d base_rotation = Eigen::Matrix3d::Identity() + v_x + (v_x * v_x) * (1 / (1 + c));
   std::cout << unit_calibrated_mean << "\n";
   std::cout << "Base Rotation Matrix:\n"
             << base_rotation
-            <<"\n";
+            << "\n";
 
   ////////////////////////////////
   //// Start of the main loop ////
@@ -245,7 +253,13 @@ int main(int argc, const char **argv) {
     // read some sensor data from roborio
     phil::data_t rio_data = {0};
     // FIXME: respond with time stamp or rio time sync won't work and error messages will print in publish_rio_data
-    ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
+    ssize_t bytes_received = 0;
+    sockaddr_in client = {0};
+    std::tie(bytes_received, client) = server.Read(&rio_data);
+    phil::data_t reply = {0};
+    reply.rio_send_time_s = rio_data.rio_send_time_s;
+    reply.received_time_s = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
+    server.Reply(client, reply);
 
     if (bytes_received != -1 && bytes_received != phil::data_t_size) {
       std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
@@ -269,7 +283,7 @@ int main(int argc, const char **argv) {
         latest_static_bias_estimate = window_mean;
 
         // set the current velocity estimate to be 0
-        // TODO: consider making this a "measurment" update with near zero variance?
+        // TODO: consider making this a "measurement" update with near zero variance?
         auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
         current_state_estimate(4) = 0;
         current_state_estimate(5) = 0;
@@ -277,7 +291,7 @@ int main(int argc, const char **argv) {
       }
 
       // apply calibration
-      Eigen::Vector3d calibrated_acc = Ta*Ka*(raw_acc + ba);
+      Eigen::Vector3d calibrated_acc = Ta * Ka * (raw_acc + ba);
 
       // rotate into base frame
       Eigen::Vector3d base_frame_acc = base_rotation * calibrated_acc;
