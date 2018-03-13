@@ -6,6 +6,7 @@
 #include <aruco/aruco.h>
 #include <cscore.h>
 #include <eigen3/Eigen/Eigen>
+#include <eigen3/Eigen/Geometry>
 #include <marker_mapper/markermapper.h>
 #include <networktables/NetworkTableInstance.h>
 #include <opencv2/opencv.hpp>
@@ -156,36 +157,75 @@ int main(int argc, const char **argv) {
   std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
   server.Read(nullptr, phil::data_t_size);
 
+  // Now that we've established communications, set a timeout so we can be robust to dropped RoboRIO data
+  struct timeval timeout{0};
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 40000;
+  server.SetTimeout(timeout);
+
+  // Create calibration matrices
+  Eigen::Matrix3d Ta;
+  Ta << 1, -acc_calib_params[0], acc_calib_params[1],
+      0, 1, -acc_calib_params[2],
+      0, 0, 1;
+  Eigen::Matrix3d Ka;
+  Ka << acc_calib_params[3], 0, 0,
+      0, acc_calib_params[4], 0,
+      0, 0, acc_calib_params[5];
+  Eigen::Vector3d ba;
+  ba << acc_calib_params[6], acc_calib_params[7], acc_calib_params[8];
+
+
+  /////////////////////////////////////////////
+  //// Start of the localization procedure ////
+  /////////////////////////////////////////////
+
   std::cout << phil::green << "Collecting Initial Stationary Sample" << phil::reset << std::endl;
-  constexpr size_t num_initial_samples = 250;
-  Eigen::Matrix<double, num_initial_samples, 2> initial_samples(num_initial_samples, 2);
+  constexpr size_t num_initial_samples = 80;
+  Eigen::MatrixX3d initial_samples(num_initial_samples, 3);
   for (size_t i = 0; i < num_initial_samples; ++i) {
     // read some sensor data from roborio
     phil::data_t rio_data = {0};
     ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
 
-    if (bytes_received == -1) {
-      long now = std::chrono::system_clock::now().time_since_epoch().count();
-      std::cout << now << " " << phil::yellow << "No data from RoboRIO" << phil::reset << std::endl;
-    } else if (bytes_received != phil::data_t_size) {
-      std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
+    if (bytes_received != phil::data_t_size) {
+      std::cerr << phil::red << "bytes received doesn't match data_t size: [" << strerror(errno) << "]" << phil::reset
                 << std::endl;
+      return EXIT_FAILURE;
     } else {
-      initial_samples(i, 0) = rio_data.world_accel_x;
-      initial_samples(i, 1) = rio_data.world_accel_y;
+      // the correct amount of data was received so we store it
+      initial_samples(i, 0) = rio_data.raw_acc_x;
+      initial_samples(i, 1) = rio_data.raw_acc_y;
+      initial_samples(i, 2) = rio_data.raw_acc_z;
     }
   }
 
   // compute the variance of our initial sample
-  Eigen::Matrix<double, Eigen::Dynamic, 2> centered = initial_samples.rowwise() - initial_samples.colwise().mean();
-  double variance_norm = centered.array().square().matrix().colwise().mean().norm();
-  auto static_threshold = std::pow(variance_norm, 6);
+  auto initial_static_means = initial_samples.colwise().mean();
+  Eigen::MatrixX3d centered = initial_samples.rowwise() - initial_static_means;
+  auto variance = centered.array().square().matrix().colwise().mean();
+  double variance_norm = variance.norm();
+  auto static_threshold = std::pow(variance_norm, 1.2);
 
-  // set a timeout so we can be robust to missing RoboRIO data
-  struct timeval timeout{0};
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 40000;
-  server.SetTimeout(timeout);
+  std::cout << "Using static threshold [" << static_threshold << "]\n";
+
+  // use initial sample to compute base frame rotation
+  Eigen::Vector3d expected_means{0, 0, 1};
+  Eigen::Vector3d v = initial_static_means.cross(expected_means);
+  double c = initial_static_means.dot(expected_means);
+  Eigen::Matrix3d v_x = Eigen::Matrix3d::Zero();
+  v_x(0, 1) = -v(2);
+  v_x(0, 2) = v(1);
+  v_x(1, 0) = v(2);
+  v_x(1, 2) = -v(0);
+  v_x(2, 0) = -v(1);
+  v_x(2, 1) = v(0);
+  Eigen::Matrix3d base_rotation = Eigen::Matrix3d::Identity() + v_x + (v_x*v_x)*(1/(1+c));
+
+
+  ////////////////////////////////
+  //// Start of the main loop ////
+  ////////////////////////////////
 
   phil::EKF ekf;
   cv::Mat frame;
@@ -194,29 +234,35 @@ int main(int argc, const char **argv) {
   static double last_yaw_rad = 0;
   constexpr size_t window_size = 20;
   size_t window_idx = 0;
-  Eigen::Array<double, window_size, 2> window;
-  Eigen::Array<double, 1, 2> biases;
+  Eigen::Matrix<double, window_size, 3> window;
+  Eigen::Vector3d latest_static_bias_estimate;
   std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
   while (!done) {
     // read some sensor data from roborio
     phil::data_t rio_data = {0};
+    // FIXME: respond with time stamp or rio time sync won't work and error messages will print in publish_rio_data
     ssize_t bytes_received = server.Read(reinterpret_cast<uint8_t *>(&rio_data), phil::data_t_size);
 
     if (bytes_received != -1 && bytes_received != phil::data_t_size) {
       std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
                 << std::endl;
     } else {
-      // static-interval detection for zero velocity updates
-      // FIXME: need to use raw_accel_* here instead, or rotate using current yaw estimate
-      window(window_idx, 0) = rio_data.world_accel_x;
-      window(window_idx, 1) = rio_data.world_accel_y;
+      Eigen::Vector3d raw_acc{rio_data.raw_acc_x, rio_data.raw_acc_y, rio_data.raw_acc_z};
+      window.row(window_idx) = raw_acc;
 
+      // implement circular buffer behavior
+      ++window_idx;
+      if (window_idx >= window_size) {
+        window_idx = 0;
+      }
+
+      // check if the robot is static. we may use the raw data here
       auto window_mean = window.colwise().mean();
-      double window_variance_norm = (window.rowwise() - window_mean).array().square().matrix().colwise().mean().norm();
-
+      auto error = window.rowwise() - window_mean;
+      double window_variance_norm = error.array().square().matrix().colwise().mean().norm();
       if (window_variance_norm > static_threshold) {
         // set the bias in each axis to the current mean of the window
-        biases = window_mean;
+        latest_static_bias_estimate = window_mean;
 
         // set the current velocity estimate to be 0
         // TODO: consider making this a "measurment" update with near zero variance?
@@ -226,13 +272,14 @@ int main(int argc, const char **argv) {
         ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
       }
 
-      // wrap cicular-array index around
-      ++window_idx;
-      if (window_idx >= window_size) {
-        window_idx = 0;
-      }
+      // apply calibration
+      Eigen::Vector3d calibrated_acc = Ta*Ka*(raw_acc + ba);
 
-      double adjusted_ax, adjusted_ay;
+      // rotate into base frame
+      Eigen::Vector3d base_frame_acc = base_rotation * calibrated_acc;
+
+      // apply current bias estimate
+      Eigen::Vector3d adjusted_acc = base_frame_acc - latest_static_bias_estimate;
 
       // Data structures for EKF Update
       constexpr double meters_per_tick = 0.000357;
@@ -253,20 +300,7 @@ int main(int argc, const char **argv) {
       yaw_measurement << accumulated_yaw_rad;
 
       MatrixWrapper::ColumnVector acc_measurement(2);
-      acc_measurement << adjusted_ax, adjusted_ay;
-
-      // TODO: perform calibration and other operations to accelerometer data
-      Eigen::Matrix3d Ta;
-      Ta << 1, -acc_calib_params[0], acc_calib_params[1],
-          0, 1, -acc_calib_params[2],
-          0, 0, 1;
-      Eigen::Matrix3d Ka;
-      Ka << acc_calib_params[3], 0, 0,
-          0, acc_calib_params[4], 0,
-          0, 0, acc_calib_params[5];
-
-      Eigen::Vector3d ba;
-      ba << acc_calib_params[6], acc_calib_params[7], acc_calib_params[8];
+      acc_measurement << adjusted_acc(0), adjusted_acc(1);
 
       ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
       ekf.filter->Update(ekf.yaw_measurement_model.get(), yaw_measurement);
@@ -274,7 +308,7 @@ int main(int argc, const char **argv) {
     }
 
     // only wait briefly for camera frame.
-    // if it's not available that's fine we'll just not call the EKF update for camera data
+    // if it's not available that's fine, we'll just not call the EKF update for camera data
     uint64_t time = sink.GrabFrame(frame, 0.005);
     if (time > 0) {
       if (frame.empty()) {
@@ -322,8 +356,6 @@ int main(int argc, const char **argv) {
       // show annotated frame. It's useful to debugging/visualizing
       cvsource.PutFrame(annotated_frame);
     }
-
-    // TODO: read serial data from PSoC
 
     // Fill our pose struct from the belief state of the EKF
     phil::pose_t pose{};

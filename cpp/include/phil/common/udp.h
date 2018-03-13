@@ -11,8 +11,11 @@ namespace phil {
 constexpr uint16_t kPort = 6789;
 
 struct data_t {
-  double world_accel_x;
-  double world_accel_y;
+  double world_acc_x;
+  double world_acc_y;
+  double raw_acc_x;
+  double raw_acc_y;
+  double raw_acc_z;
   double yaw;
   double left_encoder_rate;
   double right_encoder_rate;

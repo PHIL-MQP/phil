@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[10]:
+# In[3]:
 
 
 import csv
@@ -11,7 +11,7 @@ import matplotlib.cm as cm
 plt.style.use("phil.mplstyle")
 
 
-# In[11]:
+# In[4]:
 
 
 datafile = "recorded_sensor_data/field_data_3/auto/rio-data-25.5221.csv"
@@ -29,7 +29,7 @@ temperatures = np.array(raw_data[:,-1])
 naxv_displacements = np.array(raw_data[:,4:7])
 
 
-# In[12]:
+# In[5]:
 
 
 def get_static_intervals(threshold, data, window_size):
@@ -66,18 +66,23 @@ def get_static_intervals(threshold, data, window_size):
     return static_indicators, classifications   
 
 
-# In[13]:
+# In[39]:
 
 
 # static_guess = [[0, 95],[600,950],[1800,2200],[3350,3800], [5300,5700]]
-
-init_variance = np.linalg.norm(np.var(raw_acc_data[:, :80], axis=0))
-
-static_guess, classification = get_static_intervals(init_variance**5, raw_acc_data, 80)
-
+num_static_samples = 81
+init_variance = np.linalg.norm(np.var(raw_acc_data[1:num_static_samples,:], axis=0))
+static_threshold = init_variance**1.2
+static_guess, classification = get_static_intervals(static_threshold, raw_acc_data, num_static_samples)
+rr = raw_acc_data[1:num_static_samples,:]
+print("Using threshold:", static_threshold)
 print(static_guess)
-opacity = 0.8
 
+
+# In[40]:
+
+
+opacity = 0.8
 plt.figure(figsize=(18,8))
 plt.title("Acc raw data with static detector")
 plt.xlabel("# of samples")
@@ -104,7 +109,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[14]:
+# In[ ]:
 
 
 def find_static_mean(data, static_intervals):
@@ -148,7 +153,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[15]:
+# In[ ]:
 
 
 def clockwise_yaw_rotation_matrix(yaw_angle):
@@ -229,7 +234,7 @@ def base_rotation(mean_acc_while_stationary):
     return R
 
 
-# In[16]:
+# In[ ]:
 
 
 #calibrate first
@@ -355,7 +360,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[17]:
+# In[ ]:
 
 
 raw_velocity = integrate_velocity_with_yaw(raw_acc_data, 0.02, 9.8, yaws)
@@ -466,7 +471,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[20]:
+# In[ ]:
 
 
 colors = cm.rainbow(np.linspace(0, 1, (len(raw_data))))

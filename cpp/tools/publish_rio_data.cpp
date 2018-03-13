@@ -25,10 +25,11 @@ int main(int argc, const char **argv) {
     return EXIT_FAILURE;
   }
 
-  io::CSVReader<7> reader(args::get(rio_csv));
+  io::CSVReader<8> reader(args::get(rio_csv));
   reader.read_header(io::ignore_extra_column,
-                     "world_accel_x",
-                     "world_accel_y",
+                     "raw_accel_x",
+                     "raw_accel_y",
+                     "raw_accel_z",
                      "yaw",
                      "left_encoder_rate",
                      "right_encoder_rate",
@@ -38,12 +39,13 @@ int main(int argc, const char **argv) {
   phil::UDPClient client("localhost");
   client.SetTimeout({0, 20000});
 
-  double ax, ay, yaw, encoder_l, encoder_r, fpga_t;
+  double ax, ay, az, yaw, encoder_l, encoder_r, fpga_t;
   long navx_t;
-  while (reader.read_row(ax, ay, yaw, encoder_l, encoder_r, fpga_t, navx_t)) {
+  while (reader.read_row(ax, ay, az, yaw, encoder_l, encoder_r, fpga_t, navx_t)) {
     phil::data_t data{};
-    data.world_accel_x = ax;
-    data.world_accel_y = ay;
+    data.raw_acc_x = ax;
+    data.raw_acc_y = ay;
+    data.raw_acc_z = az;
     data.yaw = yaw;
     data.left_encoder_rate = encoder_l;
     data.right_encoder_rate = encoder_r;
