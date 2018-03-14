@@ -249,7 +249,7 @@ int main(int argc, const char **argv) {
   static double last_yaw_rad = 0;
   constexpr size_t window_size = 60;
   phil::math::Window<window_size, 3> window;
-  Eigen::Vector3d latest_static_bias_estimate;
+  Eigen::Vector3d latest_static_bias_estimate = calibrated_mean;
   size_t main_loop_idx = 0;
   std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
   while (!done) {
