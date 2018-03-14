@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <time.h>
+ #include <unistd.h>
 
 #include <phil/common/args.h>
 #include <phil/common/common.h>
@@ -58,10 +59,7 @@ int main(int argc, const char **argv) {
     if (args::get(step_flag)) {
       std::cin.get();
     } else {
-      struct timespec deadline{};
-      deadline.tv_sec = 0;
-      deadline.tv_nsec = 20'000'000;
-      clock_nanosleep(CLOCK_REALTIME, 0, &deadline, nullptr);
+      usleep(20'000);
     }
   }
 
