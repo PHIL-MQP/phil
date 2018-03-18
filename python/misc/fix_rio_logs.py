@@ -27,22 +27,25 @@ def main():
         header = header.split(',')
         header.remove('fused_heading')
         outfile.write(','.join(header))
-        for line in infile.readlines():
+        for line_number, line in enumerate(infile.readlines()):
             split = line.split(',')
             broken_cell = split[bad_column]
             if '-' in broken_cell[1:]:
                 missing_comma_idx = broken_cell.rindex('-')
                 first_num = broken_cell[:missing_comma_idx]
                 second_num = broken_cell[missing_comma_idx:]
+            elif broken_cell[-1] == '0':
+                first_num = broken_cell[:-1]
+                second_num = '0'
             elif broken_cell.count('.') == 2:
                 missing_comma_idx = broken_cell.rindex('.') - 1
                 first_num = broken_cell[:missing_comma_idx]
                 second_num = broken_cell[missing_comma_idx:]
-            elif broken_cell[-1] == '0':
-                first_num = broken_cell[:-1]
-                second_num = '0'
+            elif broken_cell.count('.') == 1 and broken_cell[0] == '1':
+                first_num = '1'
+                second_num = broken_cell[1:]
             else:
-                print(line, broken_cell, 'failed to split')
+                print(line_number, broken_cell, 'failed to split')
                 return
             split.pop(bad_column)
             split.insert(bad_column, first_num)

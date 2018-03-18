@@ -26,15 +26,20 @@ def main():
     mocap_reader = csv.reader(open(args.mocap_csv, 'r'))
     rio_reader = csv.reader(open(args.rio_csv, 'r'))
 
+    # MOCAP data
     robot_poses = load_motion_capture_csv(args.robot_name, mocap_reader)
-    rio_data = load_rio_data(rio_reader)
-    navx_yaws = rio_data[:,8]
-
     if robot_poses is None:
         print("there's no column [{:s}] in [{:s}]".format(args.robot_name, args.mocap_csv))
-
-    mocap_yaws = robot_poses[:, 2]
+    mocap_yaws = robot_poses[:, 2] - robot_poses[0, 2]
+    mocap_yaws = np.rad2deg(mocap_yaws)
+    mocap_yaws = np.unwrap(mocap_yaws, discont=0.1)
     mocap_times = np.arange(0, mocap_yaws.shape[0]) * 0.01
+
+    # RIO data
+    rio_data = load_rio_data(rio_reader)
+    navx_yaws = -rio_data[:, 8]
+    navx_yaws = np.unwrap(navx_yaws, discont=180)
+    navx_times = (rio_data[:, 18].astype(np.int32) - rio_data[0, 18]) / 1000
 
     if not args.no_plot:
         if 'DISPLAY' not in os.environ:
@@ -45,10 +50,11 @@ def main():
         plt.style.use(style)
         plt.figure()
         plt.plot(mocap_times, mocap_yaws, linewidth=1, label='motion capture')
-        plt.plot(mocap_times, navx_yaws, linewidth=1, label='NavX getYaw()')
+        plt.plot(navx_times, navx_yaws, linewidth=1, label='NavX getYaw()')
         plt.ylabel("Yaw (degrees)")
         plt.xlabel("Time (seconds)")
         plt.title("Comparison of Yaw Measurement")
+        plt.legend()
         plt.show()
 
 
@@ -67,7 +73,12 @@ def load_motion_capture_csv(robot_name, mocap_reader):
     for mocap_data in mocap_reader:
         if not mocap_data:
             break
-        robot_pose = np.array([float(d) for d in mocap_data])
+        robot_pose = np.zeros(len(mocap_data))
+        for i, d in enumerate(mocap_data):
+            try:
+                robot_pose[i] = float(d)
+            except ValueError:
+                pass  # default to 0
         robot_poses.append(robot_pose[robot_columns])
     robot_poses = np.array(robot_poses)
     return robot_poses
@@ -77,7 +88,6 @@ def load_rio_data(rio_reader):
     data = []
     next(rio_reader)
     for row in rio_reader:
-        print(row)
         data.append([float(d) for d in row])
     return np.array(data)
 
