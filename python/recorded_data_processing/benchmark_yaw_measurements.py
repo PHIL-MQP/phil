@@ -48,8 +48,24 @@ def integrate_gyro_z(gyro_z):
     yaw = 0
     for i, g in enumerate(gyro_z):
         yaw += g * 0.02
+        if yaw > 180:
+            yaw = -180
+        elif yaw < -180:
+            yaw = 180
         integrated_yaws[i] = yaw
     return integrated_yaws
+
+
+def wrap_mocap(mocap_yaws):
+    yaws = np.zeros(mocap_yaws.shape)
+    for i, y in enumerate(mocap_yaws):
+        if y < -180:
+            yaws[i] = y + 360
+        elif y > 180:
+            yaws[i] = y - 360
+        else:
+            yaws[i] = y
+    return yaws
 
 
 def main():
@@ -63,6 +79,7 @@ def main():
                         help='title of the column with the rio data. default is [%s]'.format(default_robot_name),
                         default=default_robot_name)
     parser.add_argument("--no-plot", '-p', action="store_true", help="plot FPS over time")
+    parser.add_argument("--save", '-s', action="store_true", help="save to yaw_comparison.png")
 
     args = parser.parse_args()
 
@@ -75,13 +92,13 @@ def main():
         print("there's no column [{:s}] in [{:s}]".format(args.robot_name, args.mocap_csv))
     mocap_yaws = robot_poses[:, 2] - robot_poses[0, 2]
     mocap_yaws = np.rad2deg(mocap_yaws)
-    mocap_yaws = np.unwrap(mocap_yaws, discont=0.1)
+    mocap_yaws = wrap_mocap(mocap_yaws)
     mocap_times = np.arange(0, mocap_yaws.shape[0]) * 0.01
 
     # RIO data
     rio_data = load_rio_data(rio_reader)
     navx_yaws = -rio_data[:, 8]
-    navx_yaws = np.unwrap(navx_yaws, discont=180)
+    navx_yaws = navx_yaws
     navx_times = (rio_data[:, 18].astype(np.int32) - rio_data[0, 18]) / 1000
     gyro_z = rio_data[:, 5]
 
@@ -103,7 +120,8 @@ def main():
         plt.xlabel("Time (seconds)")
         plt.title("Comparison of Yaw Measurement")
         plt.legend()
-        plt.show()
+        plt.savefig('yaw_comparison.png')
+        # plt.show()
 
 
 if __name__ == '__main__':
