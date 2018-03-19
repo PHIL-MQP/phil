@@ -1,6 +1,7 @@
 axes.formatter.useoffset : False
 figure.facecolor : white
 figure.titlesize : 18
+figure.autolayout : True
 axes.labelsize : 18
 xtick.labelsize : 18
 ytick.labelsize : 18
