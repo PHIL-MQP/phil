@@ -44,6 +44,7 @@ int main(int argc, const char **argv) {
   args::ArgumentParser parser("The main program to run on the localization co-processor");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
   args::Flag verbose_flag(parser, "verbose", "Print more information", {'v', "verbose"});
+  args::Flag show_static_flag(parser, "show_static", "Print more information", {'s', "show-static"});
   args::Flag no_camera_flag(parser, "no_camera", "Don't check the camera stream", {"no-camera"});
   args::Positional<std::string> config_filename(parser, "config_filename", "", args::Options::Required);
 
@@ -69,6 +70,7 @@ int main(int argc, const char **argv) {
   }
 
   const bool verbose = args::get(verbose_flag);
+  const bool show_static = args::get(show_static_flag);
   const bool no_camera = args::get(no_camera_flag);
 
   const auto w = yaml_get<int>(config, {"camera", "w"});
@@ -278,7 +280,9 @@ int main(int argc, const char **argv) {
         if (window_variance_norm < static_threshold) {
           //[[9, 104], [539, 760], [776, 965], [1749, 1757], [1763, 2193], [3035, 3061], [3250, 3281],
           // [3337, 3342], [3351, 3771], [5292, 5293], [5303, 5734], [7629, 7637], [7646, 7728]]
-          std::cout << "static at idx [" << main_loop_idx << "]\n";
+          if (show_static) {
+            std::cout << "static at idx [" << main_loop_idx << "]\n";
+          }
           // set the bias in each axis to the current mean of the window
           latest_static_bias_estimate = window_mean;
 
@@ -321,7 +325,7 @@ int main(int argc, const char **argv) {
       MatrixWrapper::ColumnVector acc_measurement(2);
       acc_measurement << adjusted_acc(0), adjusted_acc(1);
 
-      ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
+      // ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
       ekf.filter->Update(ekf.yaw_measurement_model.get(), yaw_measurement);
       ekf.filter->Update(ekf.acc_measurement_model.get(), acc_measurement);
     }

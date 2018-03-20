@@ -59,7 +59,7 @@ int main(int argc, const char **argv) {
     if (args::get(step_flag)) {
       std::cin.get();
     } else {
-      usleep(20'000);
+      // usleep(20'000);
     }
   }
 
