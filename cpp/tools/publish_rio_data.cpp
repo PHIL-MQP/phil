@@ -13,6 +13,7 @@ int main(int argc, const char **argv) {
   args::Positional<std::string>
       rio_csv(parser, "rio_csv", "csv file of data logged on the roborio", args::Options::Required);
   args::Flag step_flag(parser, "step", "press enter to publish each line/packet of the data", {'s', "step"});
+  args::ValueFlag<unsigned int> period_flag(parser, "period", "publish a new packet of data every [period] milliseconds", {'p', "period"});
 
   try {
     parser.ParseCLI(argc, argv);
@@ -25,6 +26,8 @@ int main(int argc, const char **argv) {
     std::cout << parser;
     return EXIT_FAILURE;
   }
+
+  unsigned int rate = args::get(period_flag);
 
   io::CSVReader<8> reader(args::get(rio_csv));
   reader.read_header(io::ignore_extra_column,
@@ -59,7 +62,7 @@ int main(int argc, const char **argv) {
     if (args::get(step_flag)) {
       std::cin.get();
     } else {
-      // usleep(20'000);
+      usleep(rate * 1000);
     }
   }
 
