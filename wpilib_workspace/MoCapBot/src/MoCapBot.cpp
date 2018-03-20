@@ -79,7 +79,7 @@ void Robot::TeleopInit() {
 
 	log << "raw_accel_x,raw_accel_y,raw_accel_z,"
 			<< "raw_gyro_x,raw_gyro_y,raw_gyro_z,"
-			<< "world_accel_x,world_accel_y," << "yaw,fused_heading,"
+			<< "world_accel_x,world_accel_y," << "yaw,"
 			<< "x,y,z," << "left_encoder_rate,right_encoder_rate,"
 			<< "left_motor,right_motor,temp," << "fpga time,navx time"
 			<< std::endl;
@@ -183,7 +183,7 @@ void Robot::TeleopPeriodic() {
 			<< "," << sample.navx_t << std::endl;
 
 	log << std::setw(6) << sample.raw_accel_x << "," << sample.raw_accel_y
-			<< "," << sample.raw_accel_z << sample.raw_gyro_x << ","
+			<< "," << sample.raw_accel_z << "," << sample.raw_gyro_x << ","
 			<< sample.raw_gyro_y << "," << sample.raw_gyro_z << ","
 			<< sample.world_accel_x << "," << sample.world_accel_y << ","
 			<< sample.yaw << "," << sample.x << "," << sample.y << ","
