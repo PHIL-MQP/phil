@@ -404,7 +404,7 @@ int main(int argc, const char **argv) {
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
-    std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
+    std::cout << pose.x << ", " << pose.y << ", " << pose.theta << std::endl;
 
     x_entry.SetDouble(pose.x);
     y_entry.SetDouble(pose.y);
