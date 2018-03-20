@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <time.h>
- #include <unistd.h>
+#include <unistd.h>
 
 #include <phil/common/args.h>
 #include <phil/common/common.h>
@@ -13,7 +13,8 @@ int main(int argc, const char **argv) {
   args::Positional<std::string>
       rio_csv(parser, "rio_csv", "csv file of data logged on the roborio", args::Options::Required);
   args::Flag step_flag(parser, "step", "press enter to publish each line/packet of the data", {'s', "step"});
-  args::ValueFlag<unsigned int> period_flag(parser, "period", "publish a new packet of data every [period] milliseconds", {'p', "period"});
+  args::ValueFlag<unsigned int>
+      period_flag(parser, "period", "publish a new packet of data every [period] milliseconds", {'p', "period"});
 
   try {
     parser.ParseCLI(argc, argv);
@@ -61,6 +62,9 @@ int main(int argc, const char **argv) {
 
     if (args::get(step_flag)) {
       std::cin.get();
+    } else if (rate == 0) {
+      // do nothing
+      continue;
     } else {
       usleep(rate * 1000);
     }

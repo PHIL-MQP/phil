@@ -99,8 +99,10 @@ int main(int argc, const char **argv) {
   cs::MjpegServer cvMjpegServer{"phil/main/annotated_mjpeg_server", annotated_stream_port};
   cvMjpegServer.SetSource(cvsource);
 
-  std::cout << phil::cyan << "See annotated camera stream at " << hostname << ":" << annotated_stream_port
-            << phil::reset << "\n";
+  if (verbose) {
+    std::cout << phil::cyan << "See annotated camera stream at " << hostname << ":" << annotated_stream_port
+              << phil::reset << "\n";
+  }
 
   // read in the markermapper config yaml file
   aruco::MarkerMap mmap;
@@ -161,7 +163,9 @@ int main(int argc, const char **argv) {
   // Setup communication with the roborio
   phil::UDPServer server(phil::kPort);
 
-  std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
+  if (verbose) {
+    std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
+  }
   while (server.Read() < 0);
 
   // Create calibration matrices
@@ -181,7 +185,10 @@ int main(int argc, const char **argv) {
   //// Start of the localization procedure ////
   /////////////////////////////////////////////
 
-  std::cout << phil::green << "Collecting Initial Stationary Sample" << phil::reset << "\n";
+  if (verbose) {
+    std::cout << phil::green << "Collecting Initial Stationary Sample" << phil::reset << "\n";
+  }
+
   constexpr size_t num_initial_samples = 60;
   Eigen::MatrixX3d initial_samples(num_initial_samples, 3);
   for (size_t i = 0; i < num_initial_samples; ++i) {
@@ -219,7 +226,9 @@ int main(int argc, const char **argv) {
   double variance_norm = centered.array().square().matrix().colwise().mean().norm();
   double static_threshold = std::pow(variance_norm, 1.2);
 
-  std::cout << "Using static threshold [" << static_threshold << "]\n";
+  if (verbose) {
+    std::cout << "Using static threshold [" << static_threshold << "]\n";
+  }
 
   // use initial sample to compute base frame rotation
   Eigen::Vector3d calibrated_mean = Ta * Ka * (initial_static_means.transpose() + ba);
@@ -235,10 +244,12 @@ int main(int argc, const char **argv) {
   v_x(2, 0) = -v(1);
   v_x(2, 1) = v(0);
   Eigen::Matrix3d base_rotation = Eigen::Matrix3d::Identity() + v_x + (v_x * v_x) * (1 / (1 + c));
-  std::cout << unit_calibrated_mean << "\n";
-  std::cout << "Base Rotation Matrix:\n"
-            << base_rotation
-            << "\n";
+  if (verbose) {
+    std::cout << unit_calibrated_mean << "\n";
+    std::cout << "Base Rotation Matrix:\n"
+              << base_rotation
+              << "\n";
+  }
 
   ////////////////////////////////
   //// Start of the main loop ////
@@ -253,7 +264,9 @@ int main(int argc, const char **argv) {
   phil::math::Window<window_size, 3> window;
   Eigen::Vector3d latest_static_bias_estimate = calibrated_mean;
   size_t main_loop_idx = 0;
-  std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
+  if (verbose) {
+    std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
+  }
   while (!done) {
     // read some sensor data from roborio
     phil::data_t rio_data = {0};
@@ -278,8 +291,6 @@ int main(int argc, const char **argv) {
         auto error = window.rowwise() - window_mean;
         double window_variance_norm = std::pow(error.array().square().matrix().colwise().mean().norm(), 2);
         if (window_variance_norm < static_threshold) {
-          //[[9, 104], [539, 760], [776, 965], [1749, 1757], [1763, 2193], [3035, 3061], [3250, 3281],
-          // [3337, 3342], [3351, 3771], [5292, 5293], [5303, 5734], [7629, 7637], [7646, 7728]]
           if (show_static) {
             std::cout << "static at idx [" << main_loop_idx << "]\n";
           }
@@ -325,7 +336,7 @@ int main(int argc, const char **argv) {
       MatrixWrapper::ColumnVector acc_measurement(2);
       acc_measurement << adjusted_acc(0), adjusted_acc(1);
 
-      // ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
+      ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
       ekf.filter->Update(ekf.yaw_measurement_model.get(), yaw_measurement);
       ekf.filter->Update(ekf.acc_measurement_model.get(), acc_measurement);
     }
@@ -351,7 +362,9 @@ int main(int argc, const char **argv) {
 
       // show annotated frame. It's useful to debugging/visualizing
       if (detected_markers.empty()) {
-        std::cout << phil::cyan << "no tags detected" << phil::reset << "\n";
+        if (verbose) {
+          std::cout << phil::cyan << "no tags detected" << phil::reset << "\n";
+        }
         cvsource.PutFrame(annotated_frame); // put in the unannotated frame
         continue;
       }
@@ -391,9 +404,8 @@ int main(int argc, const char **argv) {
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
-    if (verbose) {
-      std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
-    }
+    std::cout << pose.x << ", " << pose.y << ", " << pose.theta << "\n";
+
     x_entry.SetDouble(pose.x);
     y_entry.SetDouble(pose.y);
     yaw_entry.SetDouble(pose.theta);
