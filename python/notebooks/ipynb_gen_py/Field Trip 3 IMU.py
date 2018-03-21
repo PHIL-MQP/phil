@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[11]:
+# In[1]:
 
 
 import csv
@@ -12,7 +12,7 @@ plt.style.use("phil.mplstyle")
 np.set_printoptions(precision=5, suppress=True)
 
 
-# In[12]:
+# In[2]:
 
 
 datafile = "recorded_sensor_data/field_data_3/auto/rio-data-25.5221.csv"
@@ -31,7 +31,7 @@ naxv_displacements = raw_data[:,4:7]
 navx_times = raw_data[:, 8]
 
 
-# In[37]:
+# In[3]:
 
 
 def get_static_intervals(threshold, data, window_size):
@@ -69,7 +69,7 @@ def get_static_intervals(threshold, data, window_size):
     return static_indicators, classifications   
 
 
-# In[38]:
+# In[12]:
 
 
 # static_guess = [[0, 95],[600,950],[1800,2200],[3350,3800], [5300,5700]]
@@ -80,9 +80,10 @@ static_guess, classification = get_static_intervals(static_threshold, raw_acc_da
 rr = raw_acc_data[1:num_static_samples,:]
 print("Using threshold:", static_threshold)
 print(static_guess)
+print(raw_acc_data[:10])
 
 
-# In[39]:
+# In[5]:
 
 
 opacity = 0.8
@@ -112,7 +113,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[44]:
+# In[13]:
 
 
 def find_static_mean(data, static_intervals):
@@ -127,6 +128,7 @@ def find_static_mean(data, static_intervals):
 
 def plot_static_mean(data, static_intervals):
     averages = find_static_mean(data,static_intervals)
+    print(averages[:,:2])
     
     plt.figure(figsize=(18,8))
     plt.title("Acc mean values of different static intervals")
@@ -156,7 +158,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[55]:
+# In[7]:
 
 
 def clockwise_yaw_rotation_matrix(yaw_angle):
@@ -237,7 +239,7 @@ def base_rotation(mean_acc_while_stationary):
     return R
 
 
-# In[58]:
+# In[8]:
 
 
 #calibrate first
@@ -258,7 +260,7 @@ halfway_acc_data = (R @ calibrated_acc_data.T).T
 # halfway_acc_data = (R @ raw_acc_data.T).T
 
 
-# In[47]:
+# In[9]:
 
 
 drift_compt_data = np.copy(halfway_acc_data) 
@@ -367,7 +369,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[48]:
+# In[10]:
 
 
 raw_velocity = integrate_velocity_with_yaw(raw_acc_data, 0.02, 9.8, yaws)
@@ -478,7 +480,7 @@ plt.legend(bbox_to_anchor=(1,1))
 plt.show()
 
 
-# In[ ]:
+# In[11]:
 
 
 colors = cm.rainbow(np.linspace(0, 1, (len(raw_data))))

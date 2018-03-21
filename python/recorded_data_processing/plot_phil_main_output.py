@@ -12,29 +12,42 @@ def main():
     args = parser.parse_args()
 
     data = np.genfromtxt(args.infile, delimiter=", ", skip_footer=1)
-    xs = data[:, 0]
-    ys = data[:, 1]
 
     recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
     style = recorded_data_processing_dir + "/../phil.mplstyle"
+
     plt.style.use(style)
-    plt.plot(xs, ys)
+    plt.plot(data[:, 0], data[:, 1])
     plt.title("position of robot")
-    plt.xlabel("u (meters)")
+    plt.xlabel("y (meters)")
     plt.xlabel("x (meters)")
     plt.axis('square')
 
     plt.figure()
     plt.plot(data[:, 2])
-    plt.ylabel("angle")
+    plt.ylabel("yaw angle (radians)")
+    plt.xlabel("samples")
+
+    plt.figure()
+    plt.plot(data[:, 3], label='vx')
+    plt.plot(data[:, 4], label='vy')
+    plt.legend()
+    plt.ylabel("velocity")
+    plt.xlabel("samples")
+
+    plt.figure()
+    plt.plot(data[:, 6], label='ax')
+    plt.plot(data[:, 7], label='ay')
+    plt.legend()
+    plt.ylabel("acceleration")
     plt.xlabel("time")
-    #
-    # plt.figure()
-    # plt.plot(data[:, 3], label='vx')
-    # plt.plot(data[:, 4], label='vy')
-    # plt.legend()
-    # plt.ylabel("velocity")
-    # plt.xlabel("time")
+
+    plt.figure()
+    plt.plot(data[:, 9], label='input ax')
+    plt.plot(data[:, 10], label='input ay')
+    plt.legend()
+    plt.ylabel("acceleration")
+    plt.xlabel("time")
 
     # plt.figure()
     # plt.plot(data[:, 5], label='cov x')

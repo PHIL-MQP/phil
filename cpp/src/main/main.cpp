@@ -82,7 +82,7 @@ int main(int argc, const char **argv) {
   const auto dictionary = yaml_get<std::string>(config, {"aruco", "dictionary"});
   const auto cam_params_file = yaml_get<std::string>(config, {"camera", "params"});
 
-  constexpr auto hostname_length = 10;
+  constexpr auto hostname_length = 100;
   char hostname[hostname_length] = "localhost";
   auto failure = gethostname(hostname, hostname_length);
   if (failure) {
