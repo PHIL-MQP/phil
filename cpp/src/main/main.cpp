@@ -46,6 +46,7 @@ int main(int argc, const char **argv) {
   args::Flag verbose_flag(parser, "verbose", "Print more information", {'v', "verbose"});
   args::Flag show_static_flag(parser, "show_static", "Print more information", {'s', "show-static"});
   args::Flag no_camera_flag(parser, "no_camera", "Don't check the camera stream", {"no-camera"});
+  args::Flag print_estimate_flag(parser, "print_estimate", "print the current x/y/yaw and other information", {'p', "print-estimate"});
   args::Positional<std::string> config_filename(parser, "config_filename", "", args::Options::Required);
 
   try {
@@ -72,6 +73,7 @@ int main(int argc, const char **argv) {
   const bool verbose = args::get(verbose_flag);
   const bool show_static = args::get(show_static_flag);
   const bool no_camera = args::get(no_camera_flag);
+  const bool print_current_estimate = args::get(print_estimate_flag);
 
   const auto w = yaml_get<int>(config, {"camera", "w"});
   const auto h = yaml_get<int>(config, {"camera", "h"});
@@ -425,7 +427,9 @@ int main(int argc, const char **argv) {
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
-    std::cout << estimate.transpose().format(csv_format) << ", " << acc_measurement.transpose().format(csv_format) << std::endl;
+    if (print_current_estimate) {
+      std::cout << estimate.transpose().format(csv_format) << ", " << acc_measurement.transpose().format(csv_format) << std::endl;
+    }
 
     x_entry.SetDouble(pose.x);
     y_entry.SetDouble(pose.y);
