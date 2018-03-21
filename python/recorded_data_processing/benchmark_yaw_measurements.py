@@ -114,14 +114,13 @@ def main():
         plt.figure()
         plt.plot(mocap_times, mocap_yaws, linewidth=1, label='motion capture')
         plt.plot(navx_times, navx_yaws, linewidth=1, label='NavX getYaw()')
-        plt.plot(navx_times, integrated_yaws, linewidth=1, label='Integrated Gyro '
-                                                                 'Z')
+        plt.plot(navx_times, integrated_yaws, linewidth=1, label='Integrated Gyro Z')
         plt.ylabel("Yaw (degrees)")
         plt.xlabel("Time (seconds)")
         plt.title("Comparison of Yaw Measurement")
         plt.legend()
         plt.savefig('yaw_comparison.png')
-        # plt.show()
+        plt.show()
 
 
 if __name__ == '__main__':
