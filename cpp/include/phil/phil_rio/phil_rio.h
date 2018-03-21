@@ -21,6 +21,7 @@ class Phil {
 
   Phil();
 
+ public:
   frc::Encoder *left_encoder;
   frc::Encoder *right_encoder;
   frc::SpeedController *left_motor;
@@ -28,7 +29,6 @@ class Phil {
   AHRS *ahrs;
   std::shared_ptr<nt::NetworkTable> table;
 
- public:
   static Phil *GetInstance();
 
   void GiveSensors(frc::Encoder *left_encoder, frc::Encoder *right_encoder, AHRS *ahrs);

@@ -9,15 +9,15 @@ EKF::EKF()
   prior_mean << 0, 0, 0, 0, 0, 0, 0, 0, 0;
   MatrixWrapper::SymmetricMatrix prior_covariance(localization::N);
   prior_covariance = 0;
-  prior_covariance(1, 1) = 0.0001;
-  prior_covariance(2, 2) = 0.0001;
-  prior_covariance(3, 3) = 0.0001;
-  prior_covariance(4, 4) = 0.0001;
-  prior_covariance(5, 5) = 0.0001;
-  prior_covariance(6, 6) = 0.0001;
-  prior_covariance(7, 7) = 0.0001;
-  prior_covariance(8, 8) = 0.0001;
-  prior_covariance(9, 9) = 0.0001;
+  prior_covariance(1, 1) = 1;
+  prior_covariance(2, 2) = 1;
+  prior_covariance(3, 3) = 1;
+  prior_covariance(4, 4) = 1;
+  prior_covariance(5, 5) = 1;
+  prior_covariance(6, 6) = 1;
+  prior_covariance(7, 7) = 1;
+  prior_covariance(8, 8) = 1;
+  prior_covariance(9, 9) = 1;
   prior = std::make_unique<BFL::Gaussian>(prior_mean, prior_covariance);
   filter = std::make_unique<BFL::ExtendedKalmanFilter>(prior.get());
 

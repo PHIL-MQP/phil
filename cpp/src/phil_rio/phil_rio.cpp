@@ -11,7 +11,7 @@ Phil *Phil::instance = nullptr;
 
 // TODO: don't hard code main hostname
 Phil::Phil() :
-    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("phil-tk1.local", phil::kPort), tk1_time_offset(0) {
+    left_encoder(nullptr), right_encoder(nullptr), ahrs(nullptr), udp_client("raspberrypi.local", phil::kPort), tk1_time_offset(0) {
   auto inst = nt::NetworkTableInstance::GetDefault();
   table = inst.GetTable(phil::kTableName);
 
@@ -35,10 +35,18 @@ void Phil::GiveSensors(Encoder *left_encoder, Encoder *right_encoder, AHRS *ahrs
 }
 
 void Phil::ReadSensorsAndProcessRemotely() {
-  data_t data;
+  data_t data = {0};
   struct timeval t0 = {};
   gettimeofday(&t0, nullptr);
   data.rio_send_time_s = timeval_to_sec(t0) + tk1_time_offset;
+  data.raw_acc_x = ahrs->GetRawAccelX();
+  data.raw_acc_y = ahrs->GetRawAccelY();
+  data.raw_acc_z = ahrs->GetRawAccelZ();
+  data.navx_t = ahrs->GetLastSensorTimestamp();
+  data.fpga_t = Timer::GetFPGATimestamp();
+  data.yaw = ahrs->GetYaw();
+  data.world_acc_x = ahrs->GetWorldLinearAccelX();
+  data.world_acc_y = ahrs->GetWorldLinearAccelY();
   data.left_encoder_rate = left_encoder->GetRate();
   data.right_encoder_rate = right_encoder->GetRate();
 

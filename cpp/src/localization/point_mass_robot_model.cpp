@@ -11,11 +11,11 @@ PointMassControlModel::PointMassControlModel(const BFL::Gaussian &additiveNoise)
 MatrixWrapper::ColumnVector PointMassControlModel::ExpectedValueGet() const {
   MatrixWrapper::ColumnVector state = ConditionalArgumentGet(0);
   state(1) = state(1) + state(4) * dt_s + 0.5 * state(7) * dt_s * dt_s;
-  state(2) = state(2) + state(5) * dt_s + 0.5 * state(8) * dt_s * dt_s;
+  state(2) = state(2) + state(5) * dt_s;
   state(3) = state(3) + state(6) * dt_s;
 
-  state(4) = 0;
-  state(5) = 0;
+  state(4) = state(4) + state(7) * dt_s;
+  state(5) = state(5) + state(8) * dt_s;
   state(6) = 0;
   state(7) = state(7);
   state(8) = state(8);

@@ -141,6 +141,18 @@ int main(int argc, const char **argv) {
 
   const auto acc_calib_params = yaml_get<std::vector<double>>(config, {"imu_calibration", "accelerometer"});
 
+  // Create calibration matrices
+  Eigen::Matrix3d Ta;
+  Ta << 1, -acc_calib_params[0], acc_calib_params[1],
+      0, 1, -acc_calib_params[2],
+      0, 0, 1;
+  Eigen::Matrix3d Ka;
+  Ka << acc_calib_params[3], 0, 0,
+      0, acc_calib_params[4], 0,
+      0, 0, acc_calib_params[5];
+  Eigen::Vector3d ba;
+  ba << acc_calib_params[6], acc_calib_params[7], acc_calib_params[8];
+
   // create pose tracker
   aruco::MarkerMapPoseTracker tracker;
   tracker.setParams(camera_params, mmap);
@@ -167,18 +179,6 @@ int main(int argc, const char **argv) {
     std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
   }
   while (server.Read() < 0);
-
-  // Create calibration matrices
-  Eigen::Matrix3d Ta;
-  Ta << 1, -acc_calib_params[0], acc_calib_params[1],
-      0, 1, -acc_calib_params[2],
-      0, 0, 1;
-  Eigen::Matrix3d Ka;
-  Ka << acc_calib_params[3], 0, 0,
-      0, acc_calib_params[4], 0,
-      0, 0, acc_calib_params[5];
-  Eigen::Vector3d ba;
-  ba << acc_calib_params[6], acc_calib_params[7], acc_calib_params[8];
 
 
   /////////////////////////////////////////////
@@ -262,7 +262,8 @@ int main(int argc, const char **argv) {
   static double last_yaw_rad = 0;
   constexpr size_t window_size = 60;
   phil::math::Window<window_size, 3> window;
-  Eigen::Vector3d latest_static_bias_estimate = calibrated_mean;
+  Eigen::Vector3d &latest_static_bias_estimate = calibrated_mean;
+  const static Eigen::IOFormat csv_format(3, Eigen::DontAlignCols, ", ", "\n");
   size_t main_loop_idx = 0;
   if (verbose) {
     std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
@@ -279,6 +280,8 @@ int main(int argc, const char **argv) {
     reply.received_time_s = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
     server.Reply(client, reply);
 
+    MatrixWrapper::ColumnVector acc_measurement(2);
+
     if (bytes_received != -1 && bytes_received != phil::data_t_size) {
       std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
                 << std::endl;
@@ -288,8 +291,8 @@ int main(int argc, const char **argv) {
       /////////////////////////////////////////////////
 
       // The NavX gives us angles (-180/180), we want to unwrap this to (-\infty,\infty)
-      double yaw_rad = -rio_data.yaw * M_PI / 180.0;
-      auto d_yaw_rad = phil::yaw_diff_rad(yaw_rad, last_yaw_rad);
+      const double yaw_rad = -rio_data.yaw * M_PI / 180.0;
+      const auto d_yaw_rad = phil::yaw_diff_rad(yaw_rad, last_yaw_rad);
       last_yaw_rad = yaw_rad;
       accumulated_yaw_rad += d_yaw_rad;
 
@@ -304,42 +307,40 @@ int main(int argc, const char **argv) {
       window.push(raw_acc);
 
       if (window.isFull()) {
-        auto window_mean = window.colwise().mean();
-        auto error = window.rowwise() - window_mean;
-        double window_variance_norm = std::pow(error.array().square().matrix().colwise().mean().norm(), 2);
+        const auto window_mean = window.colwise().mean();
+        const auto error = window.rowwise() - window_mean;
+        const double window_variance_norm = std::pow(error.array().square().matrix().colwise().mean().norm(), 2);
         if (window_variance_norm < static_threshold) {
           if (show_static) {
             std::cout << "static at idx [" << main_loop_idx << "]\n";
           }
           // set the bias in each axis to the current mean of the window
-//          latest_static_bias_estimate = window_mean;
+          latest_static_bias_estimate = window_mean;
 
           // set the current velocity estimate to be 0
-          // TODO: consider making this a "measurement" update with near zero variance?
-//          auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
-//          current_state_estimate(4) = 0;
-//          current_state_estimate(5) = 0;
-//          ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
+          auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
+          current_state_estimate(4) = 0;
+          current_state_estimate(5) = 0;
+          ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
         }
       }
 
       // apply calibration
-      Eigen::Vector3d calibrated_acc = Ta * Ka * (raw_acc + ba);
-
-      // rotate into base frame
-      Eigen::Vector3d base_frame_acc = base_rotation * calibrated_acc;
+      const auto calibrated_acc = Ta * Ka * (raw_acc + ba);
 
       // apply current bias estimate
-      Eigen::Vector3d adjusted_acc = base_frame_acc - latest_static_bias_estimate;
+      const auto adjusted_acc = calibrated_acc - latest_static_bias_estimate;
+
+      // rotate into base frame
+      const auto base_frame_acc = base_rotation * adjusted_acc;
 
       // convert from Gs to m/s^2
-      adjusted_acc *= 9.8;
+      const auto mpss_acc = base_frame_acc * 9.8;
 
       // rotate acc into world frame
-      Eigen::AngleAxisd world_frame_rotation(accumulated_yaw_rad, Eigen::Vector3d::UnitZ());
-      Eigen::Vector3d world_frame_acc = world_frame_rotation * adjusted_acc;
+      const Eigen::AngleAxisd world_frame_rotation(accumulated_yaw_rad, Eigen::Vector3d::UnitZ());
+      const Eigen::Vector3d world_frame_acc = world_frame_rotation * mpss_acc;
 
-      MatrixWrapper::ColumnVector acc_measurement(2);
       acc_measurement << world_frame_acc(0), world_frame_acc(1);
 
       /////////////////////////////////////////////////
@@ -348,8 +349,8 @@ int main(int argc, const char **argv) {
 
       // Data structures for EKF Update
       constexpr double meters_per_tick = 0.000357;
-      double v_l = -rio_data.left_encoder_rate * meters_per_tick;
-      double v_r = -rio_data.right_encoder_rate * meters_per_tick;
+      const double v_l = -rio_data.left_encoder_rate * meters_per_tick;
+      const double v_r = -rio_data.right_encoder_rate * meters_per_tick;
 
       MatrixWrapper::ColumnVector encoder_input(2);
       encoder_input(1) = v_l;
@@ -395,7 +396,7 @@ int main(int argc, const char **argv) {
           cv::Mat rt_matrix = tracker.getRTMatrix();
           // We got a fully valid pose estimate from our camera frame
           MatrixWrapper::ColumnVector camera_measurement(3);
-          auto camera_pose = phil::MatrixTo3Pose(rt_matrix);
+          const auto camera_pose = phil::MatrixTo3Pose(rt_matrix);
           camera_measurement << camera_pose.x, camera_pose.y, camera_pose.theta;
 
           // perform camera EKF update
@@ -418,20 +419,13 @@ int main(int argc, const char **argv) {
 
     // Fill our pose struct from the belief state of the EKF
     phil::pose_t pose{};
-    auto estimate = ekf.filter->PostGet()->ExpectedValueGet();
-    auto cov = ekf.filter->PostGet()->CovarianceGet().diagonal();
+    const auto estimate = ekf.filter->PostGet()->ExpectedValueGet();
+    const auto cov = ekf.filter->PostGet()->CovarianceGet().diagonal();
     pose.x = estimate(1);
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
-    std::cout << pose.x << ", "
-              << pose.y << ", "
-              << pose.theta << ", "
-              << estimate(4) << ", "
-              << estimate(5) << ", "
-              << cov(1) << ", "
-              << cov(2) << ", "
-              << cov(3) << std::endl;
+    std::cout << estimate.transpose().format(csv_format) << ", " << acc_measurement.transpose().format(csv_format) << std::endl;
 
     x_entry.SetDouble(pose.x);
     y_entry.SetDouble(pose.y);
