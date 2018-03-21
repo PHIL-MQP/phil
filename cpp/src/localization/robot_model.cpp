@@ -14,9 +14,9 @@ MatrixWrapper::ColumnVector EncoderControlModel::ExpectedValueGet() const {
   state(2) = state(2) + state(5) * dt_s + 0.5 * state(8) * dt_s * dt_s;
   state(3) = state(3) + state(6) * dt_s;
 
-  state(4) = v * cos(state(3));
-  state(5) = v * sin(state(3));
-  state(6) = (control(2) - control(1)) / (alpha * W);
+  state(4) = 0; //v * cos(state(3));
+  state(5) = 0; //v * sin(state(3));
+  state(6) = 0; //(control(2) - control(1)) / (alpha * W);
   state(7) = state(7);
   state(8) = state(8);
   state(9) = 0;
@@ -41,8 +41,8 @@ MatrixWrapper::Matrix EncoderControlModel::dfGet(unsigned int i) const {
     df(3, 3) = 1;
     df(3, 6) = dt_s;
     df(3, 9) = 0;
-    df(4, 3) = -v * sin(state(3));
-    df(5, 3) = v * cos(state(3));
+    df(4, 3) = 0; //-v * sin(state(3));
+    df(5, 3) = 0; //v * cos(state(3));
     df(7, 7) = 1;
     df(8, 8) = 1;
     df(9, 9) = 0;

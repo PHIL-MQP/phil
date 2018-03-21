@@ -283,6 +283,23 @@ int main(int argc, const char **argv) {
       std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
                 << std::endl;
     } else {
+      /////////////////////////////////////////////////
+      // YAW MEASUREMENT
+      /////////////////////////////////////////////////
+
+      // The NavX gives us angles (-180/180), we want to unwrap this to (-\infty,\infty)
+      double yaw_rad = -rio_data.yaw * M_PI / 180.0;
+      auto d_yaw_rad = phil::yaw_diff_rad(yaw_rad, last_yaw_rad);
+      last_yaw_rad = yaw_rad;
+      accumulated_yaw_rad += d_yaw_rad;
+
+      MatrixWrapper::ColumnVector yaw_measurement(1);
+      yaw_measurement << accumulated_yaw_rad;
+
+      /////////////////////////////////////////////////
+      // ACCELEROMETER MEASUREMENT
+      /////////////////////////////////////////////////
+
       Eigen::Vector3d raw_acc{rio_data.raw_acc_x, rio_data.raw_acc_y, rio_data.raw_acc_z};
       window.push(raw_acc);
 
@@ -315,6 +332,20 @@ int main(int argc, const char **argv) {
       // apply current bias estimate
       Eigen::Vector3d adjusted_acc = base_frame_acc - latest_static_bias_estimate;
 
+      // convert from Gs to m/s^2
+      adjusted_acc *= 9.8;
+
+      // rotate acc into world frame
+      Eigen::AngleAxisd world_frame_rotation(accumulated_yaw_rad, Eigen::Vector3d::UnitZ());
+      Eigen::Vector3d world_frame_acc = world_frame_rotation * adjusted_acc;
+
+      MatrixWrapper::ColumnVector acc_measurement(2);
+      acc_measurement << world_frame_acc(0), world_frame_acc(1);
+
+      /////////////////////////////////////////////////
+      // ENCODER CONTROL
+      /////////////////////////////////////////////////
+
       // Data structures for EKF Update
       constexpr double meters_per_tick = 0.000357;
       double v_l = -rio_data.left_encoder_rate * meters_per_tick;
@@ -323,18 +354,6 @@ int main(int argc, const char **argv) {
       MatrixWrapper::ColumnVector encoder_input(2);
       encoder_input(1) = v_l;
       encoder_input(2) = v_r;
-
-      // The NavX gives us angles (-180/180), we want to unwrap this to (-\infty,\infty)
-      double yaw_rad = -rio_data.yaw * M_PI / 180.0;
-      auto d_yaw_rad = phil::yaw_diff_rad(yaw_rad, last_yaw_rad);
-      last_yaw_rad = yaw_rad;
-      accumulated_yaw_rad += d_yaw_rad;
-
-      MatrixWrapper::ColumnVector yaw_measurement(1);
-      yaw_measurement << accumulated_yaw_rad;
-
-      MatrixWrapper::ColumnVector acc_measurement(2);
-      acc_measurement << adjusted_acc(0), adjusted_acc(1);
 
       ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
       ekf.filter->Update(ekf.yaw_measurement_model.get(), yaw_measurement);
@@ -400,11 +419,19 @@ int main(int argc, const char **argv) {
     // Fill our pose struct from the belief state of the EKF
     phil::pose_t pose{};
     auto estimate = ekf.filter->PostGet()->ExpectedValueGet();
+    auto cov = ekf.filter->PostGet()->CovarianceGet().diagonal();
     pose.x = estimate(1);
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
-    std::cout << pose.x << ", " << pose.y << ", " << pose.theta << std::endl;
+    std::cout << pose.x << ", "
+              << pose.y << ", "
+              << pose.theta << ", "
+              << estimate(4) << ", "
+              << estimate(5) << ", "
+              << cov(1) << ", "
+              << cov(2) << ", "
+              << cov(3) << std::endl;
 
     x_entry.SetDouble(pose.x);
     y_entry.SetDouble(pose.y);
