@@ -312,14 +312,14 @@ int main(int argc, const char **argv) {
             std::cout << "static at idx [" << main_loop_idx << "]\n";
           }
           // set the bias in each axis to the current mean of the window
-          latest_static_bias_estimate = window_mean;
+//          latest_static_bias_estimate = window_mean;
 
           // set the current velocity estimate to be 0
           // TODO: consider making this a "measurement" update with near zero variance?
-          auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
-          current_state_estimate(4) = 0;
-          current_state_estimate(5) = 0;
-          ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
+//          auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
+//          current_state_estimate(4) = 0;
+//          current_state_estimate(5) = 0;
+//          ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
         }
       }
 
@@ -355,7 +355,7 @@ int main(int argc, const char **argv) {
       encoder_input(1) = v_l;
       encoder_input(2) = v_r;
 
-      ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
+      ekf.filter->Update(ekf.system_model.get(), encoder_input);
       ekf.filter->Update(ekf.yaw_measurement_model.get(), yaw_measurement);
       ekf.filter->Update(ekf.acc_measurement_model.get(), acc_measurement);
     }

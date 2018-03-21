@@ -28,13 +28,13 @@ def main():
     plt.plot(data[:, 2])
     plt.ylabel("angle")
     plt.xlabel("time")
-
-    plt.figure()
-    plt.plot(data[:, 3], label='vx')
-    plt.plot(data[:, 4], label='vy')
-    plt.legend()
-    plt.ylabel("velocity")
-    plt.xlabel("time")
+    #
+    # plt.figure()
+    # plt.plot(data[:, 3], label='vx')
+    # plt.plot(data[:, 4], label='vy')
+    # plt.legend()
+    # plt.ylabel("velocity")
+    # plt.xlabel("time")
 
     # plt.figure()
     # plt.plot(data[:, 5], label='cov x')

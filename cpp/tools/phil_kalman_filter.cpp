@@ -109,7 +109,7 @@ int main(int argc, const char **argv) {
     acc_measurement << v_l, v_r;
 
 //    filter.Update(&acc_system_model, acc_input);
-    ekf.filter->Update(ekf.encoder_system_model.get(), encoder_input);
+    ekf.filter->Update(ekf.system_model.get(), encoder_input);
 
     ekf.filter->Update(ekf.yaw_measurement_model.get(), yaw_measurement);
 //    filter.Update(&encoder_measurement_model, encoder_measurement);
