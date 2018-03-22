@@ -15,9 +15,10 @@ Phil::Phil() :
   auto inst = nt::NetworkTableInstance::GetDefault();
   table = inst.GetTable(phil::kTableName);
 
-  // initialize the table -- THIS IS BAD DON'T DO THIS
-  frc::SmartDashboard::PutNumber(phil::kWheelRadius, 0.038);
-  frc::SmartDashboard::PutNumber(phil::kTrackWidth, 0.23);
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 100000;
+  udp_client.SetTimeout(timeout);
 }
 
 Phil *Phil::GetInstance() {

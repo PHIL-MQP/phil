@@ -29,13 +29,13 @@ void Robot::TeleopPeriodic() {
 
 	phil::Phil::GetInstance()->ReadSensorsAndProcessRemotely();
 
-	phil::pose_t pose = phil::Phil::GetInstance()->GetPosition();
+//	phil::pose_t pose = phil::Phil::GetInstance()->GetPosition();
 
 	std::cout  << phil::Phil::GetInstance()->ahrs->GetRawAccelX() << ", "
 			<< phil::Phil::GetInstance()->ahrs->GetRawAccelY() << ", "
 			<< phil::Phil::GetInstance()->ahrs->GetYaw() << ", "
 			<< phil::Phil::GetInstance()->left_encoder->GetRate() << ", "
-			<< phil::Phil::GetInstance()->right_encoder->GetRate();
+			<< phil::Phil::GetInstance()->right_encoder->GetRate() << std::endl;
 }
 
 START_ROBOT_CLASS(Robot)
