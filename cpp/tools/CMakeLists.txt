@@ -37,6 +37,10 @@ if (NOT ${RIO})
     target_include_directories(play_video_with_cscore PRIVATE ${CSCORE_INCLUDE_DIR})
     target_link_libraries(play_video_with_cscore phil_common cscore)
 
+    add_executable(cscore_webcam cscore_webcam.cpp)
+    target_include_directories(cscore_webcam PRIVATE ${CSCORE_INCLUDE_DIR})
+    target_link_libraries(cscore_webcam phil_common cscore)
+
     add_executable(localize localize.cpp)
     target_link_libraries(localize ${phil_opencv_libs} aruco cscore phil_common)
     target_include_directories(localize PRIVATE ${phil_include_dir} ${CSCORE_INCLUDE_DIR} ${NTCORE_INCLUDE_DIR} ${WPIUTIL_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS})
@@ -52,6 +56,7 @@ if (NOT ${RIO})
     add_executable(fisheye unwarp_fisheye.cpp)
     target_link_libraries(fisheye ${phil_opencv_libs})
     target_include_directories(fisheye PRIVATE ${OpenCV_INCLUDE_DIRS})
+
 
     if (NOT CMAKE_HOST_WIN32)
         add_executable(record_imu_calibration_data record_imu_calibration_data.cpp)
