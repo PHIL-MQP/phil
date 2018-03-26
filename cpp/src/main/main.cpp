@@ -403,7 +403,10 @@ int main(int argc, const char **argv) {
           camera_measurement << camera_pose.x, camera_pose.y, camera_pose.theta;
           std::cout << phil::green << camera_pose.x << phil::reset << "\n";
 
-          // perform camera EKF update
+          /////////////////////////////////////////////////
+          // CAMERA MEASUREMENT
+          /////////////////////////////////////////////////
+
           ekf.filter->Update(ekf.camera_measurement_model.get(), camera_measurement);
         }
         else {
