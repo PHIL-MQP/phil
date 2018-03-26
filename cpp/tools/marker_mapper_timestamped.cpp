@@ -1,5 +1,6 @@
 #include <unordered_set>
 
+#include <marker_mapper/markermapper.h>
 #include <aruco/aruco.h>
 #include <opencv2/opencv.hpp>
 
@@ -9,6 +10,7 @@
 int detectMarkers(cv::VideoCapture capture,
                   const std::vector<unsigned long> &timestamps,
                   aruco::CameraParameters cam_params,
+                  aruco::MarkerMap mmap,
                   bool step,
                   bool show) {
   cv::Mat frame;
@@ -19,7 +21,9 @@ int detectMarkers(cv::VideoCapture capture,
   //Create the detector
   aruco::MarkerDetector MDetector;
   MDetector.setDetectionMode(aruco::DetectionMode::DM_VIDEO_FAST);
-  std::map<uint32_t, aruco::MarkerPoseTracker> tracker; //use a map so that for each id, we use a different pose tracker
+  // create pose tracker
+  aruco::MarkerMapPoseTracker tracker;
+  tracker.setParams(cam_params, mmap);
 
   if (!capture.isOpened()) {
     std::cout << "Can not load video";
@@ -49,24 +53,43 @@ int detectMarkers(cv::VideoCapture capture,
       // detect markers in frame
       std::vector<aruco::Marker> markers = MDetector.detect(frame);
 
-      for (auto &marker : markers) {
+      // estimate 3d camera pose if possible
+      if (tracker.isValid()) {
+        // estimate the pose of the camera with respect to the detected markers
+        // print only translation for now
+        if (tracker.estimatePose(markers)) {
+          cv::Mat rt_matrix = tracker.getRTMatrix();
+          std::cout << rt_matrix.col(3).row(0).at<float>(0) << ", "
+                    << rt_matrix.col(3).row(1).at<float>(0) << ", "
+                    << rt_matrix.col(3).row(2).at<float>(0) << ", "
+                    << timestamps[frame_idx] << std::endl;
+        }
 
-        tracker[marker.id].estimatePose(marker, cam_params, marker_size);
-
-        // draw the tags that were detected
-        marker.draw(annotated_frame, cv::Scalar(0, 0, 255), 2);
-        aruco::CvDrawingUtils::draw3dCube(annotated_frame, marker, cam_params);
-        aruco::CvDrawingUtils::draw3dAxis(annotated_frame, marker, cam_params);
-
-        // output to std out so one can redirect to any file they want
-        std::cout << timestamps[frame_idx] << "," << marker.id << ","
-                  << marker.Tvec.at<float>(0) << ","
-                  << marker.Tvec.at<float>(1) << ","
-                  << marker.Tvec.at<float>(2) << ","
-                  << marker.Rvec.at<float>(0) << ","
-                  << marker.Rvec.at<float>(1) << ","
-                  << marker.Rvec.at<float>(2) << std::endl;
+        // annotate the video feed
+        for (int idx : mmap.getIndices(markers)) {
+          markers[idx].draw(annotated_frame, cv::Scalar(0, 0, 255), 1);
+        }
       }
+
+
+      // for (auto &marker : markers) {
+
+      //   tracker[marker.id].estimatePose(marker, cam_params, marker_size);
+
+      //   // draw the tags that were detected
+      //   marker.draw(annotated_frame, cv::Scalar(0, 0, 255), 2);
+      //   aruco::CvDrawingUtils::draw3dCube(annotated_frame, marker, cam_params);
+      //   aruco::CvDrawingUtils::draw3dAxis(annotated_frame, marker, cam_params);
+
+      //   // output to std out so one can redirect to any file they want
+      //   std::cout << timestamps[frame_idx] << "," << marker.id << ","
+      //             << marker.Tvec.at<float>(0) << ","
+      //             << marker.Tvec.at<float>(1) << ","
+      //             << marker.Tvec.at<float>(2) << ","
+      //             << marker.Rvec.at<float>(0) << ","
+      //             << marker.Rvec.at<float>(1) << ","
+      //             << marker.Rvec.at<float>(2) << std::endl;
+      // }
 
       if (show) {
         cv::imshow("annotated", annotated_frame);
@@ -96,6 +119,10 @@ int main(int argc, const char **argv) {
       timestamps_param(parser, "timestamps_filename", "timestamps.csv file", args::Options::Required);
   args::Positional<std::string>
       params_param(parser, "params_filename", "camera parameters yaml file", args::Options::Required);
+  args::Positional<std::string>
+      markermap_param(parser, "markermap_filename", "marker map yml file", args::Options::Required);
+  args::Positional<std::string>
+      dict_param(parser, "dict_filename", "dictionary yml file", args::Options::Required);
   args::Flag show_flag(parser, "show", "show the video", {'s', "show"});
   args::Flag step_flag(parser, "step", "step the video frame-by-frame", {'p', "step"});
 
@@ -114,6 +141,8 @@ int main(int argc, const char **argv) {
   std::string video_filename = args::get(video_param);
   std::string timestamps_filename = args::get(timestamps_param);
   std::string params_filename = args::get(params_param);
+  std::string markermap_filename = args::get(markermap_param);
+  std::string dict_filename = args::get(dict_param);
 
   cv::VideoCapture cap(video_filename);
   auto w = static_cast<const int>(cap.get(CV_CAP_PROP_FRAME_WIDTH));
@@ -167,6 +196,19 @@ int main(int argc, const char **argv) {
     }
   }
 
+
+  // read in the markermapper config yaml file
+  aruco::MarkerMap mmap;
+  try {
+    mmap.readFromFile(markermap_filename);
+    mmap.setDictionary(dict_filename);
+  }
+  catch (cv::Exception &e) {
+    std::cout << "Marker map is invalid." << std::endl;
+    return EXIT_FAILURE;
+  }
+  
+
   bool show = false;
   bool step = false;
   if (argc == 5) {
@@ -179,5 +221,5 @@ int main(int argc, const char **argv) {
     }
   }
 
-  return detectMarkers(cap, timestamps, params, step, show);
+  return detectMarkers(cap, timestamps, params, mmap, step, show);
 }
