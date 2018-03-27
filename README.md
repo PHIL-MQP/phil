@@ -7,10 +7,10 @@ This project contains:
  - An executable that is compiled and run on the TK1 to gather sensor data and make calls to the localization algorithms
  - A collection of various executable tools and programs for testing and debugging
 
-Make sure you run
+Make sure you run this the first time you clone
 
-    git submodule init
-    git submodule update
+    git submodule update --init --recursive
+    
 
 ## Code for the RoboRIO
 
