@@ -118,9 +118,7 @@ def transform_map(measured_map, true_map, tags_to_make_match):
 
     A = measured_origin[3:12].reshape((3, 3)).T
     B = true_origin[3:12].reshape((3, 3)).T
-    t = measured_origin[0:3] - true_origin[0:3]
 
-    # this is wrong
     R1 = B @ np.linalg.inv(A)
     new_map[:, 0:3] = (measured_map[:, 0:3] - measured_origin[0:3]).dot(R1.T) + true_origin[0:3]
     new_map[:, 3:6] = measured_map[:, 3:6].dot(R1.T)
@@ -130,13 +128,21 @@ def transform_map(measured_map, true_map, tags_to_make_match):
     return new_map
 
 
+def angle_error(u, v):
+    """ https://stackoverflow.com/a/13849249/3353601, output is in degrees """
+    u = u / np.linalg.norm(u)
+    v = v / np.linalg.norm(v)
+    return np.rad2deg(np.arccos(np.clip(np.dot(v, u), -1.0, 1.0)))
+
+
 def main():
     parser = argparse.ArgumentParser("Compute error of aruco estimate pose")
     parser.add_argument("top_left_dot_poses", help="the hand-written csv file listing global positions top-left dots")
     parser.add_argument("dot_offsets", help="the hand-written csv file listing offsets of all points for each tag")
     parser.add_argument("markermap", help="a map.yml file output form makermapper_from_video")
     parser.add_argument("--no-plot", help="don't plot", action="store_true")
-    parser.add_argument("--tags-to-make-match", help="the ID of the tags should be made perfectly aligned", type=int, default=0)
+    parser.add_argument("--tags-to-make-match", help="the ID of the tags should be made perfectly aligned", type=int,
+                        default=0)
 
     args = parser.parse_args()
 
@@ -168,7 +174,7 @@ def main():
     # find the distances between each tag and tag 0, and compare these distances between mocap & markermapper
     N = true_map.shape[0]
     errors = np.zeros((N, N))
-    print("\nErrors on to tag 0")
+    print("\nTranslation errors on to tag 0")
     for tag_to_measure_to in range(N):
         for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
             disp_true = np.linalg.norm(true_marker[0:3] - true_map[tag_to_measure_to, 0:3])
@@ -177,20 +183,34 @@ def main():
         print(int(ids[tag_to_measure_to]), "{:0.3f}".format(errors[tag_to_measure_to, 0]))
     print()
 
-    print("Average Error in Distance between each tag and tag 0")
+    print("Average translation error (m) in distance between each tag and tag 0")
     print(errors.mean())
 
     # find the "error" distance for tag N. This is the distance between mocap and markermapper
-    print("\nErrors on each tag")
-    per_tag_errors = []
+    print("\nTranslation errors on each tag")
+    per_tag_translational_errors = np.ndarray(N)
     for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
         distance_error = np.linalg.norm(true_marker[0:3] - measured_marker[0:3])
         print(int(ids[i]), "{:0.3f}".format(distance_error))
-        per_tag_errors.append(distance_error)
+        per_tag_translational_errors[i] = distance_error
     print()
 
-    print("Average error on each tag")
-    print(np.mean(per_tag_errors))
+    print("Average translation error (m) on each tag")
+    print(np.mean(per_tag_translational_errors))
+
+    # find the rotational error of each axis
+    print("\nRotational errors on each tag")
+    print("X   Y")
+    per_tag_rotational_errors = np.ndarray((N, 2))
+    for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
+        error_x = angle_error(true_marker[3:6], measured_marker[3:6])
+        error_z = angle_error(true_marker[9:12], measured_marker[9:12])
+        print(int(ids[i]), "{:0.3f}, {:0.3f}".format(error_x, error_z))
+        per_tag_rotational_errors[i, 0] = error_x
+        per_tag_rotational_errors[i, 1] = error_z
+
+    print("Average rotational error (deg) on each tag")
+    print(np.mean(per_tag_rotational_errors))
 
     #
     # Plotting
@@ -208,12 +228,18 @@ def main():
     ax.set_aspect('equal')
     ax.scatter(true_map[:, 0], true_map[:, 1], true_map[:, 2], label="mocap", c='green')
     ax.scatter(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], label="markermap", c='red')
-    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 3], true_map[:, 4], true_map[:, 5], length=0.3, arrow_length_ratio=0.5, color='red')
-    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 6], true_map[:, 7], true_map[:, 8], length=0.3, arrow_length_ratio=0.5, color='green')
-    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 9], true_map[:, 10], true_map[:, 11], length=0.3, arrow_length_ratio=0.5, color='blue')
-    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 3], measured_map[:, 4], measured_map[:, 5], length=0.3, arrow_length_ratio=0.5, color='red')
-    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 6], measured_map[:, 7], measured_map[:, 8], length=0.3, arrow_length_ratio=0.5, color='green')
-    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 9], measured_map[:, 10], measured_map[:, 11], length=0.3, arrow_length_ratio=0.5, color='blue')
+    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 3], true_map[:, 4], true_map[:, 5],
+              length=0.3, arrow_length_ratio=0.5, color='red')
+    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 6], true_map[:, 7], true_map[:, 8],
+              length=0.3, arrow_length_ratio=0.5, color='green')
+    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 9], true_map[:, 10], true_map[:, 11],
+              length=0.3, arrow_length_ratio=0.5, color='blue')
+    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 3], measured_map[:, 4],
+              measured_map[:, 5], length=0.3, arrow_length_ratio=0.5, color='red')
+    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 6], measured_map[:, 7],
+              measured_map[:, 8], length=0.3, arrow_length_ratio=0.5, color='green')
+    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 9], measured_map[:, 10],
+              measured_map[:, 11], length=0.3, arrow_length_ratio=0.5, color='blue')
     set_axes_equal(ax)
     ax.set_xlabel('X axis')
     ax.set_ylabel('Y axis')

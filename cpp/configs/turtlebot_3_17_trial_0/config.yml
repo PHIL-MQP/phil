@@ -1,0 +1,39 @@
+camera:
+  w: 640
+  h: 480
+  fps: 60
+  encoding: YUYV
+  #params: ./ps3eye_1_calib_3_16.yml
+  params: ./mocap_3_17-ps3eye1_2-cam.yml
+  source_url: http://localhost:8081/?action=stream
+aruco:
+  map: ./mocap_3_17-ps3eye1_2.yml
+  dictionary: ARUCO_MIP_16h3
+imu_calibration:
+  accelerometer:
+    - 2.29299485e-03
+    - 9.73357832e-04
+    - 2.18891523e-03
+    - 9.97372417e-01
+    - 9.98078141e-01
+    - 9.95206414e-01
+    - -8.12765191e-03
+    - -1.24052008e-02
+    - -1.41327621e-02
+  gyro:
+    - 0.00844165
+    - 0.00196508
+    - -0.00410652
+    - -0.01548789
+    - -0.00191488
+    - -0.00770839
+    - 0.40658698
+    - 0.40275294
+    - 0.40165824
+  gyro_bias:
+    - 0.12964524
+    - 0.15079131
+    - 0.08211978
+nt:
+  server: localhost
+  port: 1735
