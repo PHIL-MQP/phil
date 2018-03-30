@@ -34,6 +34,7 @@ void Robot::RobotInit() {
 
 void Robot::TeleopInit() {
 	std::cout << "TeleopInit" << std::endl;
+	phil::Phil::GetInstance()->Reconnect();
 
 	std::cout << "Starting Motion Capture" << std::endl;
 	mocap_start_trigger->SetVoltage(0);

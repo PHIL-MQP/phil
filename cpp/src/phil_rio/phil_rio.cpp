@@ -88,4 +88,8 @@ void Phil::SendUDPToPI(uint8_t *request, size_t request_size, uint8_t *response,
   udp_client.RawTransaction(request, request_size, response, response_size);
 }
 
+void Phil::Reconnect() {
+  udp_client.Reconnect();
+}
+
 } // end namespace

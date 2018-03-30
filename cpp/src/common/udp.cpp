@@ -49,10 +49,16 @@ void UDPServer::SetTimeout(struct timeval timeout) {
   }
 }
 
-UDPClient::UDPClient(const std::string &server_hostname, int port_num) : server_hostname(server_hostname) {
+UDPClient::UDPClient(const std::string &server_hostname, int port_num) : server_hostname(server_hostname),
+                                                                         port_num(port_num),
+                                                                         connect_failed(false) {
+  Connect();
+}
 
+void UDPClient::Connect() {
   if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
     std::cerr << "socket failed: [" << strerror(errno) << "]" << std::endl;
+    connect_failed = true;
     return;
   }
 
@@ -63,6 +69,7 @@ UDPClient::UDPClient(const std::string &server_hostname, int port_num) : server_
 
   if (bind(socket_fd, (struct sockaddr *) &client_addr, sockaddr_size) < 0) {
     std::cerr << "bind failed: [" << strerror(errno) << "]" << std::endl;
+    connect_failed = true;
     return;
   }
 
@@ -72,6 +79,7 @@ UDPClient::UDPClient(const std::string &server_hostname, int port_num) : server_
   if (hp == nullptr) {
     std::cerr << "gethostbyname of [" << server_hostname << "] failed." << std::endl;
     std::cerr << "Are you *sure* that's the right hostname? Trying pinging it." << std::endl;
+    connect_failed = true;
     return;
   }
 
@@ -133,4 +141,11 @@ void UDPClient::RawTransaction(uint8_t *request, size_t request_size, uint8_t *r
 
   recvfrom(socket_fd, response, response_size, 0, reinterpret_cast<sockaddr *>(&response_addr), &sockaddr_size);
 }
+
+void UDPClient::Reconnect() {
+  if (connect_failed) {
+    Connect();
+  }
+}
+
 } // end namespace

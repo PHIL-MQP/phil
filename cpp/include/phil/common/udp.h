@@ -116,12 +116,21 @@ class UDPClient {
    */
   void SetTimeout(timeval timeout);
 
+  void Connect();
+
+  /**
+   * Reconnect if the anything failed
+   */
+  void Reconnect();
+
  private:
   int socket_fd;
   std::string server_hostname;
+  int port_num;
   struct sockaddr_in client_addr;
   struct sockaddr_in server_addr;
 
+  bool connect_failed;
 };
 
 } // end namespace

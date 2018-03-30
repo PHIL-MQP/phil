@@ -39,6 +39,11 @@ class Phil {
   void ReadSensorsAndProcessRemotely();
 
   /**
+   * Make sure the UDP client is connect
+   */
+  void Reconnect();
+
+  /**
    * Literally just reads the value of network tables and returns it
    */
   pose_t GetPosition();
