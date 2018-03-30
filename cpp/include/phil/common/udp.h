@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <string>
+#include <sstream>
 #include <sys/time.h>
 #include <string>
 #include <netinet/in.h>
@@ -23,6 +25,30 @@ struct data_t {
   long navx_t;
   double rio_send_time_s;
   double received_time_s;
+
+  std::string to_string() {
+    std::stringstream ss;
+    ss << raw_acc_x << ","
+       << raw_acc_y << ","
+       << raw_acc_z << ","
+       << world_acc_x << ","
+       << world_acc_y << ","
+       << yaw << ","
+       << left_encoder_rate << ","
+       << right_encoder_rate << ","
+       << fpga_t << ","
+       << navx_t << ",";
+    return ss.str();
+  }
+
+  static std::string header() {
+    return std::string("raw_accel_x,raw_accel_y,raw_accel_z,"
+                       "world_accel_x,world_accel_y,"
+                       "yaw,"
+                       "x,y,z,"
+                       "left_encoder_rate,right_encoder_rate,"
+                       "fpga time,navx time");
+  }
 };
 
 inline void print_data_t(data_t d) {

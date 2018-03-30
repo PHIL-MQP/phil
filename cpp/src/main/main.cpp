@@ -46,8 +46,10 @@ int main(int argc, const char **argv) {
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
   args::Flag verbose_flag(parser, "verbose", "Print more information", {'v', "verbose"});
   args::Flag show_static_flag(parser, "show_static", "Print more information", {'s', "show-static"});
-  args::Flag no_camera_flag(parser, "no_camera", "Don't check the camera stream", {"no-camera"});
-  args::Flag print_estimate_flag(parser, "print_estimate", "print the current x/y/yaw and other information", {'p', "print-estimate"});
+  args::Flag no_camera_flag(parser, "no_camera", "Don't check the camera stream", {'n', "no-camera"});
+  args::Flag print_estimate_flag
+      (parser, "print_estimate", "print the current x/y/yaw and other information", {'p', "print-estimate"});
+  args::Flag log_flag(parser, "log", "log RIO input to a file for playback later", {'l', "log"});
   args::Positional<std::string> config_filename(parser, "config_filename", "", args::Options::Required);
 
   try {
@@ -75,6 +77,7 @@ int main(int argc, const char **argv) {
   const bool show_static = args::get(show_static_flag);
   const bool no_camera = args::get(no_camera_flag);
   const bool print_current_estimate = args::get(print_estimate_flag);
+  const bool log = args::get(log_flag);
 
   const auto threshold_power = yaml_get<double>(config, {"threshold_power"});
   const auto w = yaml_get<int>(config, {"camera", "w"});
@@ -84,6 +87,7 @@ int main(int argc, const char **argv) {
   const auto map_filename = yaml_get<std::string>(config, {"aruco", "map"});
   const auto phil_source_url = yaml_get<std::string>(config, {"camera", "source_url"});
   const auto dictionary = yaml_get<std::string>(config, {"aruco", "dictionary"});
+  const auto marker_size = yaml_get<double>(config, {"aruco", "marker_size"});
   const auto cam_params_file = yaml_get<std::string>(config, {"camera", "params"});
 
   constexpr auto hostname_length = 100;
@@ -138,12 +142,34 @@ int main(int argc, const char **argv) {
     return EXIT_FAILURE;
   }
   if (!camera_params.isValid()) {
-    std::cout << phil::red << "Invalid camera parameters" << phil::reset << std::endl;
+    std::cout << phil::red << "Invalid camera parameters" << phil::reset << "\n";
     return EXIT_FAILURE;
   }
   camera_params.resize(cv::Size(w, h));
 
   const auto acc_calib_params = yaml_get<std::vector<double>>(config, {"imu_calibration", "accelerometer"});
+
+  // Create the log file for rio data
+  std::ofstream log_file;
+  cv::VideoWriter video;
+  if (log) {
+    char log_filename[100];
+    time_t now = time(nullptr);
+    tm *ltm = localtime(&now);
+    std::string rio_fmt("rio-data-%m_%d_%H-%M-%S.csv");
+    strftime(log_filename, 100, rio_fmt.c_str(), ltm);
+    log_file.open(log_filename);
+    if (!log_file.good()) {
+      std::cout << phil::red << "Failed to Open Log File" << phil::reset << "\n";
+      std::cerr << strerror(errno) << "\n";
+    }
+    log_file << phil::data_t::header() << "\n";
+
+    char video_filename[100];
+    std::string vid_fmt("video-%m_%d_%H-%M-%S.avi");
+    strftime(video_filename, 100, vid_fmt.c_str(), ltm);
+    video = cv::VideoWriter(video_filename, CV_FOURCC('M', 'J', 'P', 'G'), fps, cv::Size(w, h));
+  }
 
   // Create calibration matrices
   Eigen::Matrix3d Ta;
@@ -159,7 +185,7 @@ int main(int argc, const char **argv) {
 
   // create pose tracker
   aruco::MarkerMapPoseTracker tracker;
-  tracker.setParams(camera_params, mmap);
+  tracker.setParams(camera_params, mmap, marker_size);
 
   // network tables
   auto inst = nt::NetworkTableInstance::GetDefault();
@@ -179,10 +205,20 @@ int main(int argc, const char **argv) {
   // Setup communication with the roborio
   phil::UDPServer server(phil::kPort);
 
-  if (verbose) {
-    std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << std::endl;
+  {
+    phil::data_t first_rio_data;
+    if (verbose) {
+      std::cout << phil::green << "Waiting for data from the RoboRIO" << phil::reset << "\n";
+    }
+    ssize_t bytes_received = 0;
+    do {
+      struct sockaddr_in client = {0};
+      std::tie(bytes_received, client) = server.Read(&first_rio_data);
+    } while (bytes_received < 0);
+    if (log) {
+      log_file << first_rio_data.to_string() << "\n";
+    }
   }
-  while (server.Read() < 0);
 
 
   /////////////////////////////////////////////
@@ -205,6 +241,10 @@ int main(int argc, const char **argv) {
     reply.rio_send_time_s = rio_data.rio_send_time_s;
     reply.received_time_s = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
     server.Reply(client, reply);
+
+    if (log) {
+      log_file << rio_data.to_string() << "\n";
+    }
 
     if (bytes_received != phil::data_t_size) {
       std::cerr << phil::red << "bytes received [" << bytes_received << "] doesn't match data_t size: ["
@@ -270,7 +310,7 @@ int main(int argc, const char **argv) {
   const static Eigen::IOFormat csv_format(3, Eigen::DontAlignCols, ", ", "\n");
   size_t main_loop_idx = 0;
   if (verbose) {
-    std::cout << phil::green << "Beginning Localization loop" << phil::reset << std::endl;
+    std::cout << phil::green << "Beginning Localization loop" << phil::reset << "\n";
   }
   while (!done) {
     // read some sensor data from roborio
@@ -287,9 +327,12 @@ int main(int argc, const char **argv) {
     MatrixWrapper::ColumnVector acc_measurement(2);
 
     if (bytes_received != -1 && bytes_received != phil::data_t_size) {
-      std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset
-                << std::endl;
+      std::cerr << phil::red << "bytes does not match data_t_size: [" << strerror(errno) << "]" << phil::reset << "\n";
     } else {
+      if (log) {
+        log_file << rio_data.to_string() << "\n";
+      }
+
       /////////////////////////////////////////////////
       // YAW MEASUREMENT
       /////////////////////////////////////////////////
@@ -340,7 +383,7 @@ int main(int argc, const char **argv) {
 
       // rotate acc into world frame
       constexpr double navx_yaw_offset = M_PI / 2;
-      const Eigen::AngleAxisd world_frame_rotation(accumulated_yaw_rad+navx_yaw_offset, Eigen::Vector3d::UnitZ());
+      const Eigen::AngleAxisd world_frame_rotation(accumulated_yaw_rad + navx_yaw_offset, Eigen::Vector3d::UnitZ());
       const Eigen::Vector3d world_frame_acc = world_frame_rotation * mpss_acc;
 
       acc_measurement << world_frame_acc(0), world_frame_acc(1);
@@ -372,8 +415,12 @@ int main(int argc, const char **argv) {
 
     if (time > 0) {
       if (frame.empty()) {
-        std::cerr << phil::yellow << "empty frame" << std::endl;
+        std::cerr << phil::yellow << "empty frame" << "\n";
         break;
+      }
+
+      if (log) {
+        video.write(frame);
       }
 
       cv::Mat annotated_frame;
@@ -407,8 +454,7 @@ int main(int argc, const char **argv) {
           /////////////////////////////////////////////////
 
           filter.filter->Update(filter.camera_measurement_model.get(), camera_measurement);
-        }
-        else {
+        } else {
           std::cout << phil::cyan << "no pose estimate from marker mapper" << phil::reset << "\n";
         }
 
@@ -447,4 +493,3 @@ int main(int argc, const char **argv) {
 
   return EXIT_FAILURE;
 }
-
