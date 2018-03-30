@@ -11,6 +11,8 @@ public:
 
   void TeleopPeriodic() override;
 
+  void DisabledInit() override;
+
   static frc::Joystick *gamepad;
   static DriveBase *drive_base;
 };
