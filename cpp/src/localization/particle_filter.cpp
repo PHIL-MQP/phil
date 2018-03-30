@@ -1,10 +1,13 @@
-#include <bfl/model/linearanalyticsystemmodel_gaussianuncertainty.h>
+#include <phil/localization/particle_filter.h>
 
-#include <phil/localization/ekf.h>
+#include <bfl/model/linearanalyticsystemmodel_gaussianuncertainty.h>
+#include <bfl/filter/bootstrapfilter.h>
 
 namespace phil {
 
-EKF::EKF()
+constexpr unsigned int ParticleFilter::NUM_SAMPLES;
+
+ParticleFilter::ParticleFilter()
     : system_model(nullptr), yaw_measurement_model(nullptr), acc_measurement_model(nullptr) {
   MatrixWrapper::ColumnVector prior_mean(localization::N);
   prior_mean << 0, 0, 0, 0, 0, 0, 0, 0, 0;
@@ -19,14 +22,20 @@ EKF::EKF()
   prior_covariance(7, 7) = 0.001;
   prior_covariance(8, 8) = 0.001;
   prior_covariance(9, 9) = 0.001;
-  prior = std::make_unique<BFL::Gaussian>(prior_mean, prior_covariance);
-  filter = std::make_unique<BFL::ExtendedKalmanFilter>(prior.get());
+  BFL::Gaussian prior(prior_mean, prior_covariance);
+
+  std::vector<BFL::Sample<MatrixWrapper::ColumnVector> > prior_samples(NUM_SAMPLES);
+  prior.SampleFrom(prior_samples, NUM_SAMPLES, CHOLESKY, nullptr);
+  // With these samples we create a discrete prior distribution, a monte carlo pdf:
+  prior_discrete = std::make_unique<BFL::MCPdf<BFL::ColumnVector> >(NUM_SAMPLES, 3);
+  prior_discrete->ListOfSamplesSet(prior_samples);
+  filter = std::make_unique<PF>(prior_discrete.get(), 0, NUM_SAMPLES / 4.0);
 
   // Define x = f(x,u)
   MatrixWrapper::ColumnVector system_noise_mean(localization::N);
   system_noise_mean = 0.0;
   MatrixWrapper::SymmetricMatrix system_noise_covariance(localization::N);
-  system_noise_covariance = 0;
+  system_noise_covariance = 0.0;
   system_noise_covariance(1, 1) = 0.001;
   system_noise_covariance(2, 2) = 0.001;
   system_noise_covariance(3, 3) = 0.001;
@@ -64,8 +73,8 @@ EKF::EKF()
   acc_measurement_mean = 0;
   MatrixWrapper::SymmetricMatrix acc_measurement_covariance(acc_dim);
   acc_measurement_covariance = 0;
-  acc_measurement_covariance(1, 1) = 0.001;
-  acc_measurement_covariance(2, 2) = 0.001;
+  acc_measurement_covariance(1, 1) = 0.000000001;
+  acc_measurement_covariance(2, 2) = 0.000000001;
   BFL::Gaussian acc_measurement_uncertainty(acc_measurement_mean, acc_measurement_covariance);
   acc_measurement_pdf =
       std::make_unique<BFL::LinearAnalyticConditionalGaussian>(acc_measurement_H, acc_measurement_uncertainty);
@@ -107,12 +116,16 @@ EKF::EKF()
       std::make_unique<BFL::LinearAnalyticMeasurementModelGaussianUncertainty>(beacon_measurement_pdf.get());
 }
 
-void EKF::ZeroVelocityUpdate() {
-  auto state = filter->PostGet()->ExpectedValueGet();
-  state(4) = 0;
-  state(5) = 0;
-  state(6) = 0;
-  filter->PostGet()->ExpectedValueSet(state);
+void ParticleFilter::ZeroVelocityUpdate() {
+  for (unsigned int i = 0; i < NUM_SAMPLES; ++i) {
+    auto &samples = filter->PostGet()->ListOfSamplesGet();
+    auto sample = samples.at(i);
+    auto state = sample.ValueGet();
+    state(4) = 0;
+    state(5) = 0;
+    state(6) = 0;
+    sample.ValueSet(state);
+  }
 }
 
 }

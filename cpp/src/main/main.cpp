@@ -16,6 +16,7 @@
 #include <phil/localization/ekf.h>
 #include <phil/common/args.h>
 #include <phil/common/math.h>
+#include <phil/localization/particle_filter.h>
 
 template<typename T>
 T yaml_get(const YAML::Node &node, const std::vector<std::string> &keys) {
@@ -220,7 +221,7 @@ int main(int argc, const char **argv) {
   // Now that we've collected our initial sample, set a timeout so we can be robust to dropped RoboRIO data
   struct timeval timeout{0};
   timeout.tv_sec = 0;
-  timeout.tv_usec = 300000;
+  timeout.tv_usec = 500000;
   server.SetTimeout(timeout);
 
   // compute the variance of our initial sample
@@ -258,7 +259,7 @@ int main(int argc, const char **argv) {
   //// Start of the main loop ////
   ////////////////////////////////
 
-  phil::EKF ekf;
+  phil::EKF filter;
   cv::Mat frame;
   bool done = false;
   static double accumulated_yaw_rad = 0;
@@ -321,10 +322,7 @@ int main(int argc, const char **argv) {
           latest_static_bias_estimate = window_mean;
 
           // set the current velocity estimate to be 0
-          auto current_state_estimate = ekf.filter->PostGet()->ExpectedValueGet();
-          current_state_estimate(4) = 0;
-          current_state_estimate(5) = 0;
-          ekf.filter->PostGet()->ExpectedValueSet(current_state_estimate);
+          filter.ZeroVelocityUpdate();
         }
       }
 
@@ -341,7 +339,8 @@ int main(int argc, const char **argv) {
       const auto mpss_acc = base_frame_acc * 9.8;
 
       // rotate acc into world frame
-      const Eigen::AngleAxisd world_frame_rotation(accumulated_yaw_rad, Eigen::Vector3d::UnitZ());
+      constexpr double navx_yaw_offset = M_PI / 2;
+      const Eigen::AngleAxisd world_frame_rotation(accumulated_yaw_rad+navx_yaw_offset, Eigen::Vector3d::UnitZ());
       const Eigen::Vector3d world_frame_acc = world_frame_rotation * mpss_acc;
 
       acc_measurement << world_frame_acc(0), world_frame_acc(1);
@@ -351,7 +350,7 @@ int main(int argc, const char **argv) {
       /////////////////////////////////////////////////
 
       // Data structures for EKF Update
-      constexpr double meters_per_tick = 0.000357;
+      constexpr double meters_per_tick = 0.000357; // FIXME: where did this number come from?!
       const double v_l = -rio_data.left_encoder_rate * meters_per_tick;
       const double v_r = -rio_data.right_encoder_rate * meters_per_tick;
 
@@ -359,9 +358,9 @@ int main(int argc, const char **argv) {
       encoder_input(1) = v_l;
       encoder_input(2) = v_r;
 
-      ekf.filter->Update(ekf.system_model.get(), encoder_input);
-      ekf.filter->Update(ekf.yaw_measurement_model.get(), yaw_measurement);
-      ekf.filter->Update(ekf.acc_measurement_model.get(), acc_measurement);
+      filter.filter->Update(filter.system_model.get(), encoder_input);
+      filter.filter->Update(filter.yaw_measurement_model.get(), yaw_measurement);
+      filter.filter->Update(filter.acc_measurement_model.get(), acc_measurement);
     }
 
     // only wait briefly for camera frame.
@@ -407,7 +406,7 @@ int main(int argc, const char **argv) {
           // CAMERA MEASUREMENT
           /////////////////////////////////////////////////
 
-          ekf.filter->Update(ekf.camera_measurement_model.get(), camera_measurement);
+          filter.filter->Update(filter.camera_measurement_model.get(), camera_measurement);
         }
         else {
           std::cout << phil::cyan << "no pose estimate from marker mapper" << phil::reset << "\n";
@@ -429,14 +428,14 @@ int main(int argc, const char **argv) {
 
     // Fill our pose struct from the belief state of the EKF
     phil::pose_t pose{};
-    const auto estimate = ekf.filter->PostGet()->ExpectedValueGet();
-    const auto cov = ekf.filter->PostGet()->CovarianceGet().diagonal();
+    const auto estimate = filter.filter->PostGet()->ExpectedValueGet();
+    const auto cov = filter.filter->PostGet()->CovarianceGet().diagonal();
     pose.x = estimate(1);
     pose.y = estimate(2);
     pose.theta = estimate(3);
 
     if (print_current_estimate) {
-      std::cout << estimate.transpose().format(csv_format) << ", " << acc_measurement.transpose().format(csv_format) << std::endl;
+      std::cout << estimate.transpose().format(csv_format) << ", " << cov.transpose().format(csv_format) << std::endl;
     }
 
     x_entry.SetDouble(pose.x);
