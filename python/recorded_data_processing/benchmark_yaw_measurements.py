@@ -90,6 +90,7 @@ def main():
     robot_poses = load_motion_capture_csv(args.robot_name, mocap_reader)
     if robot_poses is None:
         print("there's no column [{:s}] in [{:s}]".format(args.robot_name, args.mocap_csv))
+        return
     mocap_yaws = robot_poses[:, 2] - robot_poses[0, 2]
     mocap_yaws = np.rad2deg(mocap_yaws)
     mocap_yaws = wrap_mocap(mocap_yaws)

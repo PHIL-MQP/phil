@@ -187,6 +187,8 @@ def apply_zero_velocity_updates_and_integrate(rotated_acc_data, static_intervals
 
 
 def main():
+    default_robot_name = 'Global Angle phil_turtlebot:phil_turtlebot'
+
     parser = argparse.ArgumentParser("Takes a rio log file and uses raw accelerometer and yaw to compute position")
     parser.add_argument('rio_data', help='a csv file of logged imu data.')
     parser.add_argument('mocap_csv', help='csv motion capture file')
@@ -196,6 +198,9 @@ def main():
     parser.add_argument('--plot-yaw', action="store_true")
     parser.add_argument('--plot-velocity', action="store_true")
     parser.add_argument('--plot-static-intervals', action="store_true")
+    parser.add_argument('--robot-name',
+                        help='title of the column with the rio data. default is [%s]'.format(default_robot_name),
+                        default=default_robot_name)
 
     args = parser.parse_args()
 
@@ -207,16 +212,16 @@ def main():
     mocap_dts = 0.01
 
     mocap_reader = csv.reader(open(args.mocap_csv, 'r'))
-    robot_name = 'Global Angle phil_turtlebot:phil_turtlebot'
-    mocap_poses = load_motion_capture_csv(robot_name, mocap_reader)
+    mocap_poses = load_motion_capture_csv(args.robot_name, mocap_reader)
     if mocap_poses is None:
-        print("there's no column [{:s}] in [{:s}]".format(args.robot_name, args.mocap_csv))
+        print("There's no column [{:s}] in [{:s}]".format(args.robot_name, args.mocap_csv))
+        return
     mocap_xs = (mocap_poses[:, 3] - mocap_poses[0, 3]) / 1000
     mocap_ys = (mocap_poses[:, 4] - mocap_poses[0, 4]) / 1000
 
     data = read_data(args.rio_data)
     raw_acc_data = data[:, 0:3]
-    yaws_rad = np.deg2rad(data[:, 8]) + np.deg2rad(args.initial_yaw_deg)
+    yaws_rad = np.deg2rad(data[:, 5]) + np.deg2rad(args.initial_yaw_deg)
 
     #
     # Process the data
@@ -282,6 +287,8 @@ def main():
     plt.axis("equal")
     colors = cm.rainbow(np.linspace(0, 1, position.shape[0]))
     plt.scatter(position[:, 0], position[:, 1], s=1, color=colors, label='IMU')
+    skip = 20
+    plt.quiver(position[::skip, 0], position[::skip, 1], np.cos(yaws_rad[::skip]), np.sin(yaws_rad[::skip]), scale=50, width=0.001)
     plt.plot(mocap_xs, mocap_ys, linewidth=1, label='Mocap')
     plt.legend()
 

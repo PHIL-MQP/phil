@@ -10,7 +10,8 @@ int detectMarkers(cv::VideoCapture capture,
                   const std::vector<unsigned long> &timestamps,
                   aruco::CameraParameters cam_params,
                   bool step,
-                  bool show) {
+                  bool show,
+                  bool no_timestamps) {
   cv::Mat frame;
   cv::Mat annotated_frame;
 
@@ -37,7 +38,7 @@ int detectMarkers(cv::VideoCapture capture,
         break;
       }
 
-      if (frame_idx >= timestamps.size()) {
+      if (frame_idx >= timestamps.size() && !no_timestamps) {
         std::cerr << phil::red
                   << "There are more frames in the video than timestamps. This is very suspicious! Exiting now."
                   << phil::reset << "\n";
@@ -59,14 +60,25 @@ int detectMarkers(cv::VideoCapture capture,
         aruco::CvDrawingUtils::draw3dAxis(annotated_frame, marker, cam_params);
 
         // output to std out so one can redirect to any file they want
-        std::cout << timestamps[frame_idx] << ","
-                  << marker.id << ","
-                  << marker.Tvec.at<float>(0) << ","
-                  << marker.Tvec.at<float>(1) << ","
-                  << marker.Tvec.at<float>(2) << ","
-                  << marker.Rvec.at<float>(0) << ","
-                  << marker.Rvec.at<float>(1) << ","
-                  << marker.Rvec.at<float>(2) << std::endl;
+        if (no_timestamps) {
+          std::cout << 0 << ","
+                    << marker.id << ","
+                    << marker.Tvec.at<float>(0) << ","
+                    << marker.Tvec.at<float>(1) << ","
+                    << marker.Tvec.at<float>(2) << ","
+                    << marker.Rvec.at<float>(0) << ","
+                    << marker.Rvec.at<float>(1) << ","
+                    << marker.Rvec.at<float>(2) << std::endl;
+        } else {
+          std::cout << timestamps[frame_idx] << ","
+                    << marker.id << ","
+                    << marker.Tvec.at<float>(0) << ","
+                    << marker.Tvec.at<float>(1) << ","
+                    << marker.Tvec.at<float>(2) << ","
+                    << marker.Rvec.at<float>(0) << ","
+                    << marker.Rvec.at<float>(1) << ","
+                    << marker.Rvec.at<float>(2) << std::endl;
+        }
       }
 
       if (show) {
@@ -87,16 +99,15 @@ int detectMarkers(cv::VideoCapture capture,
 
 int main(int argc, const char **argv) {
   args::ArgumentParser parser("Prints time-stamps of detected tags and their poses to standard out."
-                                  "It is recommended you redirect this to a file called detected_markers.csv.\n"
-                                  "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py\n"
-                                  "-v will show the video, -s will show and step through each frame (press enter)\n\n"
-                                  "you can use -s to step through frame by frame\n");
+                              "It is recommended you redirect this to a file called detected_markers.csv.\n"
+                              "You can analyze the results by feeding that file into analyze_marker_detection_analysis.py\n"
+                              "-v will show the video, -s will show and step through each frame (press enter)\n\n"
+                              "you can use -s to step through frame by frame\n");
   args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
   args::Positional<std::string> video_param(parser, "video_filename", "video file to process", args::Options::Required);
   args::Positional<std::string>
-      timestamps_param(parser, "timestamps_filename", "timestamps.csv file", args::Options::Required);
-  args::Positional<std::string>
       params_param(parser, "params_filename", "camera parameters yaml file", args::Options::Required);
+  args::Positional<std::string> timestamps_param(parser, "timestamps_filename", "timestamps.csv file");
   args::Flag show_flag(parser, "show", "show the video", {'s', "show"});
   args::Flag step_flag(parser, "step", "step the video frame-by-frame", {'p', "step"});
 
@@ -114,6 +125,12 @@ int main(int argc, const char **argv) {
 
   std::string video_filename = args::get(video_param);
   std::string timestamps_filename = args::get(timestamps_param);
+  bool no_timestamps = false;
+  if (timestamps_filename.empty()) {
+    no_timestamps = true;
+  }
+  std::cout << timestamps_filename << " <<\n";
+
   std::string params_filename = args::get(params_param);
 
   cv::VideoCapture cap(video_filename);
@@ -136,35 +153,37 @@ int main(int argc, const char **argv) {
   }
 
   // Read and process the time stamps
-  std::ifstream timestamps_file(timestamps_filename);
-
-  if (!timestamps_file.good()) {
-    std::cout << "Bad file: [" << timestamps_filename << "]. " << std::strerror(errno) << std::endl;
-    return EXIT_FAILURE;
-  }
-
   std::vector<unsigned long> timestamps;
-  while (!timestamps_file.eof()) {
-    std::string line;
-    timestamps_file >> line;
+  if (!no_timestamps) {
+    std::ifstream timestamps_file(timestamps_filename);
 
-    if (line.empty()) {
-      break;
+    if (!timestamps_file.good()) {
+      std::cout << "Bad file: [" << timestamps_filename << "]. " << std::strerror(errno) << std::endl;
+      return EXIT_FAILURE;
     }
 
-    size_t pos = 0;
-    try {
+    while (!timestamps_file.eof()) {
+      std::string line;
+      timestamps_file >> line;
 
-      unsigned long time = std::stoul(line, &pos);
-      if (pos != line.length()) {
-        std::cout << "Error parsing whole line: [" << line << "] at " << pos << std::endl;
-      } else {
-        timestamps.push_back(time);
+      if (line.empty()) {
+        break;
       }
-    }
-    catch (std::invalid_argument &e) {
-      std::cout << "Error parsing: [" << line << "]" << std::endl;
-      std::cout << e.what() << std::endl;
+
+      size_t pos = 0;
+      try {
+
+        unsigned long time = std::stoul(line, &pos);
+        if (pos != line.length()) {
+          std::cout << "Error parsing whole line: [" << line << "] at " << pos << std::endl;
+        } else {
+          timestamps.push_back(time);
+        }
+      }
+      catch (std::invalid_argument &e) {
+        std::cout << "Error parsing: [" << line << "]" << std::endl;
+        std::cout << e.what() << std::endl;
+      }
     }
   }
 
@@ -180,5 +199,5 @@ int main(int argc, const char **argv) {
     }
   }
 
-  return detectMarkers(cap, timestamps, params, step, show);
+  return detectMarkers(cap, timestamps, params, step, show, no_timestamps);
 }
