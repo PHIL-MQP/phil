@@ -75,10 +75,10 @@ def main():
                                      "naively integrated gyroscope, and motion capture.")
     parser.add_argument('mocap_csv', help='csv motion capture file')
     parser.add_argument('rio_csv', help='csv of navx data from the roborio')
-    parser.add_argument('--robot_name',
+    parser.add_argument('--robot-name',
                         help='title of the column with the rio data. default is [%s]'.format(default_robot_name),
                         default=default_robot_name)
-    parser.add_argument("--no-plot", '-p', action="store_true", help="plot FPS over time")
+    parser.add_argument("--no-plot", '-p', action="store_true", help="skip plotting")
     parser.add_argument("--save", '-s', action="store_true", help="save to yaw_comparison.png")
 
     args = parser.parse_args()
@@ -99,7 +99,7 @@ def main():
     rio_data = load_rio_data(rio_reader)
     navx_yaws = -rio_data[:, 8]
     navx_yaws = navx_yaws
-    navx_times = (rio_data[:, 18].astype(np.int32) - rio_data[0, 18]) / 1000
+    navx_times = (rio_data[:, -1].astype(np.int32) - rio_data[0, -1]) / 1000
     gyro_z = rio_data[:, 5]
 
     integrated_yaws = integrate_gyro_z(gyro_z)
