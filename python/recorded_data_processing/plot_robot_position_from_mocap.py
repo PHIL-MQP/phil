@@ -42,9 +42,11 @@ def main():
 
     parser = argparse.ArgumentParser("plot the X/Y/Yaw of the robot from a mocap file")
     parser.add_argument('mocap_csv', help='csv motion capture file')
-    parser.add_argument('--robot_name',
+    parser.add_argument('--robot-name',
                         help='title of the column with the rio data. default is [%s]'.format(default_robot_name),
                         default=default_robot_name)
+    parser.add_argument("--tracker-to-robot-yaw", help="offset in radians between the tracker and the robot",
+                        type=float, default=0)
 
     args = parser.parse_args()
 
@@ -59,17 +61,16 @@ def main():
     recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
     style = recorded_data_processing_dir + "/../phil.mplstyle"
     plt.style.use(style)
-    skip = 20
+    skip = 10
     # this is just a hack because we don't know the offset between robot "forward" and the tracking markers on it
-    tracker_to_robot_yaw = 1.8
-    yaws = robot_poses[::skip, 2] + tracker_to_robot_yaw
+    yaws = robot_poses[::skip, 2] + args.tracker_to_robot_yaw
 
     plt.figure()
     colors = cm.rainbow(np.linspace(0, 1, robot_poses.shape[0]))
-    plt.scatter(robot_poses[:, 3], robot_poses[:, 4], s=1, c=colors)
-    plt.quiver(robot_poses[::skip, 3], robot_poses[::skip, 4], np.cos(yaws), np.sin(yaws))
-    plt.ylabel("X (meters)")
-    plt.xlabel("Y (meters)")
+    plt.scatter(robot_poses[:, 3]/1000, robot_poses[:, 4]/1000, s=1, c=colors)
+    plt.quiver(robot_poses[::skip, 3]/1000, robot_poses[::skip, 4]/1000, np.cos(yaws), np.sin(yaws))
+    plt.xlabel("X (meters)")
+    plt.ylabel("Y (meters)")
     plt.axis("square")
     plt.title("Position of Robot form MoCap")
     plt.show()
