@@ -141,11 +141,16 @@ def main():
     parser.add_argument("dot_offsets", help="the hand-written csv file listing offsets of all points for each tag")
     parser.add_argument("markermap", help="a map.yml file output form makermapper_from_video")
     parser.add_argument("--no-plot", help="don't plot", action="store_true")
+    parser.add_argument("--verbose", help="print more information", action="store_true")
     parser.add_argument("--tags-to-make-match", help="the ID of the tags should be made perfectly aligned", type=int,
                         default=0)
 
     args = parser.parse_args()
 
+    compute_error(args)
+
+
+def compute_error(args):
     dot_offsets = np.genfromtxt(args.dot_offsets, delimiter=',', skip_header=True)
     top_left_dot_poses = np.genfromtxt(args.top_left_dot_poses, delimiter=',', skip_header=True)
     markermap_file = open(args.markermap, 'r')
@@ -160,91 +165,110 @@ def main():
     measured_map = get_center_tag_poses_from_map(markermap_yml, ids)
 
     # the measured map is relative to tag 0, so we need to transform everything to align with tag 0 according to mocap
-    if args.tags_to_make_match not in ids:
-        print(args.tags_to_make_match, "is not one of the tracked ids: ", ids)
-        return
-    idx_to_make_match = np.where(ids == args.tags_to_make_match)[0][0]
-    measured_map = transform_map(measured_map, true_map, idx_to_make_match)
+    all_translational_errors = []
+    all_per_tag_translational_errors = []
+    all_per_tag_rotational_errors = []
 
-    #
-    # Error analysis
-    #
-    print("Transforming to make tags {:d} line up".format(args.tags_to_make_match))
+    print("translation error to tag 0, per tag translational error, rotational error per tag")
 
-    # find the distances between each tag and tag 0, and compare these distances between mocap & markermapper
-    N = true_map.shape[0]
-    errors = np.zeros((N, N))
-    print("\nTranslation errors on to tag 0")
-    for tag_to_measure_to in range(N):
+    for tags_to_make_match in ids:
+        idx_to_make_match = np.where(ids == tags_to_make_match)[0][0]
+        measured_map = transform_map(measured_map, true_map, idx_to_make_match)
+
+        #
+        # Error analysis
+        #
+        if args.verbose:
+            print("Transforming to make tags {:d} line up".format(tags_to_make_match))
+
+        # find the distances between each tag and tag 0, and compare these distances between mocap & markermapper
+        N = true_map.shape[0]
+        errors = np.zeros((N, N))
+        if args.verbose:
+            print("\nTranslation errors on to tag 0")
+        for tag_to_measure_to in range(N):
+            for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
+                disp_true = np.linalg.norm(true_marker[0:3] - true_map[tag_to_measure_to, 0:3])
+                disp_measured = np.linalg.norm(measured_marker[0:3] - measured_map[tag_to_measure_to, 0:3])
+                errors[tag_to_measure_to, i] = abs(disp_measured - disp_true)
+            if args.verbose:
+                print(int(ids[tag_to_measure_to]), "{:0.3f}".format(errors[tag_to_measure_to, 0]))
+        if args.verbose:
+            print()
+
+        # find the "error" distance for tag N. This is the distance between mocap and markermapper
+        if args.verbose:
+            print("\nTranslation errors on each tag")
+        per_tag_translational_errors = np.ndarray(N)
         for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
-            disp_true = np.linalg.norm(true_marker[0:3] - true_map[tag_to_measure_to, 0:3])
-            disp_measured = np.linalg.norm(measured_marker[0:3] - measured_map[tag_to_measure_to, 0:3])
-            errors[tag_to_measure_to, i] = abs(disp_measured - disp_true)
-        print(int(ids[tag_to_measure_to]), "{:0.3f}".format(errors[tag_to_measure_to, 0]))
-    print()
+            distance_error = np.linalg.norm(true_marker[0:3] - measured_marker[0:3])
+            if args.verbose:
+                print(int(ids[i]), "{:0.3f}".format(distance_error))
+            per_tag_translational_errors[i] = distance_error
+        if args.verbose:
+            print()
 
-    print("Average translation error (m) in distance between each tag and tag 0")
-    print(errors.mean())
+        # find the rotational error of each axis
+        if args.verbose:
+            print("\nRotational errors on each tag")
+            print("X   Y")
+        per_tag_rotational_errors = np.ndarray((N, 2))
+        for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
+            error_x = angle_error(true_marker[3:6], measured_marker[3:6])
+            error_z = angle_error(true_marker[9:12], measured_marker[9:12])
+            if args.verbose:
+                print(int(ids[i]), "{:0.3f}, {:0.3f}".format(error_x, error_z))
+            per_tag_rotational_errors[i, 0] = error_x
+            per_tag_rotational_errors[i, 1] = error_z
 
-    # find the "error" distance for tag N. This is the distance between mocap and markermapper
-    print("\nTranslation errors on each tag")
-    per_tag_translational_errors = np.ndarray(N)
-    for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
-        distance_error = np.linalg.norm(true_marker[0:3] - measured_marker[0:3])
-        print(int(ids[i]), "{:0.3f}".format(distance_error))
-        per_tag_translational_errors[i] = distance_error
-    print()
+        print("{:.3f}, {:.3f}, {:.3f}".format(errors.mean(), np.mean(per_tag_translational_errors),
+                                              np.mean(per_tag_rotational_errors)))
+        all_translational_errors.append(errors.mean())
+        all_per_tag_translational_errors.append(np.mean(per_tag_translational_errors))
+        all_per_tag_rotational_errors.append(np.mean(per_tag_rotational_errors))
 
-    print("Average translation error (m) on each tag")
-    print(np.mean(per_tag_translational_errors))
+        #
+        # Plotting
+        #
 
-    # find the rotational error of each axis
-    print("\nRotational errors on each tag")
-    print("X   Y")
-    per_tag_rotational_errors = np.ndarray((N, 2))
-    for i, (true_marker, measured_marker) in enumerate(zip(true_map, measured_map)):
-        error_x = angle_error(true_marker[3:6], measured_marker[3:6])
-        error_z = angle_error(true_marker[9:12], measured_marker[9:12])
-        print(int(ids[i]), "{:0.3f}, {:0.3f}".format(error_x, error_z))
-        per_tag_rotational_errors[i, 0] = error_x
-        per_tag_rotational_errors[i, 1] = error_z
+        if args.no_plot:
+            continue
 
-    print("Average rotational error (deg) on each tag")
-    print(np.mean(per_tag_rotational_errors))
+        # only plot for one or it will be confusing
+        if tags_to_make_match != args.tags_to_make_match:
+            continue
 
-    #
-    # Plotting
-    #
+        recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
+        style = recorded_data_processing_dir + "/../phil.mplstyle"
+        plt.style.use(style)
 
-    if args.no_plot:
-        return
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.set_aspect('equal')
+        ax.scatter(true_map[:, 0], true_map[:, 1], true_map[:, 2], label="mocap", c='green')
+        ax.scatter(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], label="markermap", c='red')
+        ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 3], true_map[:, 4], true_map[:, 5],
+                  length=0.3, arrow_length_ratio=0.5, color='red')
+        ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 6], true_map[:, 7], true_map[:, 8],
+                  length=0.3, arrow_length_ratio=0.5, color='green')
+        ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 9], true_map[:, 10], true_map[:, 11],
+                  length=0.3, arrow_length_ratio=0.5, color='blue')
+        ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 3], measured_map[:, 4],
+                  measured_map[:, 5], length=0.3, arrow_length_ratio=0.5, color='red')
+        ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 6], measured_map[:, 7],
+                  measured_map[:, 8], length=0.3, arrow_length_ratio=0.5, color='green')
+        ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 9], measured_map[:, 10],
+                  measured_map[:, 11], length=0.3, arrow_length_ratio=0.5, color='blue')
+        set_axes_equal(ax)
+        ax.set_xlabel('X axis')
+        ax.set_ylabel('Y axis')
+        ax.set_zlabel('Z axis')
+        plt.legend()
 
-    recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
-    style = recorded_data_processing_dir + "/../phil.mplstyle"
-    plt.style.use(style)
+    print("averages:")
+    print("{:.3f}, {:.3f}, {:.3f}".format(np.mean(all_translational_errors), np.mean(all_per_tag_translational_errors),
+                                          np.mean(all_per_tag_rotational_errors)))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.set_aspect('equal')
-    ax.scatter(true_map[:, 0], true_map[:, 1], true_map[:, 2], label="mocap", c='green')
-    ax.scatter(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], label="markermap", c='red')
-    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 3], true_map[:, 4], true_map[:, 5],
-              length=0.3, arrow_length_ratio=0.5, color='red')
-    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 6], true_map[:, 7], true_map[:, 8],
-              length=0.3, arrow_length_ratio=0.5, color='green')
-    ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 9], true_map[:, 10], true_map[:, 11],
-              length=0.3, arrow_length_ratio=0.5, color='blue')
-    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 3], measured_map[:, 4],
-              measured_map[:, 5], length=0.3, arrow_length_ratio=0.5, color='red')
-    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 6], measured_map[:, 7],
-              measured_map[:, 8], length=0.3, arrow_length_ratio=0.5, color='green')
-    ax.quiver(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], measured_map[:, 9], measured_map[:, 10],
-              measured_map[:, 11], length=0.3, arrow_length_ratio=0.5, color='blue')
-    set_axes_equal(ax)
-    ax.set_xlabel('X axis')
-    ax.set_ylabel('Y axis')
-    ax.set_zlabel('Z axis')
-    plt.legend()
     plt.show()
 
 
