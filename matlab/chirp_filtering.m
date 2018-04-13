@@ -91,7 +91,7 @@ title("Filter used for matching");
 figure;
 hold on;
 plot(t_total, repeated_unshifted_signal, 'DisplayName', 'Final Signal');
-plot(t_total, repeated_shifted_signal, 'DisplayName', 'Finall Shifted Signal');
+plot(t_total, repeated_shifted_signal, 'DisplayName', 'Final Shifted Signal');
 xlim([t_total(1), t_total(end)]);
 legend('show');
 title("Final Signal");
