@@ -1,3 +1,5 @@
+*.tar
+*.gz
 .settings
 __pycache__
 venv
