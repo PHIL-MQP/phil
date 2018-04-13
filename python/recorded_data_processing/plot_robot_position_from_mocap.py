@@ -61,9 +61,9 @@ def main():
     recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
     style = recorded_data_processing_dir + "/../phil.mplstyle"
     plt.style.use(style)
-    skip = 10
+    skip = 20
     # this is just a hack because we don't know the offset between robot "forward" and the tracking markers on it
-    yaws = robot_poses[::skip, 2] + args.tracker_to_robot_yaw
+    yaws = robot_poses[::skip, 2] + np.deg2rad(args.tracker_to_robot_yaw)
 
     plt.figure()
     colors = cm.rainbow(np.linspace(0, 1, robot_poses.shape[0]))
@@ -72,7 +72,7 @@ def main():
     plt.xlabel("X (meters)")
     plt.ylabel("Y (meters)")
     plt.axis("square")
-    plt.title("Position of Robot form MoCap")
+    plt.title("Position of Robot from MoCap")
     plt.show()
 
 
