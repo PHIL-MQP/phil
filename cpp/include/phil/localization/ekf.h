@@ -14,7 +14,7 @@ namespace phil {
 
 class EKF : public Filter<BFL::ExtendedKalmanFilter> {
  public:
-  EKF();
+  EKF(double W, double alpha, double dt_s);
 
   std::unique_ptr<BFL::AnalyticSystemModelGaussianUncertainty> system_model;
   std::unique_ptr<BFL::LinearAnalyticMeasurementModelGaussianUncertainty> yaw_measurement_model;

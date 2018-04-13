@@ -23,6 +23,9 @@ if (NOT ${RIO})
     add_executable(publish_rio_data publish_rio_data.cpp)
     target_link_libraries(publish_rio_data phil_common)
 
+    add_executable(publish_turtlebot_mocap_data publish_turtlebot_mocap_data.cpp)
+    target_link_libraries(publish_turtlebot_mocap_data phil_common)
+
     add_executable(marker_mapper_timestamped marker_mapper_timestamped.cpp)
     target_link_libraries(marker_mapper_timestamped aruco ${phil_opencv_libs} phil_common)
 

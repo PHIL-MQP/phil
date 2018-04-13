@@ -30,7 +30,6 @@ int detectMarkers(cv::VideoCapture capture,
     cam_params.resize(frame.size());
 
     size_t frame_idx = 0;
-    std::unordered_map<int, unsigned int> detection_counts;
     while (capture.isOpened()) {
       capture >> frame;
 

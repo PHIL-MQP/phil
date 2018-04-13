@@ -30,8 +30,8 @@ int main(int argc, const char **argv) {
 
   unsigned int rate = args::get(period_flag);
 
-  io::CSVReader<8> reader(args::get(rio_csv));
-  reader.read_header(io::ignore_extra_column,
+  io::CSVReader<8> rio_reader(args::get(rio_csv));
+  rio_reader.read_header(io::ignore_extra_column,
                      "raw_accel_x",
                      "raw_accel_y",
                      "raw_accel_z",
@@ -46,7 +46,7 @@ int main(int argc, const char **argv) {
 
   double ax, ay, az, yaw, encoder_l, encoder_r, fpga_t;
   long navx_t;
-  while (reader.read_row(ax, ay, az, yaw, encoder_l, encoder_r, fpga_t, navx_t)) {
+  while (rio_reader.read_row(ax, ay, az, yaw, encoder_l, encoder_r, fpga_t, navx_t)) {
     phil::data_t data{};
     data.raw_acc_x = ax;
     data.raw_acc_y = ay;

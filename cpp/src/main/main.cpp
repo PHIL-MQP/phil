@@ -299,7 +299,10 @@ int main(int argc, const char **argv) {
   //// Start of the main loop ////
   ////////////////////////////////
 
-  phil::EKF filter;
+  constexpr double meters_per_tick = 0.000357; // FIXME: where did this number come from?!
+  phil::EKF filter(0.9, 1.6, 0.05); // for mocap bot
+  // phil::EKF filter(0.23, 1, 0.05); // for turtlebot--not sure about that last number (dt_s)
+
   cv::Mat frame;
   bool done = false;
   static double accumulated_yaw_rad = 0;
@@ -393,7 +396,6 @@ int main(int argc, const char **argv) {
       /////////////////////////////////////////////////
 
       // Data structures for EKF Update
-      constexpr double meters_per_tick = 0.000357; // FIXME: where did this number come from?!
       const double v_l = -rio_data.left_encoder_rate * meters_per_tick;
       const double v_r = -rio_data.right_encoder_rate * meters_per_tick;
 

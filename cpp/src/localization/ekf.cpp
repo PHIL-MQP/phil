@@ -4,7 +4,7 @@
 
 namespace phil {
 
-EKF::EKF()
+EKF::EKF(double W, double alpha, double dt_s)
     : system_model(nullptr), yaw_measurement_model(nullptr), acc_measurement_model(nullptr) {
   MatrixWrapper::ColumnVector prior_mean(localization::N);
   prior_mean << 0, 0, 0, 0, 0, 0, 0, 0, 0;
@@ -37,7 +37,7 @@ EKF::EKF()
   system_noise_covariance(8, 8) = 0.001;
   system_noise_covariance(9, 9) = 0.001;
   BFL::Gaussian system_uncertainty(system_noise_mean, system_noise_covariance);
-  system_pdf = std::make_unique<localization::EncoderControlModel>(system_uncertainty);
+  system_pdf = std::make_unique<localization::EncoderControlModel>(system_uncertainty, W, alpha, dt_s);
   system_model = std::make_unique<BFL::AnalyticSystemModelGaussianUncertainty>(system_pdf.get());
 
   // Construct measurement models for each of our sensor packages

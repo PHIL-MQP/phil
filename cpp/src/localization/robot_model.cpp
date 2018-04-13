@@ -3,8 +3,8 @@
 namespace phil {
 namespace localization {
 
-EncoderControlModel::EncoderControlModel(const BFL::Gaussian &additiveNoise)
-    : AnalyticConditionalGaussianAdditiveNoise(additiveNoise, 2) {
+EncoderControlModel::EncoderControlModel(const BFL::Gaussian &additiveNoise, double W, double alpha, double dt_s)
+    : AnalyticConditionalGaussianAdditiveNoise(additiveNoise, 2), W(W), alpha(alpha), dt_s(dt_s) {
 }
 
 MatrixWrapper::ColumnVector EncoderControlModel::ExpectedValueGet() const {
