@@ -221,11 +221,12 @@ def compute_error(args):
             per_tag_rotational_errors[i, 0] = error_x
             per_tag_rotational_errors[i, 1] = error_z
 
-        print("{:.3f}, {:.3f}, {:.3f}".format(errors.mean(), np.mean(per_tag_translational_errors),
-                                              np.mean(per_tag_rotational_errors)))
+        mean_per_tag_rotational_errors = np.mean(per_tag_rotational_errors, axis=1)
+        print("{:.3f}, {:.3f}, {:.3f}, {:.3f}".format(errors.mean(), np.mean(per_tag_translational_errors),
+                                              mean_per_tag_rotational_errors[0], mean_per_tag_rotational_errors[1]))
         all_translational_errors.append(errors.mean())
         all_per_tag_translational_errors.append(np.mean(per_tag_translational_errors))
-        all_per_tag_rotational_errors.append(np.mean(per_tag_rotational_errors))
+        all_per_tag_rotational_errors.append(mean_per_tag_rotational_errors)
 
         #
         # Plotting
@@ -265,9 +266,11 @@ def compute_error(args):
         ax.set_zlabel('Z axis')
         plt.legend()
 
+    all_per_tag_rotational_errors = np.array(all_per_tag_rotational_errors)
+    mean_all_per_tag_rotational_errors = np.mean(all_per_tag_rotational_errors, axis=1)
     print("averages:")
-    print("{:.3f}, {:.3f}, {:.3f}".format(np.mean(all_translational_errors), np.mean(all_per_tag_translational_errors),
-                                          np.mean(all_per_tag_rotational_errors)))
+    print("{:.3f}, {:.3f}, {:.3f}, {:.3f}".format(np.mean(all_translational_errors), np.mean(all_per_tag_translational_errors),
+                                          mean_all_per_tag_rotational_errors[0], mean_all_per_tag_rotational_errors[1]))
 
     plt.show()
 
