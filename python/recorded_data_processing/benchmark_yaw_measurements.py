@@ -92,6 +92,7 @@ def main():
         print("there's no column [{:s}] in [{:s}]".format(args.robot_name, args.mocap_csv))
         return
     mocap_yaws = robot_poses[:, 2] - robot_poses[0, 2]
+    mocap_yaws = robot_poses[:, 2] - robot_poses[1, 2]
     mocap_yaws = np.rad2deg(mocap_yaws)
     mocap_yaws = wrap_mocap(mocap_yaws)
     mocap_times = np.arange(0, mocap_yaws.shape[0]) * 0.01
@@ -105,6 +106,36 @@ def main():
 
     integrated_yaws = integrate_gyro_z(gyro_z)
 
+    # compute the average error of each data source
+    time_conversion = mocap_times.shape[0] / navx_times.shape[0]
+    nearest_mocap_times = np.arange(navx_times.shape[0]) * time_conversion
+
+    navx_errors = []
+    integrated_errors = []
+    outliers = 0
+    nearest_mocap_yaws = []
+    for mocap_time, navx_yaw, integrated_yaw in zip(nearest_mocap_times, navx_yaws, integrated_yaws):
+        lower_idx = int(np.floor(mocap_time))
+        upper_idx = int(np.ceil(mocap_time))
+        mocap_yaw = (mocap_yaws[lower_idx] + mocap_yaws[upper_idx])/2
+        nearest_mocap_yaws.append(mocap_yaw)
+        navx_error = abs(navx_yaw - mocap_yaw)
+        integrated_error = abs(integrated_yaw - mocap_yaw)
+        if navx_error < 40: # ignore outliers
+            navx_errors.append(navx_error)
+        else:
+            outliers += 1
+        if integrated_error < 40: # ignore outliers
+            integrated_errors.append(integrated_error)
+        else:
+            outliers += 1
+
+    print("Found {:d} outliers".format(outliers))
+    print("Data Source & Average Error (deg) & 90th Percentile Error (deg) \\\\ \hline")
+    print("Navx \\texttt{{GetYaw()}} & {:0.3f} & {:0.3f} \\\\ \hline".format(np.mean(navx_errors), np.percentile(navx_errors, 90)))
+    print("Integrated & {:0.3f} & {:0.3f} \\\\ \hline".format(np.mean(integrated_errors), np.percentile(integrated_errors, 90)))
+
+
     if not args.no_plot:
         if 'DISPLAY' not in os.environ:
             matplotlib.use('Agg')
@@ -113,14 +144,16 @@ def main():
         style = recorded_data_processing_dir + "/../phil.mplstyle"
         plt.style.use(style)
         plt.figure()
-        plt.plot(mocap_times, mocap_yaws, linewidth=1, label='motion capture')
-        plt.plot(navx_times, navx_yaws, linewidth=1, label='NavX getYaw()')
-        plt.plot(navx_times, integrated_yaws, linewidth=1, label='Integrated Gyro Z')
+        plt.scatter(mocap_times, mocap_yaws, s=1, label='motion capture', lw=0)
+        plt.scatter(navx_times, navx_yaws, s=1, label='NavX getYaw()', lw=0)
+        plt.scatter(navx_times, integrated_yaws, s=1, label='Integrated Gyro Z', lw=0)
         plt.ylabel("Yaw (degrees)")
         plt.xlabel("Time (seconds)")
         plt.title("Comparison of Yaw Measurement")
-        plt.legend()
-        plt.savefig('yaw_comparison.png')
+        legend = plt.legend()
+        legend.legendHandles[0]._sizes = [30]
+        legend.legendHandles[1]._sizes = [30]
+        legend.legendHandles[2]._sizes = [30]
         plt.show()
 
 
