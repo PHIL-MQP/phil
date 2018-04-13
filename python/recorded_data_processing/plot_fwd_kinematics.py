@@ -1,20 +1,41 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
+from recorded_data_processing.plot_robot_position_from_mocap import load_motion_capture_csv
+
 
 def main():
+    default_robot_name = 'Global Angle PHIL_ROBOT_01:PHIL_ROBOT_01'
+
     parser = argparse.ArgumentParser("run forward kinematics on encoder data from CSV")
     parser.add_argument('csv_file', help='csv file with some columns of encoder data')
+    parser.add_argument('mocap_csv', help='csv motion capture file')
+    parser.add_argument('--robot-name',
+                        help='title of the column with the rio data. default is [%s]'.format(default_robot_name),
+                        default=default_robot_name)
     robots = parser.add_mutually_exclusive_group(required=True)
     robots.add_argument('--turtlebot', action='store_true')
     robots.add_argument('--mocapbot', action='store_true')
     parser.add_argument('--alpha', help='slip value, must be >=1', default=1, type=float)
+    parser.add_argument('--initial-yaw', help='initial yaw in degrees', default=0, type=float)
 
     args = parser.parse_args()
+
+    mocap_reader = csv.reader(open(args.mocap_csv, 'r'))
+
+    # MOCAP data
+    robot_poses = load_motion_capture_csv(args.robot_name, mocap_reader)
+    if robot_poses is None:
+        print("there's no column [{:s}] in [{:s}]".format(args.robot_name, args.mocap_csv))
+        return
+    mocap_xs = (robot_poses[:, 3] - robot_poses[0, 3])/1000
+    mocap_ys = (robot_poses[:, 4] - robot_poses[0, 4])/1000
 
     if args.turtlebot:
         track_width_m = 0.23
@@ -25,8 +46,8 @@ def main():
     else:
         track_width_m = 0.9
         wheel_radius_m = 0.074
-        dt_s = 0.05
-        distance_per_tick = 0.000357
+        dt_s = 0.02
+        distance_per_tick = 0.01375
 
     data = np.genfromtxt(args.csv_file, delimiter=',', skip_header=True)
 
@@ -45,7 +66,7 @@ def main():
 
     else:  # mocap bot records linear velocity
         for i, d in enumerate(data):
-            wheel_speeds_rps.append([d[10] * distance_per_tick, d[11] * distance_per_tick])
+            wheel_speeds_rps.append([d[9] * distance_per_tick, -1 * d[10] * distance_per_tick])
 
     wheel_speeds_rps = np.array(wheel_speeds_rps)
 
@@ -56,7 +77,7 @@ def main():
     wrs = []
     x = 0
     y = 0
-    yaw = 0
+    yaw = np.deg2rad(args.initial_yaw)
     for i, d in enumerate(wheel_speeds_rps):
         wl_rps = d[0]
         wr_rps = d[1]
@@ -72,19 +93,30 @@ def main():
         wls.append(wl_rps)
         wrs.append(wr_rps)
 
+    recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
+    style = recorded_data_processing_dir + "/../phil.mplstyle"
+    plt.style.use(style)
+
+    plt.figure()
+    plt.plot(np.rad2deg(yaws))
+    plt.ylabel("yaw (degrees")
+    plt.title("Yaws")
+
     plt.figure()
     plt.plot(wls, linewidth=1, label='left wheel speed')
     plt.plot(wrs, linewidth=1, label='right wheel speed')
-    plt.title("Wheel Angular Speed Plots")
     plt.ylabel("Angular Velocity (radians/second)")
+    plt.title("Wheel Angular Speed Plots")
+    plt.legend()
 
     plt.figure()
-    colors = cm.rainbow(np.linspace(0, 1, wheel_speeds_rps.shape[0]))
-    plt.plot(xs, ys, linewidth=1)
-    plt.scatter(xs, ys, color=colors, label='robot position', s=8)
+    plt.scatter(xs, ys, s=4, lw=0, marker='o')
+    colors = cm.rainbow(np.linspace(0, 1, robot_poses.shape[0]))
+    plt.scatter(mocap_xs, mocap_ys, color=colors, label='robot position', s=4, marker='.', lw=0)
     plt.xlabel("x (meters)")
     plt.ylabel("y (meters)")
     plt.axis("square")
+    plt.title("Position of Robot from Encoders")
 
     plt.show()
 
