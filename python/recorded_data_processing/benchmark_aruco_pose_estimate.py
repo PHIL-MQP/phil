@@ -36,6 +36,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import struct
 import argparse
 import math
+import os
 
 np.set_printoptions(suppress=True)  # no scientific notation
 
@@ -302,8 +303,11 @@ def compute_distance_error(plot=False):
   print("pct95 error distance",pct95)
   print("pct5 dev distance",pct5)
 
-  if(plot == True):
-    plt.figure(figsize=(15,15), facecolor='black')
+  if plot:
+    recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
+    style = recorded_data_processing_dir + "/../phil.mplstyle"
+    plt.style.use(style)
+    plt.figure()
 
     colors_vicon = cm.Accent(np.linspace(0, 1, tag_poses.shape[0]))
     colors_aruco = cm.Set1(np.linspace(0, 1, tag_poses.shape[0]))
@@ -332,13 +336,13 @@ def compute_distance_error(plot=False):
   # plot corresponding_mocap_idx over time
   # plt.scatter(output[:,0], output[:,5], s=10, color="g") 
 
-    lgnd = plt.legend(scatterpoints=1, fontsize=16)
-    for i in range(len(lgnd.legendHandles)):
-      lgnd.legendHandles[i]._sizes = [40]
-    plt.title("Distance from Camera to Tag (ArUco vs Vicon) Trial 1", color='white', fontsize=20)
-    plt.ylabel("Distance (meters)", color='white', fontsize=20)
-    plt.xlabel("time (seconds)", color='white',fontsize=20)
-    plt.tick_params(colors='white')
+    lgnd = plt.legend()
+    # for i in range(len(lgnd.legendHandles)):
+    #   lgnd.legendHandles[i]._sizes = [40]
+    plt.title("Distance from Camera to Tag (ArUco vs Vicon) Trial 1")
+    plt.ylabel("Distance (meters)")
+    plt.xlabel("time (seconds)")
+    plt.tick_params()
     plt.show()
 
 def main():

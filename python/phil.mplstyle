@@ -7,4 +7,6 @@ xtick.labelsize : 18
 ytick.labelsize : 18
 legend.facecolor : white
 legend.fontsize : 16
+legend.markerscale : 2
+legend.scatterpoints : 1
 font.size : 18
