@@ -9,7 +9,7 @@ f = open(args.detectmarkers,"r")
 
 lines = f.readlines()
 
-print(lines)
+# print(lines)
 f.close()
 
 f = open(args.detectmarkers,"w")
