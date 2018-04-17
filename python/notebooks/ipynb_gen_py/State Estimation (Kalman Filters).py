@@ -90,9 +90,9 @@ import matplotlib.pyplot as plt
 # \theta \\
 # \end{bmatrix} -
 # \begin{bmatrix}
-# 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-# 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+# 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+# 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
 # \end{bmatrix}
 # \begin{bmatrix}
 # x \\
@@ -103,7 +103,6 @@ import matplotlib.pyplot as plt
 # \dot{\theta} \\
 # \ddot{x} \\
 # \ddot{y} \\
-# \ddot{\theta} \\
 # \end{bmatrix}
 # $$
 # 
@@ -159,7 +158,7 @@ import matplotlib.pyplot as plt
 # 
 # Because we are receiving our sensor updates asynchronously, we will just run these updates steps as soon as the data from the three sources is available. Basically this means we will have a seperate thread for collecting camera images and calling the camera update step, and another for talking to the PSoC over serial.
 
-# ## General matrix dimensions for multi-sensor multi-state stuffs
+# # General matrix dimensions for multi-sensor multi-state stuffs
 # 
 # N = number of state variables
 # 
