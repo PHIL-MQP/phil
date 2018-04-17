@@ -38,16 +38,6 @@ import argparse
 import math
 import os
 
-np.set_printoptions(suppress=True)  # no scientific notation
-
-parser = argparse.ArgumentParser("Compute error of aruco estimate pose")
-parser.add_argument("detectmarkersfile", help="The detect markers output")
-parser.add_argument("timestampsfile", help="The timestamps file for video stream")
-parser.add_argument("mocaprobotfile", help="The robot poses from vicon")
-parser.add_argument("mocaptagstopleftfile", help="The hand-written tag top left position of tags from vicon")
-parser.add_argument("tagpointsfile", help="Tag points csv")
-
-args = parser.parse_args()
 
 # https://stackoverflow.com/a/31364297/3353601
 def set_axes_equal(ax):
@@ -78,71 +68,78 @@ def set_axes_equal(ax):
     ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
     ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
 
+
 # Read in robot pose from mocap data
 # convert timestamps (ts) to seconds
 # convert pose data to meters
 # output as ts, tx, ty, tx, rx, ry, rz
 def parse_bot_pose(filename):
-  data =  np.genfromtxt(filename, delimiter=',')
-  data[:,0] -= data[0,0]
-  data[:,0] *= 0.01 # convert timestamps to seconds
-  data[:,1:] *= 0.001 #convert pose data to meters
+    data = np.genfromtxt(filename, delimiter=',')
+    data[:, 0] -= data[0, 0]
+    data[:, 0] *= 0.01  # convert timestamps to seconds
+    data[:, 1:] *= 0.001  # convert pose data to meters
 
-  return data
+    return data
+
 
 # get the first timestamp from the camera stream in seconds
 def get_camera_start(filename):
-  data =  np.genfromtxt(filename)
-  # data[:] -= data[0]
-  data[:] *= 0.000001 # convert timestamps to seconds
+    data = np.genfromtxt(filename)
+    # data[:] -= data[0]
+    data[:] *= 0.000001  # convert timestamps to seconds
 
-  return data[0]
+    return data[0]
+
 
 # return the aruco data in the format below:
 # ts, tx, ty, tx, rx, ry, rz
 # rototations are representated as a 1x3 rotational vector
 def parse_aruco_data(arucofile, timestampsfile):
-  data =  np.genfromtxt(arucofile, delimiter=',')
-  ts =  np.genfromtxt(timestampsfile)
-  data[:,0] -= ts[0]
-  data[:,0] *= 0.000001 # convert timestamps to seconds
+    data = np.genfromtxt(arucofile, delimiter=',')
+    ts = np.genfromtxt(timestampsfile)
+    data[:, 0] -= ts[0]
+    data[:, 0] *= 0.000001  # convert timestamps to seconds
 
-  # print(data)
-  return data, ts
+    # print(data)
+    return data, ts
+
 
 # return the top left corners of tags as coordinates from abs zero of the mocap system
 def parse_tag_top_left(tagfile):
-  data = np.genfromtxt(tagfile, delimiter=',',skip_header=1)
-  # data[:,1:] *= 0.001 #convert pose data to meters
+    data = np.genfromtxt(tagfile, delimiter=',', skip_header=1)
+    # data[:,1:] *= 0.001 #convert pose data to meters
 
-  # print(data)
-  return data
+    # print(data)
+    return data
+
 
 # return the corner points of tags relative to absolute zero
 def parse_tag_points(pointsFile):
-  data =  np.genfromtxt(pointsFile, delimiter=',',skip_header=1)
-  # data[:,1:] *= 0.001 #convert pose data to meters
+    data = np.genfromtxt(pointsFile, delimiter=',', skip_header=1)
+    # data[:,1:] *= 0.001 #convert pose data to meters
 
-  return data
+    return data
+
 
 def compute_dropped_poses(aruco):
-  errors = []
-  bad_pose = 0
+    errors = []
+    bad_pose = 0
 
-  for i in range(aruco.shape[0]):
-    if(aruco[i,2] == -999999.):
-      bad_pose += 1
+    for i in range(aruco.shape[0]):
+        if (aruco[i, 2] == -999999.):
+            bad_pose += 1
 
-  print("Bad Poses", str(bad_pose))
-  print("Total Detected", str(aruco.shape[0]))
-  print("Dropped Pct", str(bad_pose*100./float(aruco.shape[0])))
-  return bad_pose/aruco.shape[0]
+    print("Bad Poses", str(bad_pose))
+    print("Total Detected", str(aruco.shape[0]))
+    print("Dropped Pct", str(bad_pose * 100. / float(aruco.shape[0])))
+    return bad_pose / aruco.shape[0]
+
 
 # stolen from Peter
 def get_center_tag_poses_from_dots(top_left_dot_poses, dot_offsets):
-    if(top_left_dot_poses.shape[0] != dot_offsets.shape[0]):
-      print("Suspicious! the files should have the same number of rows. exiting")
-      return
+    if (top_left_dot_poses.shape[0] != dot_offsets.shape[0]):
+        print("Suspicious! the files should have the same number of rows. exiting")
+        return
     true_map = np.zeros((top_left_dot_poses.shape[0], 13))
     dots = np.zeros((top_left_dot_poses.shape[0] * 3, 3))
     ids = top_left_dot_poses[:, 0]
@@ -183,170 +180,128 @@ def get_center_tag_poses_from_dots(top_left_dot_poses, dot_offsets):
 
     return true_map, dots, ids
 
+
 # https://stackoverflow.com/questions/6802577/rotation-of-3d-vector
 def rotation_matrix(axis, theta):
-  axis = np.asarray(axis)
-  axis = axis/math.sqrt(np.dot(axis, axis))
-  a = math.cos(theta/2.0)
-  b, c, d = -axis*math.sin(theta/2.0)
-  aa, bb, cc, dd = a*a, b*b, c*c, d*d
-  bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
-  return np.array([[aa+bb-cc-dd, 2*(bc+ad), 2*(bd-ac)],
-                   [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
-                   [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
-
-def dropped_poses():
-    aruco_data, ts = parse_aruco_data(args.detectmarkersfile, args.timestampsfile)
-    compute_dropped_poses(aruco_data)
-
-# finds the transform beetween the mocap frame and frame of the tag,
-# compute the rotational matrix of the ArUco pose estimate, and compare it to the 
-# mocap data
-def compute_angle_error():
-  # parse data from files
-  aruco_data, timestamps = parse_aruco_data(args.detectmarkersfile, args.timestampsfile)
-  robot_pose = parse_bot_pose(args.mocaprobotfile)
-  tag_poses = parse_tag_top_left(args.mocaptagstopleftfile)
-  tag_offsets = parse_tag_points(args.tagpointsfile)
-  tag_centers = get_center_tag_poses_from_dots(tag_poses, tag_offsets)
-
-  start_ts = timestamps[0]
-  end_ts = timestamps[-1]
-
-  # get first tag detected, find corresponding mocap data
-  aruco_first_sample = aruco_data[0,:]
-  tag_id = aruco_first_sample[1]
-  first_detection_ts = aruco_first_sample[0]
-
-  corresponding_mocap_idx = (np.abs(robot_pose[:,0]-first_detection_ts)).argmin()
-
-  robot_pose_first_ts = robot_pose[corresponding_mocap_idx,:]
-
-  tag_pose = tag_centers[0][np.where(tag_centers[0][:,12] == tag_id)[0][0],:-1]
-
-  A = tag_pose[3:13].reshape((3,3)).T
-
-  robot_z = robot_pose_first_ts[-1]
-
-  xOffset = (-3.14/2)
-
-  B = np.array( [  [np.cos(robot_z), -np.sin(robot_z), 0 ], 
-                  [np.sin(robot_z), np.cos(robot_z), 0 ], 
-                  [0, 0, 1]] )
-
-  C = np.array( [ [1, 0, 0], 
-                  [0, np.cos(xOffset), np.sin(xOffset) ], 
-                  [0, -np.sin(xOffset), np.cos(xOffset)] ] )
-
-  mocap_rot = A@np.linalg.inv(B)@np.linalg.inv(C)
-  aruco_rod_theta = np.linalg.norm(aruco_first_sample[5:8])
-  unit_vec = aruco_first_sample[5:8]/aruco_rod_theta
-  aruco_rot = rotation_matrix(unit_vec, aruco_rod_theta)
-
-  print("Mocap", mocap_rot)
-  print()
-  print("ArUco", aruco_rot)
+    axis = np.asarray(axis)
+    axis = axis / math.sqrt(np.dot(axis, axis))
+    a = math.cos(theta / 2.0)
+    b, c, d = -axis * math.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
 
 def compute_distance_error(plot=False):
-  # parse data from files
-  aruco_data, timestamps = parse_aruco_data(args.detectmarkersfile, args.timestampsfile)
-  robot_pose = parse_bot_pose(args.mocaprobotfile)
-  tag_poses = parse_tag_top_left(args.mocaptagstopleftfile)
-  tag_offsets = parse_tag_points(args.tagpointsfile)
-  tag_centers = get_center_tag_poses_from_dots(tag_poses, tag_offsets)
+    np.set_printoptions(suppress=True)  # no scientific notation
 
-  # apply time shift to account for delay in camera start-up
-  aruco_data[:,0] += 0.55
+    parser = argparse.ArgumentParser("Compute error of aruco estimate pose")
+    parser.add_argument("detected_markers", help="The output of deter_markers_in_video")
+    parser.add_argument("timestamps", help="The timestamps file for video stream")
+    parser.add_argument("mocaprobotfile", help="The robot poses from vicon")
+    parser.add_argument("top_left_dot_poses", help="the hand-written csv file listing global positions top-left dots")
+    parser.add_argument("dot_offsets", help="the hand-written csv file listing offsets of all points for each tag")
 
-  output = []
+    args = parser.parse_args()
 
-  for i in range(aruco_data.shape[0]):
-    temp = []
-    aruco_sample = aruco_data[i,:]
-    tag_id = aruco_sample[1]
-    timestamp = aruco_sample[0]
+    # parse data from files
+    aruco_data, timestamps = parse_aruco_data(args.detected_markers, args.timestamps)
+    robot_pose = parse_bot_pose(args.mocaprobotfile)
+    tag_poses = parse_tag_top_left(args.top_left_dot_poses)
+    tag_offsets = parse_tag_points(args.dot_offsets)
+    tag_centers = get_center_tag_poses_from_dots(tag_poses, tag_offsets)
 
-    corresponding_mocap_idx = (np.abs(robot_pose[:,0]-timestamp)).argmin()
+    # apply time shift to account for delay in camera start-up
+    aruco_data[:, 0] += 0.55
 
-    robot_pose_temp = robot_pose[corresponding_mocap_idx,:]
+    output = []
 
-    try:
-      tag_pose = tag_centers[0][np.where(tag_centers[0][:,12] == tag_id)[0][0],:-1]
-    except Exception as e:
-      continue
-    else:
-      pass
-    finally:
-      pass
-
-    mocap_robot_to_tag = robot_pose_temp[1:4] - np.array([0, 0, .17]) - tag_pose[0:3]
-
-    # timestamp (aruco), tag id, truth (mocap), measured (aruco)
-    temp.append(timestamp)
-    temp.append(tag_id)
-    temp.append(np.linalg.norm(mocap_robot_to_tag))
-    temp.append(np.linalg.norm(aruco_sample[2:5]))
-    temp.append(np.abs(np.linalg.norm(mocap_robot_to_tag) - np.linalg.norm(aruco_sample[2:5]))) # error
-    temp.append(corresponding_mocap_idx)
-    output.append(temp)
-
-  output = np.array(output)
-
-  mean_dist = np.mean(output[:,4])
-  st_dev_dist = np.std(output[:,4])
-  pct95 = np.percentile(output[:,4], 95)
-  pct5 = np.percentile(output[:,4], 5)
-
-  print("Mean error distance",mean_dist)
-  print("St dev distance",st_dev_dist)
-  print("pct95 error distance",pct95)
-  print("pct5 dev distance",pct5)
-
-  if plot:
-    recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
-    style = recorded_data_processing_dir + "/../phil.mplstyle"
-    plt.style.use(style)
-    plt.figure()
-
-    colors_vicon = cm.Accent(np.linspace(0, 1, tag_poses.shape[0]))
-    colors_aruco = cm.Set1(np.linspace(0, 1, tag_poses.shape[0]))
-
-    for i in range(tag_centers[0].shape[0]):
-      try:
-        mean_errors_idxs = np.where(output[:,1] == tag_centers[0][i,12])[0]
-      except Exception as e:
-        continue
-      if(mean_errors_idxs.shape[0] > 0):
-        errors_by_tag = []
+    for i in range(aruco_data.shape[0]):
         temp = []
-        for err in mean_errors_idxs:
-          errors_by_tag.append(output[err,4])
-          temp.append(output[err,:])
-        temp = np.array(temp)
-        labelV =  "Vicon " + str(int(tag_centers[0][i,12]))
-        labelA = "ArUco " + str(int(tag_centers[0][i,12]))
-        idx =  np.where(tag_poses[:,0] == int(tag_centers[0][i,12]) )
-        plt.scatter(temp[:,0], temp[:,2], s=10, color=colors_vicon[idx[0][0]], label=labelV)
-        plt.scatter(temp[:,0], temp[:,3], s=10, color=colors_aruco[idx[0][0]], label=labelA)
+        aruco_sample = aruco_data[i, :]
+        tag_id = aruco_sample[1]
+        timestamp = aruco_sample[0]
 
-    # print(np.mean(errors_by_tag))
-    # print(tag_centers[0][i,12] )
+        corresponding_mocap_idx = (np.abs(robot_pose[:, 0] - timestamp)).argmin()
 
-  # plot corresponding_mocap_idx over time
-  # plt.scatter(output[:,0], output[:,5], s=10, color="g") 
+        robot_pose_temp = robot_pose[corresponding_mocap_idx, :]
 
-    lgnd = plt.legend()
-    # for i in range(len(lgnd.legendHandles)):
-    #   lgnd.legendHandles[i]._sizes = [40]
-    plt.title("Distance from Camera to Tag (ArUco vs Vicon) Trial 1")
-    plt.ylabel("Distance (meters)")
-    plt.xlabel("time (seconds)")
-    plt.tick_params()
-    plt.show()
+        try:
+            tag_pose = tag_centers[0][np.where(tag_centers[0][:, 12] == tag_id)[0][0], :-1]
+        except Exception:
+            continue
+
+        mocap_robot_to_tag = robot_pose_temp[1:4] - np.array([0, 0, .17]) - tag_pose[0:3]
+
+        # timestamp (aruco), tag id, truth (mocap), measured (aruco)
+        temp.append(timestamp)
+        temp.append(tag_id)
+        temp.append(np.linalg.norm(mocap_robot_to_tag))
+        temp.append(np.linalg.norm(aruco_sample[2:5]))
+        temp.append(np.abs(np.linalg.norm(mocap_robot_to_tag) - np.linalg.norm(aruco_sample[2:5])))  # error
+        temp.append(corresponding_mocap_idx)
+        output.append(temp)
+
+    output = np.array(output)
+
+    mean_dist = np.mean(output[:, 4])
+    st_dev_dist = np.std(output[:, 4])
+    pct95 = np.percentile(output[:, 4], 95)
+    pct5 = np.percentile(output[:, 4], 5)
+
+    print("Mean error distance", mean_dist)
+    print("St dev distance", st_dev_dist)
+    print("pct95 error distance", pct95)
+    print("pct5 dev distance", pct5)
+
+    if plot:
+        recorded_data_processing_dir = os.path.dirname(os.path.realpath(__file__))
+        style = recorded_data_processing_dir + "/../phil.mplstyle"
+        plt.style.use(style)
+        plt.figure()
+
+        colors_vicon = cm.Accent(np.linspace(0, 1, tag_poses.shape[0]))
+        colors_aruco = cm.Set1(np.linspace(0, 1, tag_poses.shape[0]))
+
+        for i in range(tag_centers[0].shape[0]):
+            try:
+                mean_errors_idxs = np.where(output[:, 1] == tag_centers[0][i, 12])[0]
+            except Exception as e:
+                continue
+            if (mean_errors_idxs.shape[0] > 0):
+                errors_by_tag = []
+                temp = []
+                for err in mean_errors_idxs:
+                    errors_by_tag.append(output[err, 4])
+                    temp.append(output[err, :])
+                temp = np.array(temp)
+                labelV = "Vicon " + str(int(tag_centers[0][i, 12]))
+                labelA = "ArUco " + str(int(tag_centers[0][i, 12]))
+                idx = np.where(tag_poses[:, 0] == int(tag_centers[0][i, 12]))
+                plt.scatter(temp[:, 0], temp[:, 2], s=10, color=colors_vicon[idx[0][0]], label=labelV)
+                plt.scatter(temp[:, 0], temp[:, 3], s=10, color=colors_aruco[idx[0][0]], label=labelA)
+
+        # print(np.mean(errors_by_tag))
+        # print(tag_centers[0][i,12] )
+
+        # plot corresponding_mocap_idx over time
+        # plt.scatter(output[:,0], output[:,5], s=10, color="g")
+
+        lgnd = plt.legend()
+        # for i in range(len(lgnd.legendHandles)):
+        #   lgnd.legendHandles[i]._sizes = [40]
+        plt.title("Distance from Camera to Tag (ArUco vs Vicon) Trial 1")
+        plt.ylabel("Distance (meters)")
+        plt.xlabel("time (seconds)")
+        plt.tick_params()
+        plt.show()
+
 
 def main():
-  compute_distance_error(plot=True)
+    compute_distance_error(plot=True)
+
 
 if __name__ == '__main__':
-  sys.exit(main())
+    sys.exit(main())
