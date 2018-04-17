@@ -246,8 +246,8 @@ def compute_error(args):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.set_aspect('equal')
-        ax.scatter(true_map[:, 0], true_map[:, 1], true_map[:, 2], label="mocap", c='green')
-        ax.scatter(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], label="markermap", c='red')
+        ax.scatter(true_map[:, 0], true_map[:, 1], true_map[:, 2], s=100, label="mocap", c='green')
+        ax.scatter(measured_map[:, 0], measured_map[:, 1], measured_map[:, 2], s=100, label="markermap", c='red')
         ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 3], true_map[:, 4], true_map[:, 5],
                   length=0.3, arrow_length_ratio=0.5, color='red')
         ax.quiver(true_map[:, 0], true_map[:, 1], true_map[:, 2], true_map[:, 6], true_map[:, 7], true_map[:, 8],
