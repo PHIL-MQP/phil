@@ -194,7 +194,7 @@ def rotation_matrix(axis, theta):
                      [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
 
-def compute_distance_error(plot=False):
+def compute_distance_error(plot=False, plotIndividualTags=False):
     np.set_printoptions(suppress=True)  # no scientific notation
 
     parser = argparse.ArgumentParser("Compute error of aruco estimate pose")
@@ -277,11 +277,29 @@ def compute_distance_error(plot=False):
                     errors_by_tag.append(output[err, 4])
                     temp.append(output[err, :])
                 temp = np.array(temp)
-                labelV = "Vicon " + str(int(tag_centers[0][i, 12]))
-                labelA = "ArUco " + str(int(tag_centers[0][i, 12]))
+                labelV = "Vicon Tag " + str(int(tag_centers[0][i, 12]))
+                labelA = "ArUco Tag " + str(int(tag_centers[0][i, 12]))
                 idx = np.where(tag_poses[:, 0] == int(tag_centers[0][i, 12]))
+
+
                 plt.scatter(temp[:, 0], temp[:, 2], s=10, color=colors_vicon[idx[0][0]], label=labelV)
                 plt.scatter(temp[:, 0], temp[:, 3], s=10, color=colors_aruco[idx[0][0]], label=labelA)
+                if plotIndividualTags:
+                    lgnd = plt.legend()
+                    plt.title("Distance from Camera to Tag (ArUco vs Vicon) Trial 0")
+                    plt.ylabel("Distance (meters)")
+                    plt.xlabel("time (seconds)")
+                    plt.tick_params()
+                    mean_dist = np.mean(temp[:, 4])
+                    st_dev_dist = np.std(temp[:, 4])
+                    pct95 = np.percentile(temp[:, 4], 95)
+                    pct5 = np.percentile(temp[:, 4], 5)
+
+                    print("Mean error distance tag ", int(temp[0,1]),"=", mean_dist)
+                    print("St dev distance tag ", int(temp[0,1]),"=", st_dev_dist)
+                    print("pct95 error distance tag ", int(temp[0,1]),"=", pct95)
+                    print("pct5 dev distance tag ", int(temp[0,1]),"=", pct5)
+                    plt.show()
 
         # print(np.mean(errors_by_tag))
         # print(tag_centers[0][i,12] )
@@ -300,7 +318,7 @@ def compute_distance_error(plot=False):
 
 
 def main():
-    compute_distance_error(plot=True)
+    compute_distance_error(plot=True, plotIndividualTags=True)
 
 
 if __name__ == '__main__':
