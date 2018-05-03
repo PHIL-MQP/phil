@@ -30,14 +30,25 @@ This will build `libphil_rio.a` and then install it to ~/wpilib/user/cpp so that
 
 This library is platform independent, and it's called `phil_common`. The point of this is so that if we have recorded data we can run it through out processing on any desktop or laptop to test and tune our algorithms. Of course this code can also run on the TK1.
 
-## Code for the TK1
+## Code for the Coprocessor
 
-The TK1 will have a program running that accumulates the IMU + Encoder data from the RIO/NavX, reads camera images, and any other sources of snesor data. It makes sure all of these have consistent time stamps and manages any synchronization issues. it then passes sensor readings to the common processing code, gets the resulting localization information, and puts that in network tables.
+The coprocessor will have a program running that aggregates the IMU + Encoder data from the RIO/NavX, reads camera images, and any other sources of snesor data. It makes sure all of these have consistent time stamps and manages any synchronization issues. it then passes sensor readings to the common processing code, gets the resulting localization information, and puts that in network tables.
+
+## Building on Linux
+
+Once you have all of the dependencies installed and submodules checked out, you can use a normal CMake workflow in the cpp directory
+
+    cd cpp
+    mkdir build
+    cd build
+    cmake ..
+    make
 
 ## Building on Windows
 
-First install cmake. You'll also need to download opencv and extract it to somewhere useful (program files) and do `git clone https://github.com/aruco/aruco.git` and install that.
 
-If you want to build the rio libraries, you need to install the WPILIb eclipse plugins and the WPILib toolchain. At this moment in time we are using the Beta3 stuff, so make sure you download the [beta 3 toolchain](http://first.wpi.edu/FRC/roborio/toolchains/FRC-2018-Windows-Toolchain-5.4.msi) and use this url for the plugins: [http://first.wpi.edu/FRC/roborio/beta/eclipse](http://first.wpi.edu/FRC/RoboRIO/beta/eclipse)
+Nope.
 
-If you want to build for your laptop you need a windows compiler, which you can get with Visual Studio. You should run the x64 Native tools command prompt and use `cmake .. -G "Unix Makefiles"`. You need to install `make` and add it to your path
+## Robot Datasets
+
+Please contact Professor Michalson at WPI if you are a future MQP team and would like access to the datasets we collected. They are desrcibed breifly in our MQP paper as well.
