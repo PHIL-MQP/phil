@@ -1,5 +1,7 @@
 # PHIL - Position Hallucination and Indoor Localization
 
+Full Paper: https://digitalcommons.wpi.edu/mqp-all/4087/
+
 This project contains:
 
  - A library that is cross-compiler for the RIO and used in robot programs along side WPILib
